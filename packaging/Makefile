@@ -12,7 +12,7 @@
 #
 # Haiku-only (needs the `package` tool, the userlandfs FUSE headers, libssh2, and OpenSSL).
 
-VERSION := 0.3.27-1
+VERSION := 0.3.28-1
 ARCH := x86_64
 PKG := campiello-$(VERSION)-$(ARCH).hpkg
 
@@ -76,7 +76,8 @@ REPLICANT := $(REPL_DIR)/PeerReplicant.cpp $(MDNS)
 # SMB/SFTP helpers by signature. Links only the mDNS socket/wire (not the whole Bricola stack).
 VICINATO := $(VIC_DIR)/campiello_vicinato.cpp $(VIC_DIR)/NetworkDirectory.cpp \
             $(VIC_DIR)/SmbHostFinder.cpp $(VIC_DIR)/ShareFolder.cpp \
-            $(VIC_DIR)/HandlerRegistry.cpp $(VIC_DIR)/NetIntel.cpp $(MDNS_DIR)/MdnsRadar.cpp \
+            $(VIC_DIR)/HandlerRegistry.cpp $(VIC_DIR)/NetIntel.cpp $(VIC_DIR)/OldSchoolDemo.cpp \
+            $(MDNS_DIR)/MdnsRadar.cpp \
             $(MDNS_DIR)/RadarLabels.cpp $(MDNS_DIR)/MdnsSocket.cpp $(MDNS_DIR)/MdnsWire.cpp
 
 STAGE := stage
@@ -142,7 +143,7 @@ campiello_replicant: $(REPLICANT) $(REPL_DIR)/PeerReplicant.rdef
 # The WON app (World O' Networking; codename vicinato): its app_signature resource
 # (mimeset-registered) lets be_roster find it by signature and launch the connect helpers.
 campiello_won: $(VICINATO) $(VIC_DIR)/Vicinato.rdef $(ICON_RDEF)
-	$(CXX) $(CXXFLAGS) -o $@ $(VICINATO) -lbe -lnetwork
+	$(CXX) $(CXXFLAGS) -o $@ $(VICINATO) -lbe -lmedia -lnetwork
 	rc -o campiello_won.rsrc $(VIC_DIR)/Vicinato.rdef $(ICON_RDEF)
 	xres -o $@ campiello_won.rsrc
 	mimeset -f $@

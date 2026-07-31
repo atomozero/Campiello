@@ -120,13 +120,13 @@ radar: $(VIC_DIR)/campiello_radar.cpp $(MDNS_DIR)/MdnsRadar.cpp $(MDNS_DIR)/Rada
 # docs/NEIGHBORHOOD.md.
 vicinato: $(VIC_DIR)/campiello_vicinato.cpp $(VIC_DIR)/NetworkDirectory.cpp \
           $(VIC_DIR)/SmbHostFinder.cpp $(VIC_DIR)/ShareFolder.cpp $(VIC_DIR)/NetIntel.cpp \
-          $(VIC_DIR)/HandlerRegistry.cpp $(MDNS_DIR)/MdnsRadar.cpp \
+          $(VIC_DIR)/HandlerRegistry.cpp $(VIC_DIR)/OldSchoolDemo.cpp $(MDNS_DIR)/MdnsRadar.cpp \
           $(MDNS_DIR)/RadarLabels.cpp $(MDNS_DIR)/MdnsSocket.cpp $(MDNS_DIR)/MdnsWire.cpp
 	$(CXX) $(CXXFLAGS) -o campiello_won $(VIC_DIR)/campiello_vicinato.cpp \
 	    $(VIC_DIR)/NetworkDirectory.cpp $(VIC_DIR)/SmbHostFinder.cpp $(VIC_DIR)/ShareFolder.cpp \
-	    $(VIC_DIR)/NetIntel.cpp $(VIC_DIR)/HandlerRegistry.cpp \
+	    $(VIC_DIR)/NetIntel.cpp $(VIC_DIR)/HandlerRegistry.cpp $(VIC_DIR)/OldSchoolDemo.cpp \
 	    $(MDNS_DIR)/MdnsRadar.cpp $(MDNS_DIR)/RadarLabels.cpp $(MDNS_DIR)/MdnsSocket.cpp \
-	    $(MDNS_DIR)/MdnsWire.cpp -lbe $(LDLIBS)
+	    $(MDNS_DIR)/MdnsWire.cpp -lbe -lmedia $(LDLIBS)
 
 .PHONY: check clean
 check: $(TESTS)

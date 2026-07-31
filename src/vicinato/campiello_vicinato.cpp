@@ -54,6 +54,7 @@
 #include <unistd.h>
 
 #include <cctype>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <map>
@@ -66,6 +67,7 @@
 #include "ShareFolder.h"
 #include "SmbHostFinder.h"
 #include "NetIntel.h"
+#include "OldSchoolDemo.h"
 #include "WorldIcon.h"
 
 using namespace campiello::vicinato;
@@ -97,6 +99,7 @@ static const uint32 kMsgCopyAll     = 'cpal';
 static const uint32 kMsgSsh          = 'sssh'; // open a Terminal running ssh to the selected host
 static const uint32 kMsgRdp          = 'srdp'; // open an RDP client to the selected host
 static const uint32 kMsgWake         = 'wake'; // Wake-on-LAN the selected device
+static const uint32 kMsgEasterEgg    = 'egg!'; // ten clicks on the header globe open the demo
 static const uint32 kMsgIntelTick    = 'itik'; // periodic LAN-intel enrichment pass
 static const uint32 kMsgIntelReady   = 'irdy'; // enrichment results from the worker thread
 static const uint32 kMsgAutostart    = 'auto'; // toggle "open the window at system startup"
@@ -429,6 +432,21 @@ public:
 	BSize MaxSize() override { return BSize(B_SIZE_UNLIMITED, 64); }
 	BSize PreferredSize() override { return BSize(360, 64); }
 
+	// Ten clicks on the globe tile summon the old-school demo (a wink to the demoscene).
+	void MouseDown(BPoint where) override
+	{
+		BRect tile(14, 12, 54, 52);
+		if (!tile.Contains(where)) {
+			fLogoClicks = 0;
+			return;
+		}
+		if (++fLogoClicks >= 10) {
+			fLogoClicks = 0;
+			if (Window() != nullptr)
+				Window()->PostMessage(kMsgEasterEgg);
+		}
+	}
+
 	void Draw(BRect) override
 	{
 		SetHighColor(kHeaderBg);
@@ -492,6 +510,7 @@ private:
 	bool     fAnyOnline = false;
 	BBitmap* fLogo = nullptr;
 	bool     fLogoTried = false;
+	int      fLogoClicks = 0;
 };
 
 class GroupItem : public BListItem {
@@ -1078,6 +1097,7 @@ const float DetailTable::kPad = 10;
 const float DetailTable::kVPad = 5;
 const float DetailTable::kTopPad = 8;
 
+
 class VicinatoWindow : public BWindow {
 public:
 	VicinatoWindow();
@@ -1296,6 +1316,9 @@ void VicinatoWindow::MessageReceived(BMessage* message)
 			return;
 		case kMsgWake:
 			WakeSelected();
+			return;
+		case kMsgEasterEgg:
+			CreateOldSchoolDemoWindow()->Show();
 			return;
 		case kMsgAutostart: {
 			bool enable = !IsAutostartEnabled();
