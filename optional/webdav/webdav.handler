@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the WebDAV add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered WebDAV server and
+# launches the browser with the device (host=<ip> name=<label>). Plain HTTP; HTTPS WebDAV is a
+# documented follow-up (docs/addons/webdav.md).
+signature  = application/x-vnd.Campiello-webdav
+name       = Server WebDAV
+match.type = _webdav._tcp
+action.open = File

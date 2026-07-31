@@ -1,0 +1,30 @@
+name			campiello_smb
+version 0.2.0-14
+architecture	x86_64
+summary			"Windows shared-folder support for Campiello"
+description		"Optional SMB add-on for Campiello: mount a Windows (or Samba) shared
+folder as a read-only volume on the Desktop, browsed in Tracker. Use the
+campiello_smb_mount helper to enter the server, share, and login; it appears as a
+disk. This add-on is kept separate from the MIT core because it links libsmb2
+(LGPL-2.1), which it loads dynamically. Install it only if you want to reach Windows
+shares; the core campiello package does not depend on it."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_smb = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+	userland_fs
+	lib:libsmb2 >= 4
+}

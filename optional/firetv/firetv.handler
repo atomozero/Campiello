@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the Amazon Fire TV remote (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to discovered Fire TV devices and
+# launches the app with the device (host=<ip> name=<label>).
+signature  = application/x-vnd.Campiello-firetv
+name       = Amazon Fire TV
+match.type = _amzn-wplay._tcp
+match.type = _androidtvremote2._tcp
+action.open = Telecomando

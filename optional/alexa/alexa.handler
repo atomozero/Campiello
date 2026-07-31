@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the Alexa add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered Alexa device and
+# launches the add-on with the device (CAMPIELLO:host/name + the mDNS TXT as CAMPIELLO:txt.<key>).
+# Informational only: Alexa has no open local control API (control is cloud/account only).
+signature  = application/x-vnd.Campiello-alexa
+name       = Dispositivo Alexa
+match.type = _amzn-alexa._tcp
+action.open = Informazioni

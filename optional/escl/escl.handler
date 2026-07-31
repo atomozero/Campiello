@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the eSCL scanning add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered eSCL scanner and
+# launches the panel with the device (host=<ip> name=<label>). Matches plain _uscan._tcp (HTTP);
+# TLS scanning (_uscans._tcp) is a documented follow-up (docs/addons/escl.md).
+signature  = application/x-vnd.Campiello-escl
+name       = Scanner eSCL
+match.type = _uscan._tcp
+action.open = Scanner

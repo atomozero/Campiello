@@ -1,0 +1,28 @@
+name			campiello_afp
+version			0.1.0-2
+architecture	x86_64
+summary			"AFP server info for Campiello"
+description		"Optional device add-on for Campiello: for an AFP (Apple Filing Protocol) server on
+the network it shows the server's public info (name, machine type, AFP versions, authentication
+methods) via the unauthenticated DSI GetStatus probe. AFP is legacy; prefer the Campiello SMB module
+for file sharing. Launched from the WON network neighborhood on a double-click of a discovered AFP
+server. Pure DSI over TCP, no third-party dependency; part of the MIT-clean add-on suite. A native AFP
+client is a documented follow-up."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_afp = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

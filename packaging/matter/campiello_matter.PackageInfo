@@ -1,0 +1,28 @@
+name			campiello_matter
+version			0.1.0-2
+architecture	x86_64
+summary			"Matter device info for Campiello"
+description		"Optional device add-on for Campiello: for a Matter device on the network it shows the
+advertised info (vendor/product, device type, commissioning state, discriminator, session timing)
+decoded from the mDNS TXT. It does not commission or control the device: that needs the Matter secure
+sessions (PASE/CASE), attestation certificates, and Thread/Wi-Fi onboarding, a documented follow-up.
+Launched from the WON network neighborhood on a double-click of a discovered Matter device. No crypto,
+no third-party dependency; part of the MIT-clean add-on suite."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_matter = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

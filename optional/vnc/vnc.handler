@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the VNC remote-desktop add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered RFB host and launches
+# the add-on with the device (host=<ip> name=<label>). The add-on hands off to an installed VNC
+# viewer; a native RFB client is a documented follow-up (docs/addons/vnc.md).
+signature  = application/x-vnd.Campiello-vnc
+name       = Desktop remoto VNC
+match.type = _rfb._tcp
+action.open = Desktop remoto

@@ -1,0 +1,29 @@
+name			campiello_firetv
+version			0.1.0-7
+architecture	x86_64
+summary			"Amazon Fire TV remote for Campiello"
+description		"Optional device add-on for Campiello: an on-screen remote for an Amazon
+Fire TV, over the device's official REST API (no ADB). Pair once with a PIN, then use the
+navigation ring, playback, and app shortcuts to drive the TV. Launched from the WON network
+neighborhood on a double-click of a discovered Fire TV. Kept separate from the MIT core because
+it links OpenSSL (Apache-2.0); the core campiello package does not depend on it."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_firetv = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+	lib:libssl
+	lib:libcrypto
+}

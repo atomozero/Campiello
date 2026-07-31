@@ -1,0 +1,20 @@
+/*
+ * Resources for the Campiello AirPlay add-on (campiello_airplay).
+ * The app_signature is registered by mimeset at build time so be_roster can launch it by signature
+ * (the WON app opens it on a double-click of an AirPlay receiver). Must match kSignature in
+ * campiello_airplay.cpp.
+ */
+
+resource app_signature "application/x-vnd.Campiello-airplay";
+
+resource app_flags B_MULTIPLE_LAUNCH;
+
+resource app_version {
+	major  = 0,
+	middle = 1,
+	minor  = 0,
+	variety = B_APPV_DEVELOPMENT,
+	internal = 0,
+	short_info = "Campiello (AirPlay)",
+	long_info = "Campiello device add-on: show an AirPlay receiver's info and capabilities"
+};

@@ -1,0 +1,20 @@
+/*
+ * Resources for the Campiello Matter add-on (campiello_matter).
+ * The app_signature is registered by mimeset at build time so be_roster can launch it by signature
+ * (the WON app opens it on a double-click of a Matter device). Must match kSignature in
+ * campiello_matter.cpp.
+ */
+
+resource app_signature "application/x-vnd.Campiello-matter";
+
+resource app_flags B_MULTIPLE_LAUNCH;
+
+resource app_version {
+	major  = 0,
+	middle = 1,
+	minor  = 0,
+	variety = B_APPV_DEVELOPMENT,
+	internal = 0,
+	short_info = "Campiello (Matter)",
+	long_info = "Campiello device add-on: show a Matter device's advertised info"
+};

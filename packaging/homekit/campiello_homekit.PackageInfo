@@ -1,0 +1,28 @@
+name			campiello_homekit
+version			0.1.0-3
+architecture	x86_64
+summary			"HomeKit accessory info for Campiello"
+description		"Optional device add-on for Campiello: for an Apple HomeKit (HAP) accessory on the
+network it shows the advertised info (name, category, pairing state, config/protocol) decoded from the
+mDNS TXT. It does not control the accessory: HomeKit control needs a paired secure session (SRP +
+ChaCha20-Poly1305 + Ed25519), a documented follow-up. Launched from the WON network neighborhood on a
+double-click of a discovered accessory. No crypto, no third-party dependency; part of the MIT-clean
+add-on suite."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_homekit = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

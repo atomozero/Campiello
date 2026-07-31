@@ -1,0 +1,27 @@
+name			campiello_daap
+version			0.1.0-2
+architecture	x86_64
+summary			"DAAP music-library browser for Campiello"
+description		"Optional device add-on for Campiello: browses a shared iTunes / OwnTone music library
+over DAAP (Digital Audio Access Protocol, port 3689). Lists the library's tracks (artist, title,
+album). Launched from the WON network neighborhood on a double-click of a discovered music library.
+Pure HTTP with a hand-rolled DMAP parser, no third-party dependency; part of the MIT-clean add-on
+suite. Streaming/playback is a documented follow-up."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_daap = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

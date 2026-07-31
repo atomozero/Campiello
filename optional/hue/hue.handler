@@ -1,0 +1,7 @@
+# Campiello device handler manifest for the Philips Hue add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered Hue bridge and
+# launches the control panel with the device (host=<ip> name=<label>).
+signature  = application/x-vnd.Campiello-hue
+name       = Philips Hue
+match.type = _hue._tcp
+action.open = Luci

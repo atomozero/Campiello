@@ -1,0 +1,29 @@
+name			campiello_hue
+version			0.1.0-2
+architecture	x86_64
+summary			"Philips Hue control panel for Campiello"
+description		"Optional device add-on for Campiello: a control panel for a Philips Hue bridge over
+its local REST API (no cloud). Press the bridge link button to pair, then toggle lights and set
+brightness. Launched from the WON network neighborhood on a double-click of a discovered Hue bridge.
+Kept separate from the MIT core because it links OpenSSL (Apache-2.0); the core campiello package
+does not depend on it."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_hue = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+	lib:libssl
+	lib:libcrypto
+}

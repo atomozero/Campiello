@@ -1,0 +1,28 @@
+name			campiello_spotify
+version			0.1.0-3
+architecture	x86_64
+summary			"Spotify Connect device info for Campiello"
+description		"Optional device add-on for Campiello: for a Spotify Connect receiver on the network it
+shows the speaker's public info (name, brand/model, device type, version, active user) via the
+unauthenticated zeroconf getInfo endpoint. It does not control playback: that needs a Spotify Premium
+account and OAuth, a documented follow-up. Launched from the WON network neighborhood on a
+double-click of a discovered Spotify Connect device. Pure HTTP, no third-party dependency; part of the
+MIT-clean add-on suite."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_spotify = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

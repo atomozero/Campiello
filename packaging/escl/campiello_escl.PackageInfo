@@ -1,0 +1,27 @@
+name			campiello_escl
+version			0.1.0-2
+architecture	x86_64
+summary			"eSCL/AirScan network-scanner panel for Campiello"
+description		"Optional device add-on for Campiello: a panel for an eSCL (Apple AirScan) network
+scanner. Shows the scanner's model and supported modes/formats, and scans a page to a file the user
+chooses (color, resolution, and format selectable) over plain _uscan._tcp HTTP. Launched from the WON
+network neighborhood on a double-click of a discovered scanner. Pure HTTP/XML, no third-party
+dependency; part of the MIT-clean add-on suite."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_escl = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

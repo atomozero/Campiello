@@ -1,0 +1,27 @@
+name			campiello_nfs
+version			0.1.0-2
+architecture	x86_64
+summary			"NFS export lister for Campiello"
+description		"Optional device add-on for Campiello: for an NFS server on the network it lists the
+server's exports (like showmount -e, over ONC RPC) and shows how to mount one on Haiku. It does not
+mount anything itself. Launched from the WON network neighborhood on a double-click of a discovered
+NFS server. Pure RPC over UDP, no third-party dependency; part of the MIT-clean add-on suite. A
+native NFS filesystem client is a documented follow-up."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_nfs = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

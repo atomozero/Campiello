@@ -1,0 +1,20 @@
+/*
+ * Resources for the Campiello native daemon (campiello_daemon).
+ * B_BACKGROUND_APP keeps the resident daemon out of the Deskbar application list and the app switcher
+ * (it is a background service: presence advertisement + file server; the UI is the WON app and the
+ * Deskbar peer replicant). The app_signature must match kSignature in DaemonApp.cpp.
+ */
+
+resource app_signature "application/x-vnd.Campiello-daemon";
+
+resource app_flags B_BACKGROUND_APP;
+
+resource app_version {
+	major  = 0,
+	middle = 3,
+	minor  = 0,
+	variety = B_APPV_DEVELOPMENT,
+	internal = 0,
+	short_info = "Campiello daemon",
+	long_info = "Campiello native daemon: peer presence and file server"
+};

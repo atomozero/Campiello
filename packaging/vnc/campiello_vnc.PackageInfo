@@ -1,0 +1,27 @@
+name			campiello_vnc
+version			0.1.0-2
+architecture	x86_64
+summary			"VNC remote-desktop launcher for Campiello"
+description		"Optional device add-on for Campiello: opens a VNC / RFB remote desktop discovered on
+the network in an installed VNC viewer (via the vnc:// scheme), or shows the connection details
+(host:port) and how to install a viewer. Launched from the WON network neighborhood on a double-click
+of a discovered remote desktop. No third-party dependency; part of the MIT-clean add-on suite. A
+native RFB client is a documented follow-up."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_vnc = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

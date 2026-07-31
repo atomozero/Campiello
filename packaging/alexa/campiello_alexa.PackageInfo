@@ -1,0 +1,27 @@
+name			campiello_alexa
+version			0.1.0-2
+architecture	x86_64
+summary			"Amazon Alexa device info for Campiello"
+description		"Optional device add-on for Campiello: for an Amazon Alexa device on the network it
+shows the device's presence and advertised mDNS info. It does not control Alexa: there is no open
+local control API (Alexa control goes through Amazon's cloud, bound to an account). Informational
+only. Launched from the WON network neighborhood on a double-click of a discovered Alexa device. No
+network, no third-party dependency; part of the MIT-clean add-on suite."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_alexa = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

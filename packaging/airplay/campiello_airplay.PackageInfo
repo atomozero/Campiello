@@ -1,0 +1,28 @@
+name			campiello_airplay
+version			0.1.0-2
+architecture	x86_64
+summary			"AirPlay receiver info for Campiello"
+description		"Optional device add-on for Campiello: for an AirPlay receiver on the network it shows
+the receiver's info (model, device id, source version) and decodes the features capability bitfield
+(audio, video, screen mirroring, AirPlay 2, ...) from the mDNS TXT. It does not stream or mirror: that
+needs the AirPlay 2 handshake and FairPlay, a documented follow-up. Launched from the WON network
+neighborhood on a double-click of a discovered AirPlay device. No crypto, no third-party dependency;
+part of the MIT-clean add-on suite."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_airplay = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

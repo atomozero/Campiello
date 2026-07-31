@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the DAAP music-library add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered DAAP library and
+# launches the browser with the device (host=<ip> name=<label>). Lists tracks; streaming is a
+# documented follow-up (docs/addons/daap.md).
+signature  = application/x-vnd.Campiello-daap
+name       = Libreria musicale DAAP
+match.type = _daap._tcp
+action.open = Libreria

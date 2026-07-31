@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the AFP add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered AFP server and
+# launches the add-on with the device (host=<ip> name=<label>). It shows the server's public info
+# (DSI GetStatus); it does not mount or authenticate. AFP is legacy (prefer SMB).
+signature  = application/x-vnd.Campiello-afp
+name       = Server AFP
+match.type = _afpovertcp._tcp
+action.open = Informazioni

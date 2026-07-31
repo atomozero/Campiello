@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the FTP add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered FTP server and
+# launches the browser with the device (host=<ip> name=<label>). Plain FTP; FTPS is a documented
+# follow-up (docs/addons/ftp.md).
+signature  = application/x-vnd.Campiello-ftp
+name       = Server FTP
+match.type = _ftp._tcp
+action.open = File

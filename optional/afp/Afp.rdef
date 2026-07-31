@@ -1,0 +1,19 @@
+/*
+ * Resources for the Campiello AFP add-on (campiello_afp).
+ * The app_signature is registered by mimeset at build time so be_roster can launch it by signature
+ * (the WON app opens it on a double-click of an AFP server). Must match kSignature in campiello_afp.cpp.
+ */
+
+resource app_signature "application/x-vnd.Campiello-afp";
+
+resource app_flags B_MULTIPLE_LAUNCH;
+
+resource app_version {
+	major  = 0,
+	middle = 1,
+	minor  = 0,
+	variety = B_APPV_DEVELOPMENT,
+	internal = 0,
+	short_info = "Campiello (AFP)",
+	long_info = "Campiello device add-on: show an AFP server's info (DSI GetStatus)"
+};

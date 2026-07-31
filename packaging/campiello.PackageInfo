@@ -1,0 +1,36 @@
+name			campiello
+version			0.3.27-1
+architecture	x86_64
+summary			"Modern, native file sharing for Haiku"
+description		"Campiello shares folders between machines with a native Tracker
+experience. Two surfaces: interop (mount a remote SFTP host as a read-only volume
+via the campiello_mount helper and the campiello_sftp add-on), and native
+Haiku-to-Haiku (the resident campiello_daemon advertises and serves your shared
+folder, and the campiello_net add-on shows discovered machines as a /Campiello
+network-neighborhood volume), plus a Deskbar replicant that shows discovered peers.
+The native daemon starts automatically at login (a user launch job) and installs
+the replicant into the Deskbar. The WON app (World O' Networking) lists every service found on the
+LAN (Windows shares, Campiello peers, printers, media devices) and opens a login
+helper or an info card on a double-click."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello = 0.3.3
+}
+
+requires {
+	haiku >= r1~beta5
+	userland_fs
+	lib:libssh2 >= 1
+	lib:libssl >= 3
+	lib:libcrypto >= 3
+}

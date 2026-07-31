@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the Google Cast add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered Cast device and
+# launches the panel with the device (host=<ip> name=<label>). Uses DIAL (HTTP, port 8008); full
+# media casting over CASTv2 (TLS 8009) is a documented follow-up (docs/addons/cast.md).
+signature  = application/x-vnd.Campiello-cast
+name       = Google Cast
+match.type = _googlecast._tcp
+action.open = Cast

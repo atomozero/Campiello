@@ -1,0 +1,28 @@
+name			campiello_lutron
+version			0.1.0-2
+architecture	x86_64
+summary			"Lutron smart-bridge info for Campiello"
+description		"Optional device add-on for Campiello: for a Lutron Caseta / RA smart bridge on the
+network it shows the device presence and its Secure LEAP connection info (host:8081 over TLS). It does
+not control lights/shades: Lutron Secure LEAP needs a TLS client-certificate pairing (button press)
+and LEAP messages, a documented follow-up. Informational only. Launched from the WON network
+neighborhood on a double-click of a discovered Lutron bridge. No network, no third-party dependency;
+part of the MIT-clean add-on suite."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_lutron = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

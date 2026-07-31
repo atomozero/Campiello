@@ -1,0 +1,27 @@
+name			campiello_ftp
+version			0.1.0-2
+architecture	x86_64
+summary			"FTP browser for Campiello"
+description		"Optional device add-on for Campiello: a simple browser for an FTP server. Connects
+anonymously or with credentials, lists directories, navigates folders, and downloads a file to a
+chosen location. Launched from the WON network neighborhood on a double-click of a discovered FTP
+server. Pure sockets, no third-party dependency; part of the MIT-clean add-on suite. Plain FTP only
+(FTPS is a documented follow-up)."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_ftp = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

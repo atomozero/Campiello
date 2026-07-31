@@ -1,0 +1,102 @@
+SUMMARY="SMB2/3 userspace client"
+DESCRIPTION="Libsmb2 is a userspace client library for accessing SMB2/SMB3 \
+shares on a network.
+It is high performance and fully async. It supports both zero-copy \
+for SMB READ/WRITE commands as well as compounded commands."
+HOMEPAGE="https://github.com/sahlberg/libsmb2"
+COPYRIGHT="2020 Ronnie Sahlberg"
+LICENSE="GNU LGPL v2.1"
+REVISION="6"
+SOURCE_URI="https://github.com/sahlberg/libsmb2/archive/refs/tags/v${portVersion}.tar.gz"
+CHECKSUM_SHA256="b4d1b13bc07adc68379a72f723b9032a950afd62fed7f2aa3e57f3421406da11"
+PATCHES="libsmb2-$portVersion.patchset"
+
+ARCHITECTURES="all !x86_gcc2"
+SECONDARY_ARCHITECTURES="x86"
+
+libVersion="$portVersion"
+libVersionCompat="$libVersion compat >= ${libVersion%%.*}"
+
+PROVIDES="
+	libsmb2$secondaryArchSuffix = $portVersion
+	lib:libsmb2$secondaryArchSuffix = $libVersionCompat
+	"
+REQUIRES="
+	haiku$secondaryArchSuffix
+	"
+
+PROVIDES_devel="
+	libsmb2${secondaryArchSuffix}_devel = $portVersion
+	devel:libsmb2$secondaryArchSuffix = $libVersionCompat
+	"
+REQUIRES_devel="
+	libsmb2$secondaryArchSuffix == $portVersion base
+	"
+
+BUILD_REQUIRES="
+	haiku${secondaryArchSuffix}_devel
+	devel:libssl$secondaryArchSuffix
+	"
+BUILD_PREREQUIRES="
+	cmd:cmake
+	cmd:gcc$secondaryArchSuffix
+	cmd:make
+	cmd:pkg_config$secondaryArchSuffix
+	"
+
+
+defineDebugInfoPackage libsmb2$secondaryArchSuffix \
+	$libDir/libsmb2.so.$libVersion
+
+BUILD()
+{
+	# ERRNO SIGN: libsmb2's non-blocking connect/read/write do `errno != EINPROGRESS`,
+	# `errno == EAGAIN`, etc. For these to work, libsmb2's errno constants must match the RUNTIME errno
+	# it reads. But the runtime errno sign differs by host process: a normal app (no mapper) sees
+	# Haiku's NATIVE (negative) errno, while userlandfs_server (built with libposix_error_mapper) sees
+	# POSITIVE errno. So no single-sign build works in both: a native libsmb2 connects fine in apps but
+	# fails with "Operation now in progress" inside the SMB mount's userlandfs_server child (positive
+	# host), and a positive build fails in apps. Baking the mapper into libsmb2.so made the initial
+	# connect pass but broke the async wait (timeout). The robust fix: build NATIVE (so the library
+	# also loads cleanly as a userlandfs add-on dependency, no mapper) and make the three would-block
+	# errno checks SIGN-AGNOSTIC (accept both +C and -C). Then connect + NTLM auth succeed in BOTH a
+	# normal app and the userlandfs_server child. We override CMAKE_C_FLAGS to drop haikuporter's
+	# injected -DB_USE_POSITIVE_POSIX_ERRORS so the constants stay native.
+	sed -i \
+		-e 's/errno != EINPROGRESS) {/errno != EINPROGRESS \&\& errno != -EINPROGRESS) {/' \
+		-e 's/if (errno == EAGAIN || errno == EWOULDBLOCK) {/if (errno == EAGAIN || errno == -EAGAIN || errno == EWOULDBLOCK || errno == -EWOULDBLOCK) {/' \
+		-e 's/if (err == EINTR || err == EAGAIN) {/if (err == EINTR || err == -EINTR || err == EAGAIN || err == -EAGAIN) {/' \
+		lib/socket.c
+
+	cmake -B build -S . \
+		-DCMAKE_C_FLAGS="" \
+		-DCMAKE_CXX_FLAGS="" \
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DCMAKE_SHARED_LINKER_FLAGS="-lnetwork" \
+		-DCMAKE_EXE_LINKER_FLAGS="-lnetwork" \
+		-DINSTALL_CMAKE_DIR=$libDir/cmake \
+		-DINSTALL_LIB_DIR=$libDir \
+		-DINSTALL_INC_DIR=$includeDir \
+		-DINSTALL_PKGCONFIG_DIR=$libDir/pkgconfig
+	make -C build $jobArgs
+}
+
+INSTALL()
+{
+	make -C build install
+
+	prepareInstalledDevelLib libsmb2
+	fixPkgconfig
+
+	# devel package
+	packageEntries devel \
+		$developDir \
+		$libDir/cmake
+}
+
+TEST()
+{
+	true
+#	make -C build test # no tests provided
+}

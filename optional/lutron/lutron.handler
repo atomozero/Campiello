@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the Lutron add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered Lutron smart bridge
+# and launches the add-on with the device (CAMPIELLO:host/name, CAMPIELLO:port, and the mDNS TXT as
+# CAMPIELLO:txt.<key>). Informational: control needs Secure LEAP TLS client-cert pairing, a follow-up.
+signature  = application/x-vnd.Campiello-lutron
+name       = Bridge Lutron
+match.type = _sleap._tcp
+action.open = Informazioni

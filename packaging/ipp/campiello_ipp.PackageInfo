@@ -1,0 +1,27 @@
+name			campiello_ipp
+version			0.1.0-2
+architecture	x86_64
+summary			"IPP network-printer panel for Campiello"
+description		"Optional device add-on for Campiello: a panel for an IPP/AirPrint network printer.
+Shows the printer's name, state, and supported formats, and submits a document file to it over the
+Internet Printing Protocol (plain _ipp._tcp, port 631). Launched from the WON network neighborhood on
+a double-click of a discovered printer. Pure IPP, no third-party dependency; part of the MIT-clean
+add-on suite."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_ipp = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

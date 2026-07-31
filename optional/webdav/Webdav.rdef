@@ -1,0 +1,20 @@
+/*
+ * Resources for the Campiello WebDAV add-on (campiello_webdav).
+ * The app_signature is registered by mimeset at build time so be_roster can launch it by signature
+ * (the WON app opens it on a double-click of a WebDAV server). Must match kSignature in
+ * campiello_webdav.cpp.
+ */
+
+resource app_signature "application/x-vnd.Campiello-webdav";
+
+resource app_flags B_MULTIPLE_LAUNCH;
+
+resource app_version {
+	major  = 0,
+	middle = 1,
+	minor  = 0,
+	variety = B_APPV_DEVELOPMENT,
+	internal = 0,
+	short_info = "Campiello (WebDAV)",
+	long_info = "Campiello device add-on: browse and download from a WebDAV server"
+};

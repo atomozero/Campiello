@@ -1,0 +1,43 @@
+Campiello device icon set - attribution
+=======================================
+
+The .hvif device icons in this directory are shipped in the Campiello core
+package (installed to /system/data/campiello/icons/) and rendered per service
+in the WON network-neighborhood app.
+
+Source and license
+-------------------
+All device icons are converted from the MIT-licensed HVIF collection:
+
+  https://github.com/threedeyes/HVIF-Collection
+  MIT License, Copyright (c) 2019 Gerasim Troeglazov (3dEyes / threedeyes)
+
+They were converted from Icon-O-Matic (.iom) sources to HVIF with the same
+author's MIT-licensed hvif-tools (https://github.com/threedeyes/hvif-tools,
+the iom2hvif converter). The device icons come from the classic "McClintock"
+BeOS icon set contributed to that collection; the Campiello world/globe app
+icon (campiello.hvif) is atomozero's own asset (from the sibling Sotoportego
+project, MIT). No third-party brand logos are used, so no trademarks are
+implicated: every device is represented by a generic device icon.
+
+Mapping (IconBaseName -> HVIF-Collection/McClintock source)
+-----------------------------------------------------------
+  campiello              atomozero world/globe (art/campiello_world.hvif)
+  smb, nfs, afp          Network Disk
+  ssh                    Terminal
+  ftp                    Servers
+  web, webdav            Netpositive / Globe
+  vnc                    VNC
+  printer                Printer
+  scanner                Image
+  home, homekit, matter  Home
+  hue, lutron            LampGray (a lamp)
+  media, airplay,
+    cast, firetv         TV
+  spotify, daap, alexa   Sound (speaker)
+  other                  BeBox (a generic computer host)
+
+To add or change an icon, drop the new .hvif here named per the IconBaseName it
+should match (see src/vicinato/campiello_vicinato.cpp IconBaseName and
+docs/ICONS.md), then rebuild the core package. A user override may be dropped
+into ~/config/settings/Campiello/icons/<name>.hvif, which the app prefers.

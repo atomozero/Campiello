@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the IPP printing add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered IPP printer and
+# launches the panel with the device (host=<ip> name=<label>). Matches plain _ipp._tcp (port 631);
+# TLS printing (_ipps._tcp) is a documented follow-up (docs/addons/ipp.md).
+signature  = application/x-vnd.Campiello-ipp
+name       = Stampante IPP
+match.type = _ipp._tcp
+action.open = Stampante

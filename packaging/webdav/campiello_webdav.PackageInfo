@@ -1,0 +1,27 @@
+name			campiello_webdav
+version			0.1.0-2
+architecture	x86_64
+summary			"WebDAV browser for Campiello"
+description		"Optional device add-on for Campiello: a simple browser for a WebDAV server. PROPFINDs
+a collection, lists its members, navigates folders, and downloads a file to a chosen location, with
+optional Basic authentication. Launched from the WON network neighborhood on a double-click of a
+discovered WebDAV server. Pure HTTP/XML, no third-party dependency; part of the MIT-clean add-on
+suite. Plain HTTP only (HTTPS WebDAV is a documented follow-up)."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_webdav = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

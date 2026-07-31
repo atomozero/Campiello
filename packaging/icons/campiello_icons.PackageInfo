@@ -1,0 +1,26 @@
+name			campiello_icons
+version			0.1.0-1
+architecture	any
+summary			"HVIF icon set for the Campiello network neighborhood"
+description		"Optional vector-icon set (HVIF) for Campiello: per-service icons shown in the WON
+network neighborhood and on the ~/WON shortcuts. Not part of the MIT core - the icons keep their
+authors' rights and ship separately with attribution (optional/icons/ATTRIBUTION). Missing icons fall
+back to Campiello's built-in badges, so this package is entirely optional."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"Icons by their respective authors (see ATTRIBUTION); packaging 2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_icons = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}
