@@ -50,6 +50,9 @@ test:
 	$(CXX) $(CXXFLAGS) -o test_mirror $(CAST)/test_mirror.cpp $(CAST)/CastMirror.cpp \
 		$(CAST)/CastChannel.cpp -lssl -lcrypto -lnetwork
 	./test_mirror
+	$(CXX) $(CXXFLAGS) -o test_transport $(CAST)/test_transport.cpp $(CAST)/CastTransport.cpp \
+		-lssl -lcrypto -lnetwork
+	./test_transport
 
 # Dev tool: run the Cast Streaming milestone-1 handshake against a real device (needs a Cast video
 # receiver on the LAN). Build only; run as ./mirror_probe <ip>.
@@ -65,4 +68,5 @@ vpxtest:
 	./test_vpx
 
 clean:
-	rm -rf $(STAGE) campiello_cast test_cast test_mediaserver test_mirror mirror_probe test_vpx $(PKG)
+	rm -rf $(STAGE) campiello_cast test_cast test_mediaserver test_mirror test_transport \
+		mirror_probe test_vpx $(PKG)

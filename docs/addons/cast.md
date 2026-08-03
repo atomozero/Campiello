@@ -124,8 +124,22 @@ Milestones (each independently testable, none faked):
    decodable 320x240), and a live capture of the real 1366x768 desktop encoded to a ~125 KB VP8
    keyframe that decoded back to 1366x768. The encoder is dev/roadmap code, not yet in the shipped app
    (that is milestone 4). libvpx is BSD, so it stays optional/dependency-clean.
-3. **Transport**: implement Cast RTP packetization + AES + the RTCP timing/feedback over UDP.
-4. **Live loop**: capture -> encode -> packetize -> send at 30 fps, then add Opus audio.
+3. **Transport - DONE (code + tests; wire-interop unverified without a device).**
+   `optional/cast/CastTransport.{h,cpp}` implements the send side: AES-128-CTR frame encryption
+   (`FrameCrypto`, with the Cast per-frame nonce = iv_mask XOR frame_id), the Cast RTP packet format
+   (`BuildRtpPacket`/`ParseRtpPacket`, `Packetize`/`Reassemble` splitting a frame across packets with
+   the key bit, frame/packet ids and an optional reference frame id), a `UdpSender`, and a minimal
+   RTCP sender report. Tested in `test_transport.cpp` (in `make test`): the AES-CTR is checked against
+   the **NIST SP800-38A CTR-AES128 known-answer vector** and by encrypt/decrypt round-trips; the
+   packetizer reassembles a frame byte-for-byte (in order, shuffled, and fails on a missing packet);
+   the UDP sender is verified over loopback; the RTCP SR layout is checked. Honest limit: the exact
+   Cast wire conventions (header bit positions, IV derivation, RTCP compound) are implemented from the
+   openscreen / Chromium `media/cast` descriptions and are **not yet validated against a physical Cast
+   receiver** (none on the dev LAN), so byte-level interop is unverified. No RTCP receiver-feedback
+   (ACK/NACK -> retransmit) yet - that lives in the live loop below.
+4. **Live loop**: capture -> encode -> packetize -> send at 30 fps, wire the receiver RTCP feedback
+   (ACK/NACK) for retransmission, then add Opus audio. This is where milestones 1-3 combine into a
+   real mirror; it also needs a physical Cast video receiver to validate end to end.
 
 The dependency on a real-time encoder (a separate, licensed library) and the RTP/crypto stack make
 this multi-step; the `~1 fps` preview above is the honest, working stand-in until it lands.
