@@ -40,13 +40,23 @@ campiello_cast: $(SRC) $(CAST)/DialClient.h $(CAST)/CastChannel.h $(CAST)/MediaS
 	mimeset -f $@
 	rm -f campiello_cast.rsrc
 
-# Protocol codec + media-server unit tests (the media-server test uses loopback sockets).
+# Protocol codec + media-server + mirroring-negotiation unit tests (loopback sockets only).
 test:
 	$(CXX) $(CXXFLAGS) -o test_cast $(CAST)/test_cast.cpp $(CAST)/CastChannel.cpp \
 		$(CAST)/DialClient.cpp -lssl -lcrypto -lnetwork
 	./test_cast
 	$(CXX) $(CXXFLAGS) -o test_mediaserver $(CAST)/test_mediaserver.cpp $(CAST)/MediaServer.cpp -lnetwork
 	./test_mediaserver
+	$(CXX) $(CXXFLAGS) -o test_mirror $(CAST)/test_mirror.cpp $(CAST)/CastMirror.cpp \
+		$(CAST)/CastChannel.cpp -lssl -lcrypto -lnetwork
+	./test_mirror
+
+# Dev tool: run the Cast Streaming milestone-1 handshake against a real device (needs a Cast video
+# receiver on the LAN). Build only; run as ./mirror_probe <ip>.
+probe:
+	$(CXX) $(CXXFLAGS) -o mirror_probe $(CAST)/mirror_probe.cpp $(CAST)/CastMirror.cpp \
+		$(CAST)/CastChannel.cpp -lssl -lcrypto -lnetwork
+	@echo "Built mirror_probe. Run: ./mirror_probe <ip-del-chromecast>"
 
 clean:
-	rm -rf $(STAGE) campiello_cast test_cast $(PKG)
+	rm -rf $(STAGE) campiello_cast test_cast test_mediaserver test_mirror mirror_probe $(PKG)

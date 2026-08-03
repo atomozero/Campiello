@@ -106,8 +106,16 @@ Feasibility on Haiku, checked honestly:
 
 Milestones (each independently testable, none faked):
 
-1. **Negotiation proof**: open the mirroring receiver and complete the OFFER/ANSWER handshake over the
-   `webrtc` namespace, logging the device's ANSWER (no media yet).
+1. **Negotiation proof - DONE (code + tests; live pending a device).** `optional/cast/CastMirror.{h,cpp}`
+   builds the mirroring OFFER (`castMode: mirroring`, a VP8/H.264 video stream + an Opus audio stream,
+   real AES keys via OpenSSL `RAND_bytes`) and parses the device's ANSWER (`udpPort`, `sendIndexes`,
+   `ssrcs`, or an error). `CastChannel` was generalized (`LaunchAppById`, `Send`, `Receive`) to launch
+   the mirroring receiver app (`0F5096E8`) and exchange on the `webrtc` namespace. The OFFER builder and
+   ANSWER parser are unit-tested (`test_mirror.cpp`, in `make test`). The **live** handshake is a dev
+   tool, `mirror_probe.cpp` (`make -C packaging/cast probe`, then `./mirror_probe <ip>`): it needs a
+   real Cast **video** receiver to answer (a Chromecast / Google TV; audio-only Google Home devices do
+   not mirror), and none was on the dev LAN, so the live ANSWER has not yet been captured. No media is
+   sent - this is only the handshake.
 2. **Encoder integration**: bring in libvpx (optional package), encode captured frames to VP8 offline,
    verify a decodable stream.
 3. **Transport**: implement Cast RTP packetization + AES + the RTCP timing/feedback over UDP.

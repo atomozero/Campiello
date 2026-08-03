@@ -92,6 +92,23 @@ public:
 	// Stop the running application (needs its sessionId). Returns true on ack.
 	bool StopApp(const std::string& sessionId);
 
+	// --- lower-level primitives, used by the Cast Streaming (mirroring) negotiation ---
+
+	// Launch an arbitrary receiver app by id, wait for its RECEIVER_STATUS, open a virtual
+	// connection to its session and return the session transportId. Returns false on failure.
+	bool LaunchAppById(const std::string& appId, std::string& transportIdOut);
+
+	// Open a virtual connection (a CONNECT message) to a destination (receiver-0 or a transportId).
+	bool OpenConnection(const std::string& destination);
+
+	// Send a JSON payload on a namespace to a destination.
+	bool Send(const std::string& nameSpace, const std::string& destination,
+		const std::string& payload);
+
+	// Read frames until one on `nameSpace` matches `wantType` ("type":"..."; empty = any), within
+	// the timeout. Returns the payload, or "" on timeout. Answers heartbeat PINGs while waiting.
+	std::string Receive(const std::string& nameSpace, const std::string& wantType, int timeoutMs);
+
 	const char* Error() const { return fError; }
 
 private:

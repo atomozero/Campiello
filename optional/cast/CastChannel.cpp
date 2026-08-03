@@ -377,43 +377,63 @@ bool CastChannel::StopApp(const std::string& sessionId)
 	return !ReadUntil(kNsReceiver, "RECEIVER_STATUS", 3000).empty();
 }
 
-bool CastChannel::LaunchMediaReceiver()
+bool CastChannel::LaunchAppById(const std::string& appId, std::string& transportIdOut)
 {
-	if (!fMediaTransportId.empty())
-		return true;
-
-	// 1. Launch the Default Media Receiver.
-	char launch[128];
+	// 1. LAUNCH the app.
+	char launch[160];
 	std::snprintf(launch, sizeof(launch),
-		"{\"type\":\"LAUNCH\",\"appId\":\"%s\",\"requestId\":%d}", kDefaultMediaReceiver,
-		fRequestId++);
+		"{\"type\":\"LAUNCH\",\"appId\":\"%s\",\"requestId\":%d}", appId.c_str(), fRequestId++);
 	if (!SendJson(kNsReceiver, "receiver-0", launch)) {
 		fError = "LAUNCH non inviato";
 		return false;
 	}
 
-	// 2. Wait for a RECEIVER_STATUS that carries the media receiver's transportId.
+	// 2. Wait for a RECEIVER_STATUS that carries this app's transportId.
 	std::string transportId;
 	auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(10000);
 	while (std::chrono::steady_clock::now() < deadline) {
 		std::string payload = ReadUntil(kNsReceiver, "RECEIVER_STATUS", 3000);
 		if (payload.empty())
 			continue;
-		if (payload.find(kDefaultMediaReceiver) == std::string::npos)
+		if (payload.find(appId) == std::string::npos)
 			continue;
 		transportId = CastJsonString(payload, "transportId");
 		if (!transportId.empty())
 			break;
 	}
 	if (transportId.empty()) {
-		fError = "sessione media non avviata";
+		fError = "sessione app non avviata";
 		return false;
 	}
 
-	// 3. Open a virtual connection to the media session.
+	// 3. Open a virtual connection to the app session.
 	SendJson(kNsConnection, transportId, "{\"type\":\"CONNECT\"}");
-	fMediaTransportId = transportId;
+	transportIdOut = transportId;
 	return true;
+}
+
+bool CastChannel::OpenConnection(const std::string& destination)
+{
+	return SendJson(kNsConnection, destination, "{\"type\":\"CONNECT\"}");
+}
+
+bool CastChannel::Send(const std::string& nameSpace, const std::string& destination,
+	const std::string& payload)
+{
+	return SendJson(nameSpace, destination, payload);
+}
+
+std::string CastChannel::Receive(const std::string& nameSpace, const std::string& wantType,
+	int timeoutMs)
+{
+	return ReadUntil(nameSpace, wantType, timeoutMs);
+}
+
+bool CastChannel::LaunchMediaReceiver()
+{
+	if (!fMediaTransportId.empty())
+		return true;
+	return LaunchAppById(kDefaultMediaReceiver, fMediaTransportId);
 }
 
 bool CastChannel::Load(const std::string& url, const std::string& contentType,
