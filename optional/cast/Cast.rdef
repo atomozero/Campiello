@@ -10,10 +10,10 @@ resource app_flags B_MULTIPLE_LAUNCH;
 
 resource app_version {
 	major  = 0,
-	middle = 2,
+	middle = 3,
 	minor  = 0,
 	variety = B_APPV_DEVELOPMENT,
 	internal = 0,
 	short_info = "Campiello (Google Cast)",
-	long_info = "Campiello device add-on: CASTv2 status + media cast and DIAL launch/stop for Google Cast"
+	long_info = "Campiello device add-on: CASTv2 status/volume, cast a URL or a local file, and DIAL launch/stop"
 };

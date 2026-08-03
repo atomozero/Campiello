@@ -22,9 +22,11 @@
 #include <Alert.h>
 #include <Button.h>
 #include <Entry.h>
+#include <FilePanel.h>
 #include <LayoutBuilder.h>
 #include <Messenger.h>
 #include <Node.h>
+#include <Path.h>
 #include <StringView.h>
 #include <String.h>
 #include <TextControl.h>
@@ -37,6 +39,7 @@
 
 #include "CastChannel.h"
 #include "DialClient.h"
+#include "MediaServer.h"
 
 using namespace campiello::cast;
 
@@ -47,6 +50,8 @@ static const uint32 kMsgInfoReady  = 'cinr';
 static const uint32 kMsgLaunch     = 'clau'; // "app" = receiver app name (DIAL)
 static const uint32 kMsgStop       = 'csto';
 static const uint32 kMsgCastUrl    = 'curl';
+static const uint32 kMsgPickFile   = 'cpik';
+static const uint32 kMsgFilePicked = 'cfpk';
 static const uint32 kMsgVolUp      = 'cvup';
 static const uint32 kMsgVolDown    = 'cvdn';
 static const uint32 kMsgActionDone = 'cact';
@@ -179,6 +184,7 @@ class CastWindow : public BWindow {
 public:
 	bool QuitRequested() override { be_app->PostMessage(B_QUIT_REQUESTED); return true; }
 	CastWindow(const std::string& host, const std::string& name);
+	~CastWindow() override { fMediaServer.Stop(); delete fFilePanel; }
 	void MessageReceived(BMessage* msg) override;
 
 private:
@@ -194,6 +200,8 @@ private:
 	BStringView* fVolView = nullptr;
 	BTextControl* fUrl = nullptr;
 	BStringView* fStatus = nullptr;
+	MediaServer  fMediaServer; // serves a local file over HTTP while the device streams it
+	BFilePanel*  fFilePanel = nullptr;
 };
 
 CastWindow::CastWindow(const std::string& host, const std::string& name)
@@ -221,6 +229,7 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 
 	fUrl = new BTextControl("url", "URL media:", "", nullptr);
 	BButton* bCast = new BButton("cast", "Casta URL", new BMessage(kMsgCastUrl));
+	BButton* bLocal = new BButton("local", "Casta file locale...", new BMessage(kMsgPickFile));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -239,6 +248,7 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 		.End()
 		.Add(fUrl)
 		.AddGroup(B_HORIZONTAL)
+			.Add(bLocal)
 			.AddGlue()
 			.Add(bCast)
 		.End()
@@ -339,6 +349,58 @@ void CastWindow::MessageReceived(BMessage* msg)
 				GuessContentType(url.String()), "Campiello", BMessenger(this)};
 			thread_id t = spawn_thread(CastThread, "cast_url", B_NORMAL_PRIORITY, job);
 			if (t < 0) delete job; else resume_thread(t);
+			return;
+		}
+		case kMsgPickFile: {
+			if (fFilePanel == nullptr) {
+				fFilePanel = new BFilePanel(B_OPEN_PANEL, new BMessenger(this), nullptr,
+					B_FILE_NODE, false, new BMessage(kMsgFilePicked));
+				fFilePanel->Window()->SetTitle("Scegli un file da castare");
+			}
+			fFilePanel->Show();
+			return;
+		}
+		case kMsgFilePicked: {
+			entry_ref ref;
+			if (msg->FindRef("refs", &ref) != B_OK) {
+				fStatus->SetText("Nessun file scelto.");
+				return;
+			}
+			BEntry entry(&ref);
+			BPath path;
+			if (entry.GetPath(&path) != B_OK || path.Path() == nullptr) {
+				fStatus->SetText("File non valido.");
+				return;
+			}
+			std::string filePath = path.Path();
+			std::string leaf = path.Leaf() != nullptr ? path.Leaf() : "stream";
+			std::string ct = GuessMediaType(filePath);
+
+			int port = fMediaServer.Serve(filePath, ct);
+			if (port == 0) {
+				fStatus->SetText("Impossibile avviare il server locale.");
+				return;
+			}
+			std::string ip = LocalIpToward(fHost);
+			if (ip.empty()) {
+				fStatus->SetText("Impossibile determinare l'IP locale.");
+				fMediaServer.Stop();
+				return;
+			}
+			// The Chromecast ignores the path (we serve one file), but keep the extension so it and
+			// any format sniffing see a sensible name.
+			std::string ext;
+			size_t dot = leaf.rfind('.');
+			if (dot != std::string::npos)
+				ext = leaf.substr(dot);
+			BString url;
+			url << "http://" << ip.c_str() << ":" << port << "/stream" << ext.c_str();
+
+			fStatus->SetText("Casting del file locale...");
+			CastJob* job = new CastJob{fHost, std::string(url.String()), ct, leaf, BMessenger(this)};
+			thread_id t = spawn_thread(CastThread, "cast_file", B_NORMAL_PRIORITY, job);
+			if (t < 0) { delete job; fMediaServer.Stop(); }
+			else resume_thread(t);
 			return;
 		}
 		case kMsgVolUp:

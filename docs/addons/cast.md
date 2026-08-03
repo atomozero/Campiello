@@ -37,9 +37,32 @@ launch/stop apps from the computer.
 - Casts a media URL: type a direct media URL, the add-on launches the Default Media Receiver and
   `LOAD`s it (the contentType is guessed from the extension, e.g. `video/mp4`, `audio/mpeg`,
   `application/x-mpegurl` for HLS).
+- Casts a **local file from this PC**: "Casta file locale..." opens a file panel; the add-on starts a
+  small built-in HTTP server (`MediaServer`) that serves the chosen file with byte-range support,
+  finds this machine's LAN address toward the device, and `LOAD`s `http://<this-pc>:<port>/stream.<ext>`.
+  The Chromecast then pulls and plays the file straight from the PC. See "Casting a local file" below.
 - Adjusts volume (Vol +/- in 10% steps) via `SET_VOLUME`.
 - Launches YouTube/Netflix and stops the running app (CASTv2 `STOP` when a session is known, else a
   DIAL stop).
+
+## Casting a local file (how the PC feeds the video)
+
+A Chromecast never receives a pushed stream: you give it a URL and it downloads the media over HTTP by
+itself. So to play a file on this PC, Campiello serves that one file over HTTP and hands the device the
+URL:
+
+1. You pick a file. `MediaServer` binds an ephemeral port on `0.0.0.0` and serves only that file, for
+   as long as playback lasts, handling `GET`/`HEAD` and `Range` requests (206 Partial Content) so the
+   Chromecast can seek.
+2. The add-on finds this machine's LAN IPv4 on the route toward the device (a `connect()`ed UDP socket
+   + `getsockname`, no packets sent) and builds `http://<pc-ip>:<port>/stream.<ext>`.
+3. It `LOAD`s that URL over CASTv2 (as above); the Chromecast connects back to the PC and streams it.
+
+**No transcoding.** The file is served byte-for-byte, so the Chromecast must natively support the
+codec: H.264 (and VP8/VP9) video with AAC/MP3/Opus/Vorbis audio, in MP4/WebM/MKV. An unsupported codec
+(e.g. H.265/HEVC on older devices) is rejected by the receiver, not converted - the add-on reports the
+failure rather than pretending. `MediaServer` and the range handling are tested over loopback
+(`test_mediaserver.cpp`: full GET, a `Range` slice with the exact bytes, an open-ended range, HEAD).
 
 ## Screen mirroring (honest follow-up, not implemented)
 
@@ -56,11 +79,15 @@ the closed remoting channel and a real-time video encoder, a large separate effo
   `StopApp`. The codec and JSON readers are unit-tested off-device (`test_cast.cpp`).
 - `optional/cast/DialClient.{h,cpp}`: hand-rolled DIAL over plain HTTP (`FriendlyName`, `AppState`,
   `Launch`, `Stop`; a namespace-agnostic `XmlTag`, unit-tested).
-- `optional/cast/campiello_cast.cpp`: the panel app; all network I/O on worker threads. `RefsReceived`
-  reads `CAMPIELLO:host/name` from the WON device shortcut.
+- `optional/cast/MediaServer.{h,cpp}`: the built-in single-file HTTP server (Range support) used to
+  cast a local file, plus `GuessMediaType` and `LocalIpToward`. Pure sockets, no dependency;
+  loopback-tested.
+- `optional/cast/campiello_cast.cpp`: the panel app; all network I/O on worker threads, the media
+  server is a window member that lives for as long as the window is open. `RefsReceived` reads
+  `CAMPIELLO:host/name` from the WON device shortcut.
 - `optional/cast/cast.handler`: matches `_googlecast._tcp`. `packaging/cast` builds
-  `campiello_cast-0.2.0-1` and links OpenSSL (`libssl`/`libcrypto`, Apache-2.0) for the TLS channel;
-  the MIT core never depends on it.
+  `campiello_cast-0.3.0-1` and links OpenSSL (`libssl`/`libcrypto`, Apache-2.0) for the TLS channel and
+  `libtracker` for the file panel; the MIT core never depends on it.
 
 ## Testing status
 
