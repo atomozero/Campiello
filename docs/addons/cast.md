@@ -116,8 +116,14 @@ Milestones (each independently testable, none faked):
    real Cast **video** receiver to answer (a Chromecast / Google TV; audio-only Google Home devices do
    not mirror), and none was on the dev LAN, so the live ANSWER has not yet been captured. No media is
    sent - this is only the handshake.
-2. **Encoder integration**: bring in libvpx (optional package), encode captured frames to VP8 offline,
-   verify a decodable stream.
+2. **Encoder integration - DONE (code + tests + live proof).** `optional/cast/VpxEncoder.{h,cpp}` is a
+   real VP8 encoder over **libvpx** (BSD-3-Clause, `libvpx_devel` from HaikuPorts): it converts a
+   captured BGRA screen frame (Haiku `B_RGB32`) to I420 and encodes VP8, emitting keyframe and
+   inter-frame packets. Verified two ways, no faking: `test_vpx.cpp` (`make -C packaging/cast vpxtest`)
+   encodes synthetic frames and **decodes them back with libvpx** to the right size (6 frames ->
+   decodable 320x240), and a live capture of the real 1366x768 desktop encoded to a ~125 KB VP8
+   keyframe that decoded back to 1366x768. The encoder is dev/roadmap code, not yet in the shipped app
+   (that is milestone 4). libvpx is BSD, so it stays optional/dependency-clean.
 3. **Transport**: implement Cast RTP packetization + AES + the RTCP timing/feedback over UDP.
 4. **Live loop**: capture -> encode -> packetize -> send at 30 fps, then add Opus audio.
 

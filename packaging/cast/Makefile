@@ -58,5 +58,11 @@ probe:
 		$(CAST)/CastChannel.cpp -lssl -lcrypto -lnetwork
 	@echo "Built mirror_probe. Run: ./mirror_probe <ip-del-chromecast>"
 
+# Milestone-2 proof: VP8 encode + decode round-trip. Needs libvpx_devel (HaikuPorts). Kept out of the
+# default `test` so the suite builds without libvpx.
+vpxtest:
+	$(CXX) $(CXXFLAGS) -o test_vpx $(CAST)/test_vpx.cpp $(CAST)/VpxEncoder.cpp -lvpx
+	./test_vpx
+
 clean:
-	rm -rf $(STAGE) campiello_cast test_cast test_mediaserver test_mirror mirror_probe $(PKG)
+	rm -rf $(STAGE) campiello_cast test_cast test_mediaserver test_mirror mirror_probe test_vpx $(PKG)
