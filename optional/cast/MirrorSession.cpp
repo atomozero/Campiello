@@ -36,6 +36,8 @@ MirrorSession::MirrorSession(const std::string& host) : fChannel(host), fHost(ho
 {
 	std::memset(fVideoKey, 0, sizeof(fVideoKey));
 	std::memset(fVideoIv, 0, sizeof(fVideoIv));
+	std::memset(fAudioKey, 0, sizeof(fAudioKey));
+	std::memset(fAudioIv, 0, sizeof(fAudioIv));
 }
 
 MirrorSession::~MirrorSession()
@@ -50,10 +52,10 @@ bool MirrorSession::Start(int width, int height, int fps)
 		return false;
 	}
 
-	// Real per-stream AES material; keep the video key/iv for encrypting frames.
-	uint8_t audioKey[16], audioIv[16];
+	// Real per-stream AES material; keep BOTH the video and audio key/iv for encrypting frames (the
+	// audio key used to be discarded, which is why audio never worked).
 	if (RAND_bytes(fVideoKey, 16) != 1 || RAND_bytes(fVideoIv, 16) != 1
-		|| RAND_bytes(audioKey, 16) != 1 || RAND_bytes(audioIv, 16) != 1) {
+		|| RAND_bytes(fAudioKey, 16) != 1 || RAND_bytes(fAudioIv, 16) != 1) {
 		fError = "generazione chiavi AES fallita";
 		return false;
 	}
@@ -64,6 +66,8 @@ bool MirrorSession::Start(int width, int height, int fps)
 	cfg.frameRate = fps;
 	cfg.videoSsrc = static_cast<int>(fVideoSsrc);
 	cfg.videoPayloadType = fVideoPayloadType;
+	cfg.audioSsrc = static_cast<int>(fAudioSsrc);
+	cfg.audioPayloadType = fAudioPayloadType;
 
 	std::string transportId;
 	if (!fChannel.LaunchAppById(kMirroringAppId, transportId)) {
@@ -72,7 +76,7 @@ bool MirrorSession::Start(int width, int height, int fps)
 	}
 
 	std::string offer = BuildOffer(1, cfg, ToHex(fVideoKey, 16), ToHex(fVideoIv, 16),
-		ToHex(audioKey, 16), ToHex(audioIv, 16));
+		ToHex(fAudioKey, 16), ToHex(fAudioIv, 16));
 	if (!fChannel.Send(kNsWebrtc, transportId, offer)) {
 		fError = "invio OFFER fallito";
 		return false;
@@ -90,9 +94,12 @@ bool MirrorSession::Start(int width, int height, int fps)
 		return false;
 	}
 	fUdpPort = ans.udpPort;
-	for (int idx : ans.sendIndexes)
+	for (int idx : ans.sendIndexes) {
 		if (idx == 0)
 			fVideoAccepted = true;
+		else if (idx == 1)
+			fAudioAccepted = true;
+	}
 	if (fUdpPort <= 0 || !fVideoAccepted) {
 		fError = "il ricevitore non ha accettato lo stream video";
 		return false;
@@ -123,6 +130,7 @@ bool MirrorSession::SendFrame(const uint8_t* bgra, int stride)
 {
 	if (!fStarted)
 		return false;
+	std::lock_guard<std::mutex> lock(fSendMutex);
 
 	bool forceKey = fAllKeyframes || (fFrameId == 0)
 		|| (fFrameId % static_cast<uint32_t>(fFps) == 0);
@@ -170,6 +178,75 @@ bool MirrorSession::SendFrame(const uint8_t* bgra, int stride)
 	return okAll;
 }
 
+bool MirrorSession::StartAudio(int sampleRate, int channels, int bitrateBps)
+{
+	if (!fStarted) {
+		fError = "sessione non avviata";
+		return false;
+	}
+	if (!fAudioAccepted)
+		return false; // the receiver declined the audio stream; the video mirror runs without it
+	if (fAudioStarted)
+		return true;
+	if (!fAudio.Init(sampleRate, channels, bitrateBps)) {
+		fError = fAudio.Error() != nullptr ? fAudio.Error() : "init encoder Opus fallito";
+		return false;
+	}
+	std::lock_guard<std::mutex> lock(fSendMutex);
+	fAudioFrameId = 0;
+	fAudioSeq = 0;
+	fAudioRtpTimestamp = 0;
+	fAudioPacketCount = 0;
+	fAudioOctetCount = 0;
+	fAudioStarted = true;
+	return true;
+}
+
+bool MirrorSession::SendAudio(const int16_t* pcm, int samplesPerChannel)
+{
+	if (!fStarted || !fAudioStarted)
+		return true; // audio optional: silently succeed when not mirroring sound
+	std::lock_guard<std::mutex> lock(fSendMutex);
+
+	std::string opus;
+	if (!fAudio.Encode(pcm, samplesPerChannel, opus))
+		return false;
+
+	FrameCrypto crypto(fAudioKey, fAudioIv);
+	std::string enc = crypto.Encrypt(fAudioFrameId, opus);
+	uint8_t frameId8 = static_cast<uint8_t>(fAudioFrameId & 0xff);
+	// Each Opus packet is independently decodable: mark it a key frame, no reference.
+	std::vector<std::string> packets = Packetize(fAudioSsrc, fAudioPayloadType, fAudioSeq,
+		frameId8, true, fAudioRtpTimestamp, false, 0, enc, 1400);
+
+	bool okAll = true;
+	for (const std::string& pkt : packets) {
+		if (!fUdp.Send(pkt))
+			okAll = false;
+		++fAudioSeq;
+		++fAudioPacketCount;
+		fAudioOctetCount += static_cast<uint32_t>(pkt.size());
+	}
+	// Cache for retransmission on NACK (small recent window, keyed by the 8-bit frame id).
+	fAudioSentPackets[frameId8] = packets;
+	fAudioCacheOrder.push_back(frameId8);
+	while (fAudioCacheOrder.size() > 120) {
+		uint8_t old = fAudioCacheOrder.front();
+		fAudioCacheOrder.pop_front();
+		bool stillReferenced = false;
+		for (uint8_t id : fAudioCacheOrder)
+			if (id == old) { stillReferenced = true; break; }
+		if (!stillReferenced)
+			fAudioSentPackets.erase(old);
+	}
+	++fAudioFrameId;
+	// The audio RTP clock is the 48 kHz sample clock: one tick per sample per channel.
+	fAudioRtpTimestamp += static_cast<uint32_t>(samplesPerChannel);
+
+	ServiceRtcp();
+	return okAll;
+}
+
 namespace {
 int64_t NowUs()
 {
@@ -179,30 +256,32 @@ int64_t NowUs()
 }
 } // namespace
 
-void MirrorSession::SendSenderReport()
+void MirrorSession::SendSenderReport(uint32_t ssrc, uint32_t rtpTimestamp, uint32_t packetCount,
+	uint32_t octetCount, bool withDlrr)
 {
 	struct timeval tv;
 	gettimeofday(&tv, nullptr);
 	uint32_t ntpSeconds = static_cast<uint32_t>(tv.tv_sec) + 2208988800u; // NTP epoch (1900)
 	uint32_t ntpFraction = static_cast<uint32_t>((static_cast<double>(tv.tv_usec) / 1000000.0)
 		* 4294967296.0);
-	std::string sr = BuildSenderReport(fVideoSsrc, ntpSeconds, ntpFraction, fRtpTimestamp,
-		fPacketCount, fOctetCount);
+	std::string sr = BuildSenderReport(ssrc, ntpSeconds, ntpFraction, rtpTimestamp,
+		packetCount, octetCount);
 	// If the receiver has sent a Reference Time, echo it back as DLRR so it can lock the playout
 	// clock (delay in units of 1/65536 s). Sent as one compound RTCP datagram with the SR.
-	if (fHaveRr) {
+	if (withDlrr && fHaveRr) {
 		int64_t elapsedUs = NowUs() - fLastRrRecvUs;
 		if (elapsedUs < 0) elapsedUs = 0;
 		uint32_t delay = static_cast<uint32_t>((static_cast<double>(elapsedUs) / 1000000.0) * 65536.0);
-		sr += BuildXrDlrr(fVideoSsrc, fReceiverSsrc, fLastRrLrr, delay);
+		sr += BuildXrDlrr(ssrc, fReceiverSsrc, fLastRrLrr, delay);
 	}
 	fUdp.Send(sr);
 }
 
-void MirrorSession::Retransmit(uint8_t frameId8, uint16_t packetId, uint8_t bitmask)
+void MirrorSession::Retransmit(std::map<uint8_t, std::vector<std::string>>& cache,
+	uint8_t frameId8, uint16_t packetId, uint8_t bitmask)
 {
-	auto it = fSentPackets.find(frameId8);
-	if (it == fSentPackets.end())
+	auto it = cache.find(frameId8);
+	if (it == cache.end())
 		return;
 	const std::vector<std::string>& pkts = it->second;
 	auto resend = [&](uint32_t pid) {
@@ -222,11 +301,15 @@ void MirrorSession::Retransmit(uint8_t frameId8, uint16_t packetId, uint8_t bitm
 
 void MirrorSession::ServiceRtcp()
 {
-	// Send a Sender Report roughly every 200 ms so the receiver can build its playout clock.
+	// Send a Sender Report roughly every 200 ms so the receiver can build its playout clock. The video
+	// SR carries the DLRR echo; the audio SR (when audio is running) gives the receiver the audio
+	// stream's RTP<->NTP mapping for lip-sync.
 	int64_t now = NowUs();
 	if (now - fLastSrUs >= 200000) {
 		fLastSrUs = now;
-		SendSenderReport();
+		SendSenderReport(fVideoSsrc, fRtpTimestamp, fPacketCount, fOctetCount, true);
+		if (fAudioStarted)
+			SendSenderReport(fAudioSsrc, fAudioRtpTimestamp, fAudioPacketCount, fAudioOctetCount, false);
 	}
 
 	// Drain the receiver's RTCP and honour its CAST NACKs.
@@ -242,17 +325,27 @@ void MirrorSession::ServiceRtcp()
 			size_t blockLen = (words + 1) * 4;
 			if (blockLen == 0 || i + blockLen > n)
 				break;
-			// PSFB (206) carrying a "CAST" application feedback FCI.
+			// PSFB (206) carrying a "CAST" application feedback FCI. The media source SSRC (bytes
+			// [8..11] of the packet) tells us whether this feedback is about the video or audio stream,
+			// so we retransmit from the matching cache.
 			if (pt == 206 && blockLen >= 20 && std::memcmp(p + i + 12, "CAST", 4) == 0) {
-				fLastAck = p[i + 16];
+				uint32_t mediaSsrc = (static_cast<uint32_t>(p[i + 8]) << 24)
+					| (static_cast<uint32_t>(p[i + 9]) << 16)
+					| (static_cast<uint32_t>(p[i + 10]) << 8) | p[i + 11];
+				bool isAudio = (mediaSsrc == fAudioSsrc);
+				std::map<uint8_t, std::vector<std::string>>& cache =
+					isAudio ? fAudioSentPackets : fSentPackets;
+				if (!isAudio) {
+					fLastAck = p[i + 16];
+					fLastLoss = p[i + 17];
+				}
 				uint8_t lossCount = p[i + 17];
-				fLastLoss = lossCount;
 				size_t fci = i + 20; // 12 header + "CAST"(4) + ack(1) + lossCount(1) + playout(2)
 				for (uint8_t L = 0; L < lossCount && fci + 4 <= i + blockLen; ++L) {
 					uint8_t fid = p[fci];
 					uint16_t pid = (static_cast<uint16_t>(p[fci + 1]) << 8) | p[fci + 2];
 					uint8_t bitmask = p[fci + 3];
-					Retransmit(fid, pid, bitmask);
+					Retransmit(cache, fid, pid, bitmask);
 					fci += 4;
 				}
 			}

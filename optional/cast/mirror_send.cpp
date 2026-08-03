@@ -6,7 +6,8 @@
 // renders (that is the only way to confirm the wire-level format end to end). Not shipped - build:
 //
 //   g++ -std=c++17 mirror_send.cpp MirrorSession.cpp CastChannel.cpp CastMirror.cpp \
-//       CastTransport.cpp VpxEncoder.cpp -lbe -lvpx -lssl -lcrypto -lnetwork -o mirror_send
+//       CastTransport.cpp VpxEncoder.cpp OpusEncoder.cpp AudioCapture.cpp \
+//       -lbe -lmedia -lvpx -lopus -lssl -lcrypto -lnetwork -o mirror_send
 //   ./mirror_send 192.168.1.88 [seconds] [fps]
 
 #include <Application.h>
@@ -16,9 +17,16 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "AudioCapture.h"
 #include "MirrorSession.h"
 
 using namespace campiello::cast;
+
+// Forward captured PCM into the mirror session's audio path.
+static void SendAudioFrame(void* cookie, const int16_t* pcm, int samplesPerChannel, int /*ch*/)
+{
+	static_cast<MirrorSession*>(cookie)->SendAudio(pcm, samplesPerChannel);
+}
 
 int main(int argc, char** argv)
 {
@@ -57,8 +65,18 @@ int main(int argc, char** argv)
 		std::fprintf(stderr, "negoziazione/avvio fallito: %s\n", session.LastError().c_str());
 		return 1;
 	}
-	std::printf("negoziato: udpPort=%d, videoAccettato=%d\nANSWER: %s\n",
-		session.UdpPort(), session.VideoAccepted(), session.AnswerRaw().c_str());
+	std::printf("negoziato: udpPort=%d, videoAccettato=%d, audioAccettato=%d\nANSWER: %s\n",
+		session.UdpPort(), session.VideoAccepted(), session.AudioAccepted(),
+		session.AnswerRaw().c_str());
+
+	// Start audio (system-audio source) if the receiver accepted the stream.
+	AudioCapture audio;
+	bool audioOn = false;
+	if (session.AudioAccepted() && session.StartAudio(48000, 2, 128000))
+		audioOn = audio.Start(SendAudioFrame, &session, AudioCapture::kSystemAudio);
+	std::printf("audio: %s%s%s\n", audioOn ? "attivo" : "no",
+		audioOn && !audio.SourceName().empty() ? " sorgente=" : "",
+		audioOn ? audio.SourceName().c_str() : "");
 	std::printf("invio %d secondi di video... GUARDA LA TV.\n", seconds);
 
 	int frames = seconds * fps;
@@ -72,7 +90,10 @@ int main(int argc, char** argv)
 		}
 		snooze(1000000 / fps);
 	}
-	std::printf("inviati %d/%d frame. Stop.\n", sent, frames);
+	if (audioOn)
+		audio.Stop();
+	std::printf("inviati %d/%d frame video, %u frame audio. Stop.\n",
+		sent, frames, (unsigned)session.SentAudioFrames());
 	session.Stop();
 	return 0;
 }

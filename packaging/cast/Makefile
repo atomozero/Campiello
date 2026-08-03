@@ -8,7 +8,7 @@
 #
 # Haiku-only (needs the `package` tool).
 
-VERSION := 0.5.1-1
+VERSION := 0.6.0-1
 ARCH := x86_64
 PKG := campiello_cast-$(VERSION)-$(ARCH).hpkg
 
@@ -18,7 +18,8 @@ CXXFLAGS ?= -std=c++17 -Wall -Wextra -O2
 CAST := ../../optional/cast
 SRC := $(CAST)/campiello_cast.cpp $(CAST)/DialClient.cpp $(CAST)/CastChannel.cpp \
        $(CAST)/MediaServer.cpp $(CAST)/MirrorSession.cpp $(CAST)/CastMirror.cpp \
-       $(CAST)/CastTransport.cpp $(CAST)/VpxEncoder.cpp
+       $(CAST)/CastTransport.cpp $(CAST)/VpxEncoder.cpp $(CAST)/OpusEncoder.cpp \
+       $(CAST)/AudioCapture.cpp
 STAGE := stage
 
 .PHONY: package clean test
@@ -35,10 +36,12 @@ $(PKG): campiello_cast.PackageInfo campiello_cast
 # The Cast panel, with its app_signature resource so be_roster can launch it by signature.
 # Links OpenSSL for the CASTv2 TLS channel (kept optional; the MIT core never depends on it).
 CAST_HDRS := $(CAST)/DialClient.h $(CAST)/CastChannel.h $(CAST)/MediaServer.h \
-             $(CAST)/MirrorSession.h $(CAST)/CastMirror.h $(CAST)/CastTransport.h $(CAST)/VpxEncoder.h
+             $(CAST)/MirrorSession.h $(CAST)/CastMirror.h $(CAST)/CastTransport.h \
+             $(CAST)/VpxEncoder.h $(CAST)/OpusEncoder.h $(CAST)/AudioCapture.h
 
 campiello_cast: $(SRC) $(CAST_HDRS) $(CAST)/Cast.rdef
-	$(CXX) $(CXXFLAGS) -o $@ $(SRC) -lbe -ltracker -ltranslation -lnetwork -lssl -lcrypto -lvpx
+	$(CXX) $(CXXFLAGS) -o $@ $(SRC) -lbe -ltracker -ltranslation -lmedia -lnetwork \
+		-lssl -lcrypto -lvpx -lopus
 	rc -o campiello_cast.rsrc $(CAST)/Cast.rdef
 	xres -o $@ campiello_cast.rsrc
 	mimeset -f $@
@@ -71,12 +74,19 @@ vpxtest:
 	$(CXX) $(CXXFLAGS) -o test_vpx $(CAST)/test_vpx.cpp $(CAST)/VpxEncoder.cpp -lvpx
 	./test_vpx
 
+# Audio-milestone proof: Opus encode + decode round-trip. Needs opus_devel (HaikuPorts). Kept out of
+# the default `test` so the suite builds without libopus.
+opustest:
+	$(CXX) $(CXXFLAGS) -o test_opus $(CAST)/test_opus.cpp $(CAST)/OpusEncoder.cpp -lopus -lm
+	./test_opus
+
 # Milestone-4 dev tool: mirror this desktop to a real Cast device (needs libvpx + a physical Cast
 # video receiver). Build only; run as ./mirror_send <ip> [seconds] [fps].
 mirrorsend:
 	$(CXX) $(CXXFLAGS) -o mirror_send $(CAST)/mirror_send.cpp $(CAST)/MirrorSession.cpp \
 		$(CAST)/CastChannel.cpp $(CAST)/CastMirror.cpp $(CAST)/CastTransport.cpp \
-		$(CAST)/VpxEncoder.cpp -lbe -lvpx -lssl -lcrypto -lnetwork
+		$(CAST)/VpxEncoder.cpp $(CAST)/OpusEncoder.cpp $(CAST)/AudioCapture.cpp \
+		-lbe -lmedia -lvpx -lopus -lssl -lcrypto -lnetwork
 	@echo "Built mirror_send. Run: ./mirror_send <ip-del-chromecast> [secondi] [fps]"
 
 # Dev diagnostic: send frames and print the receiver's CAST ack_frame_id/loss_count (no TV needed) to
@@ -84,9 +94,9 @@ mirrorsend:
 rtcpprobe:
 	$(CXX) $(CXXFLAGS) -o mirror_rtcp_probe $(CAST)/mirror_rtcp_probe.cpp $(CAST)/MirrorSession.cpp \
 		$(CAST)/CastChannel.cpp $(CAST)/CastMirror.cpp $(CAST)/CastTransport.cpp \
-		$(CAST)/VpxEncoder.cpp -lbe -lvpx -lssl -lcrypto -lnetwork
+		$(CAST)/VpxEncoder.cpp $(CAST)/OpusEncoder.cpp -lbe -lvpx -lopus -lssl -lcrypto -lnetwork
 	@echo "Built mirror_rtcp_probe. Run: ./mirror_rtcp_probe <ip>"
 
 clean:
-	rm -rf $(STAGE) campiello_cast test_cast test_mediaserver test_mirror test_transport \
+	rm -rf $(STAGE) campiello_cast test_cast test_mediaserver test_mirror test_transport test_opus \
 		mirror_probe mirror_send test_vpx $(PKG)

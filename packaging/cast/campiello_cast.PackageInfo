@@ -1,16 +1,17 @@
 name			campiello_cast
-version			0.5.1-1
+version			0.6.0-1
 architecture	x86_64
 summary			"Google Cast panel for Campiello"
 description		"Optional device add-on for Campiello: a control panel for a Google Cast / Chromecast
 device. Over CASTv2 (the real Cast channel, TLS 8009) it reads the device state (volume, running app),
 casts a media URL, casts a LOCAL file from this PC via a built-in HTTP server with byte-range support,
 shows this computer's screen on the TV as a ~1 fps refreshing image, and MIRRORS the screen as real
-video via Cast Streaming (VP8 over encrypted Cast RTP, negotiated on the webrtc namespace); plus a
-volume control. Over DIAL (plain HTTP 8008) it also launches or stops named apps such as YouTube and
-Netflix. The mirror is experimental (about 15 fps, no audio yet). Launched from the WON network
-neighborhood on a double-click of a discovered Cast device. Links OpenSSL (CASTv2 TLS) and libvpx (VP8
-encoding); part of the MIT-clean add-on suite (both permissive, in this optional package only)."
+video via Cast Streaming (VP8 over encrypted Cast RTP, negotiated on the webrtc namespace) with the
+system audio mirrored alongside as Opus; plus a volume control. Over DIAL (plain HTTP 8008) it also
+launches or stops named apps such as YouTube and Netflix. The mirror is experimental (about 15 fps).
+Launched from the WON network neighborhood on a double-click of a discovered Cast device. Links
+OpenSSL (CASTv2 TLS), libvpx (VP8) and libopus (Opus audio); part of the MIT-clean add-on suite (all
+permissive, in this optional package only)."
 packager		"atomozero <atomozero@proton.me>"
 vendor			"atomozero"
 

@@ -21,11 +21,13 @@
 #include <cstdint>
 #include <deque>
 #include <map>
+#include <mutex>
 #include <string>
 #include <vector>
 
 #include "CastChannel.h"
 #include "CastTransport.h"
+#include "OpusEncoder.h"
 #include "VpxEncoder.h"
 
 namespace campiello {
@@ -45,6 +47,16 @@ public:
 	// RTCP sender report every second. Returns false on a send error.
 	bool SendFrame(const uint8_t* bgra, int stride);
 
+	// Initialise the Opus encoder for the audio stream, if the receiver accepted it in the ANSWER.
+	// Safe to call after Start(); returns false (and does nothing) if audio was not accepted. Audio is
+	// optional: the video mirror runs fine without it.
+	bool StartAudio(int sampleRate, int channels, int bitrateBps);
+
+	// Encode/encrypt/packetize/send one PCM frame (`samplesPerChannel` interleaved int16 samples, a
+	// valid Opus frame size for the rate). No-op returning true if audio is not started. Thread-safe
+	// against SendFrame, so the capture thread can call this directly. Returns false on a send error.
+	bool SendAudio(const int16_t* pcm, int samplesPerChannel);
+
 	void Stop();
 
 	// Diagnostic: force every frame to be a keyframe (independently decodable). Useful to separate a
@@ -57,24 +69,45 @@ public:
 
 	int UdpPort() const { return fUdpPort; }
 	bool VideoAccepted() const { return fVideoAccepted; }
+	bool AudioAccepted() const { return fAudioAccepted; }
+	bool AudioStarted() const { return fAudioStarted; }
 	const std::string& LastError() const { return fError; }
 	const std::string& AnswerRaw() const { return fAnswerRaw; }
 
 	// Diagnostics reflecting the receiver's latest CAST feedback vs frames sent.
 	uint32_t SentFrames() const { return fFrameId; }
+	uint32_t SentAudioFrames() const { return fAudioFrameId; }
 	uint8_t LastAck() const { return fLastAck; }
 	uint8_t LastLoss() const { return fLastLoss; }
 
 private:
 	CastChannel fChannel;
 	VpxEncoder fEncoder;
+	OpusAudioEncoder fAudio;
 	UdpSender fUdp;
+	std::mutex fSendMutex; // serialises the send path (SendFrame + SendAudio + RTCP)
 
 	std::string fHost;
 	uint8_t fVideoKey[16];
 	uint8_t fVideoIv[16];
 	uint32_t fVideoSsrc = 100000;
 	uint8_t fVideoPayloadType = 127;
+
+	// Audio stream (Opus). Its AES material is generated in Start() and kept (unlike before, when it
+	// was discarded); the RTP timestamp runs on the audio's own 48 kHz sample clock.
+	uint8_t fAudioKey[16];
+	uint8_t fAudioIv[16];
+	uint32_t fAudioSsrc = 100001;
+	uint8_t fAudioPayloadType = 96;
+	uint32_t fAudioFrameId = 0;
+	uint16_t fAudioSeq = 0;
+	uint32_t fAudioRtpTimestamp = 0;
+	uint32_t fAudioPacketCount = 0;
+	uint32_t fAudioOctetCount = 0;
+	bool fAudioAccepted = false;
+	bool fAudioStarted = false;
+	std::map<uint8_t, std::vector<std::string>> fAudioSentPackets;
+	std::deque<uint8_t> fAudioCacheOrder;
 
 	int fFps = 30;
 	uint32_t fFrameId = 0;      // increments per emitted VP8 frame
@@ -88,8 +121,11 @@ private:
 	// Read the receiver's RTCP feedback and retransmit any packets it NACKs; also send a Sender Report
 	// on a timer. Called from SendFrame so both the GUI and the dev tools get it for free.
 	void ServiceRtcp();
-	void Retransmit(uint8_t frameId8, uint16_t packetId, uint8_t bitmask);
-	void SendSenderReport();
+	void Retransmit(std::map<uint8_t, std::vector<std::string>>& cache,
+		uint8_t frameId8, uint16_t packetId, uint8_t bitmask);
+	// Send an RTCP Sender Report (with DLRR echo for the video SSRC) for one stream.
+	void SendSenderReport(uint32_t ssrc, uint32_t rtpTimestamp, uint32_t packetCount,
+		uint32_t octetCount, bool withDlrr);
 
 	int fUdpPort = 0;
 	bool fVideoAccepted = false;

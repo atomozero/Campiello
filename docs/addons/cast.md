@@ -157,11 +157,32 @@ Milestones (each independently testable, none faked):
    rather than transport. Fixed in `CastNonce` (`CAMP_NONCE` env overrides the offset for probing other
    receivers).
 
-   Remaining polish (honest, not faked): no audio yet (an Opus stream is offered but not encoded/sent);
-   frame rate/bitrate are untuned; and there is no adaptive bitrate. The video mirror itself works.
+5. **Audio (Opus).** The mirror now also carries audio. `OpusEncoder.{h,cpp}` is a real libopus (BSD)
+   encoder (48 kHz stereo, 20 ms frames; encode/decode round-trip in `test_opus.cpp`, `make -C
+   packaging/cast opustest`). `AudioCapture.{h,cpp}` records live PCM with `BMediaRecorder`, converts
+   the hardware format (this codec delivers 48 kHz stereo 32-bit int) to interleaved int16, and hands
+   the session fixed 20 ms frames. `MirrorSession` keeps the audio AES key from the OFFER (it used to be
+   discarded), Opus-encodes each frame, AES-128-CTR encrypts it under the audio frame id, packetizes it
+   on the audio SSRC (payload type 96, the 48 kHz RTP clock) and sends it over the same UDP socket, with
+   its own RTCP Sender Report and NACK-driven retransmission routed by the feedback's media SSRC. The
+   video and audio send paths share one mutex so the capture thread can push audio while the screen
+   thread pushes video.
 
-The dependency on a real-time encoder (a separate, licensed library) and the RTP/crypto stack make
-this multi-step; the `~1 fps` preview above is the honest, working stand-in until it lands.
+   **Capture source (honest).** By default Campiello records the **system audio** - the hardware output
+   loopback/monitor, which HD Audio codecs expose in the input-source selector under a label such as
+   "Speaker", "Loopback", "Mix" or "Monitor"; `AudioCapture` selects it via the input node's
+   `BParameterWeb` and reports the chosen source. It falls back to the mic/line input when no loopback
+   source exists. Two Haiku specifics were needed to make capture work: the producer (system input) node
+   must be **explicitly started** on its time source (`StartNode`) or no buffers ever flow, and the
+   system mixer exposes **zero spare outputs**, so there is no generic desktop-output loopback node -
+   the input-source selector is the only route, and its availability/level is hardware dependent.
+
+   Remaining polish (honest, not faked): frame rate/bitrate are untuned, there is no adaptive bitrate,
+   and audio/video lip-sync relies on the per-stream RTCP Sender Reports rather than a tuned offset.
+
+The dependency on real-time encoders (separate, permissively licensed libraries) and the RTP/crypto
+stack make this multi-step; the `~1 fps` preview above is the honest, working stand-in for the light
+path.
 
 ## Integration into Campiello
 

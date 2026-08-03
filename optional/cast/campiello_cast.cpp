@@ -48,6 +48,7 @@
 #include "DialClient.h"
 #include "MediaServer.h"
 #include "MirrorSession.h"
+#include "AudioCapture.h"
 
 using namespace campiello::cast;
 
@@ -66,6 +67,7 @@ static const uint32 kMsgScreenTgl  = 'cscr';
 static const uint32 kMsgScreenEnd  = 'csnd';
 static const uint32 kMsgMirrorTgl  = 'cmir';
 static const uint32 kMsgMirrorEnd  = 'cmen';
+static const uint32 kMsgMirrorStat = 'cmst';
 static const uint32 kMsgActionDone = 'cact';
 
 // The DIAL receiver apps this panel can launch by name.
@@ -215,8 +217,16 @@ static bool CaptureJpeg(std::string& out)
 	return true;
 }
 
+// Feeds one captured PCM frame to the mirror session's audio path (called on the media thread;
+// MirrorSession::SendAudio is thread-safe against the video sends).
+static void MirrorAudioFrame(void* cookie, const int16_t* pcm, int samplesPerChannel, int /*ch*/)
+{
+	static_cast<campiello::cast::MirrorSession*>(cookie)->SendAudio(pcm, samplesPerChannel);
+}
+
 // The full screen-mirroring loop (Cast Streaming): negotiate, then capture the screen and send it as
-// encrypted VP8 over Cast RTP for as long as the user leaves it on. ~15 fps, no audio yet.
+// encrypted VP8 over Cast RTP for as long as the user leaves it on (~15 fps). When the receiver
+// accepts the audio stream, the system audio is captured, Opus-encoded and sent alongside the video.
 struct MirrorJob {
 	std::string host;
 	std::atomic<bool>* stop;
@@ -248,6 +258,26 @@ static int32 MirrorThread(void* arg)
 		return 0;
 	}
 
+	// If the receiver accepted the audio stream, capture the system audio and mirror it too. Audio is
+	// best-effort: any failure leaves the video mirror running.
+	AudioCapture audio;
+	bool audioOn = false;
+	if (session.AudioAccepted() && session.StartAudio(48000, 2, 128000))
+		audioOn = audio.Start(MirrorAudioFrame, &session, AudioCapture::kSystemAudio);
+
+	// Tell the window what actually came up (video only, or video + audio and from which source).
+	BMessage stat(kMsgMirrorStat);
+	if (audioOn) {
+		std::string txt = "Mirroring attivo: video + audio";
+		if (!audio.SourceName().empty())
+			txt += " (" + audio.SourceName() + ")";
+		txt += ".";
+		stat.AddString("txt", txt.c_str());
+	} else {
+		stat.AddString("txt", "Mirroring attivo: solo video.");
+	}
+	job->reply.SendMessage(&stat);
+
 	const bigtime_t frameInterval = 1000000 / fps;
 	while (!job->stop->load()) {
 		bigtime_t t0 = system_time();
@@ -261,6 +291,8 @@ static int32 MirrorThread(void* arg)
 		if (spent < frameInterval)
 			snooze(frameInterval - spent);
 	}
+	if (audioOn)
+		audio.Stop();
 	session.Stop();
 	done.AddBool("ok", true);
 	job->reply.SendMessage(&done);
@@ -417,7 +449,7 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 		.End()
 		.AddGroup(B_HORIZONTAL)
 			.Add(fMirrorBtn)
-			.Add(new BStringView("mnote", "(sperimentale, ~15 fps, senza audio)"))
+			.Add(new BStringView("mnote", "(sperimentale, ~15 fps, con audio di sistema)"))
 			.AddGlue()
 		.End()
 		.AddGroup(B_HORIZONTAL)
@@ -660,6 +692,13 @@ void CastWindow::MessageReceived(BMessage* msg)
 				StartMirror();
 			}
 			return;
+		case kMsgMirrorStat: {
+			// Mid-run status from the mirror thread (whether audio came up, and its source).
+			const char* txt = "";
+			if (fMirrorOn && msg->FindString("txt", &txt) == B_OK && txt[0])
+				fStatus->SetText(txt);
+			return;
+		}
 		case kMsgMirrorEnd: {
 			if (fMirrorThread >= 0) {
 				status_t r;
