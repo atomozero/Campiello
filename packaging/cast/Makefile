@@ -8,7 +8,7 @@
 #
 # Haiku-only (needs the `package` tool).
 
-VERSION := 0.5.0-1
+VERSION := 0.5.1-1
 ARCH := x86_64
 PKG := campiello_cast-$(VERSION)-$(ARCH).hpkg
 
@@ -78,6 +78,14 @@ mirrorsend:
 		$(CAST)/CastChannel.cpp $(CAST)/CastMirror.cpp $(CAST)/CastTransport.cpp \
 		$(CAST)/VpxEncoder.cpp -lbe -lvpx -lssl -lcrypto -lnetwork
 	@echo "Built mirror_send. Run: ./mirror_send <ip-del-chromecast> [secondi] [fps]"
+
+# Dev diagnostic: send frames and print the receiver's CAST ack_frame_id/loss_count (no TV needed) to
+# tell reception from decode problems. Needs libvpx + a real Cast video receiver.
+rtcpprobe:
+	$(CXX) $(CXXFLAGS) -o mirror_rtcp_probe $(CAST)/mirror_rtcp_probe.cpp $(CAST)/MirrorSession.cpp \
+		$(CAST)/CastChannel.cpp $(CAST)/CastMirror.cpp $(CAST)/CastTransport.cpp \
+		$(CAST)/VpxEncoder.cpp -lbe -lvpx -lssl -lcrypto -lnetwork
+	@echo "Built mirror_rtcp_probe. Run: ./mirror_rtcp_probe <ip>"
 
 clean:
 	rm -rf $(STAGE) campiello_cast test_cast test_mediaserver test_mirror test_transport \

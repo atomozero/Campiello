@@ -19,7 +19,10 @@
 #define CAMPIELLO_CAST_MIRRORSESSION_H
 
 #include <cstdint>
+#include <deque>
+#include <map>
 #include <string>
+#include <vector>
 
 #include "CastChannel.h"
 #include "CastTransport.h"
@@ -44,10 +47,23 @@ public:
 
 	void Stop();
 
+	// Diagnostic: force every frame to be a keyframe (independently decodable). Useful to separate a
+	// delta-frame/reference problem from a transport/timing problem.
+	void SetAllKeyframes(bool on) { fAllKeyframes = on; }
+
+	// Diagnostic: read one datagram of the receiver's RTCP feedback from the UDP socket (up to
+	// timeoutMs). Returns false on timeout.
+	bool PollFeedback(std::string& out, int timeoutMs) { return fUdp.Receive(out, timeoutMs); }
+
 	int UdpPort() const { return fUdpPort; }
 	bool VideoAccepted() const { return fVideoAccepted; }
 	const std::string& LastError() const { return fError; }
 	const std::string& AnswerRaw() const { return fAnswerRaw; }
+
+	// Diagnostics reflecting the receiver's latest CAST feedback vs frames sent.
+	uint32_t SentFrames() const { return fFrameId; }
+	uint8_t LastAck() const { return fLastAck; }
+	uint8_t LastLoss() const { return fLastLoss; }
 
 private:
 	CastChannel fChannel;
@@ -69,11 +85,32 @@ private:
 	uint32_t fOctetCount = 0;
 	int fFramesSinceReport = 0;
 
+	// Read the receiver's RTCP feedback and retransmit any packets it NACKs; also send a Sender Report
+	// on a timer. Called from SendFrame so both the GUI and the dev tools get it for free.
+	void ServiceRtcp();
+	void Retransmit(uint8_t frameId8, uint16_t packetId, uint8_t bitmask);
+	void SendSenderReport();
+
 	int fUdpPort = 0;
 	bool fVideoAccepted = false;
+	bool fAllKeyframes = false;
 	bool fStarted = false;
 	std::string fError;
 	std::string fAnswerRaw;
+
+	// Recently-sent RTP packets, keyed by the 8-bit frame id, for retransmission on NACK.
+	std::map<uint8_t, std::vector<std::string>> fSentPackets;
+	std::deque<uint8_t> fCacheOrder;
+	int64_t fLastSrUs = 0; // last Sender Report time (us)
+
+	// Receiver Reference Time echo, for the DLRR playout-clock sync.
+	bool fHaveRr = false;
+	uint32_t fReceiverSsrc = 0;
+	uint32_t fLastRrLrr = 0;    // middle-32 of the receiver's last RRTR NTP
+	int64_t fLastRrRecvUs = 0;  // when we received it (us)
+
+	uint8_t fLastAck = 0xff;   // receiver's last CAST ack_frame_id
+	uint8_t fLastLoss = 0;     // receiver's last CAST loss_count
 };
 
 } // namespace cast

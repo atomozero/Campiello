@@ -91,6 +91,9 @@ public:
 
 	bool Open(const std::string& host, int port);
 	bool Send(const std::string& datagram);
+	// Receive one datagram from the peer (the receiver's RTCP feedback), waiting up to timeoutMs.
+	// Returns false on timeout/error.
+	bool Receive(std::string& out, int timeoutMs);
 	void Close();
 	bool IsOpen() const { return fFd >= 0; }
 
@@ -104,6 +107,12 @@ private:
 // (msw/lsw) + RTP timestamp + packet/octet counts. Used for lip-sync/timing.
 std::string BuildSenderReport(uint32_t ssrc, uint32_t ntpSeconds, uint32_t ntpFraction,
 	uint32_t rtpTimestamp, uint32_t packetCount, uint32_t octetCount);
+
+// Build an RTCP XR with a single DLRR block (RFC 3611, PT=207, BT=5): our SSRC, then a sub-block
+// echoing the receiver's SSRC, its last Receiver-Reference-Time middle-32 (LRR), and the delay since
+// we received it (units of 1/65536 s). This is what lets the Cast receiver establish the shared
+// playout clock and advance past the first frame.
+std::string BuildXrDlrr(uint32_t senderSsrc, uint32_t receiverSsrc, uint32_t lastRr, uint32_t delay);
 
 } // namespace cast
 } // namespace campiello

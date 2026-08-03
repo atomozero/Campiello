@@ -59,8 +59,10 @@ int main()
 		uint8_t mask[16]; std::memset(mask, 0, sizeof(mask));
 		uint8_t iv[16];
 		CastNonce(0x01020304u, mask, iv);
-		CHECK(iv[0] == 0x01 && iv[1] == 0x02 && iv[2] == 0x03 && iv[3] == 0x04);
-		for (int i = 4; i < 16; ++i) CHECK(iv[i] == 0);
+		// Cast writes the 32-bit frame_id big-endian into bytes [8..11].
+		CHECK(iv[8] == 0x01 && iv[9] == 0x02 && iv[10] == 0x03 && iv[11] == 0x04);
+		for (int i = 0; i < 16; ++i)
+			if (i < 8 || i > 11) CHECK(iv[i] == 0);
 	}
 
 	// Encrypt/decrypt round-trip with a non-zero frame id.

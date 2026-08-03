@@ -5,11 +5,13 @@
 #include "CastTransport.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
 #include <map>
 
 #include <netdb.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <openssl/evp.h>
@@ -22,10 +24,19 @@ namespace cast {
 void CastNonce(uint32_t frameId, const uint8_t ivMask[16], uint8_t out[16])
 {
 	std::memcpy(out, ivMask, 16);
-	out[0] ^= static_cast<uint8_t>((frameId >> 24) & 0xff);
-	out[1] ^= static_cast<uint8_t>((frameId >> 16) & 0xff);
-	out[2] ^= static_cast<uint8_t>((frameId >> 8) & 0xff);
-	out[3] ^= static_cast<uint8_t>(frameId & 0xff);
+	// Cast writes the 32-bit frame_id big-endian into bytes [8..11] of the IV mask (openscreen /
+	// Chromium media/cast). Overridable via CAMP_NONCE for interop probing.
+	int off = 8;
+	const char* env = std::getenv("CAMP_NONCE");
+	if (env != nullptr) {
+		off = std::atoi(env);
+		if (off < 0 || off > 12)
+			off = 8;
+	}
+	out[off + 0] ^= static_cast<uint8_t>((frameId >> 24) & 0xff);
+	out[off + 1] ^= static_cast<uint8_t>((frameId >> 16) & 0xff);
+	out[off + 2] ^= static_cast<uint8_t>((frameId >> 8) & 0xff);
+	out[off + 3] ^= static_cast<uint8_t>(frameId & 0xff);
 }
 
 FrameCrypto::FrameCrypto(const uint8_t key[16], const uint8_t ivMask[16])
@@ -230,6 +241,8 @@ bool UdpSender::Open(const std::string& host, int port)
 		return false;
 	int fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 	if (fd < 0) { freeaddrinfo(res); return false; }
+	int snd = 512 * 1024; // room for large keyframes so bursts are not dropped locally
+	setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &snd, sizeof(snd));
 	// connect() a UDP socket so subsequent send() go to this peer.
 	if (connect(fd, res->ai_addr, res->ai_addrlen) != 0) {
 		close(fd); freeaddrinfo(res); return false;
@@ -245,6 +258,30 @@ bool UdpSender::Send(const std::string& datagram)
 		return false;
 	ssize_t n = send(fFd, datagram.data(), datagram.size(), 0);
 	return n == static_cast<ssize_t>(datagram.size());
+}
+
+bool UdpSender::Receive(std::string& out, int timeoutMs)
+{
+	if (fFd < 0)
+		return false;
+	char buf[2048];
+	if (timeoutMs <= 0) {
+		// Truly non-blocking drain (SO_RCVTIMEO of 0 would mean "block forever").
+		ssize_t n = recv(fFd, buf, sizeof(buf), MSG_DONTWAIT);
+		if (n <= 0)
+			return false;
+		out.assign(buf, n);
+		return true;
+	}
+	struct timeval tv;
+	tv.tv_sec = timeoutMs / 1000;
+	tv.tv_usec = (timeoutMs % 1000) * 1000;
+	setsockopt(fFd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+	ssize_t n = recv(fFd, buf, sizeof(buf), 0);
+	if (n <= 0)
+		return false;
+	out.assign(buf, n);
+	return true;
 }
 
 void UdpSender::Close()
@@ -271,6 +308,24 @@ std::string BuildSenderReport(uint32_t ssrc, uint32_t ntpSeconds, uint32_t ntpFr
 	PutBE32(p, rtpTimestamp);
 	PutBE32(p, packetCount);
 	PutBE32(p, octetCount);
+	return p;
+}
+
+std::string BuildXrDlrr(uint32_t senderSsrc, uint32_t receiverSsrc, uint32_t lastRr, uint32_t delay)
+{
+	std::string p;
+	// word 0: V=2, P=0, reserved=0, PT=207 (XR), length = 5 (6 words total minus one)
+	p += static_cast<char>(0x80);
+	p += static_cast<char>(207);
+	PutBE16(p, 5);
+	PutBE32(p, senderSsrc);
+	// DLRR block: BT=5, type-specific=0, block length = 3 words (one sub-block)
+	p += static_cast<char>(5);
+	p += static_cast<char>(0);
+	PutBE16(p, 3);
+	PutBE32(p, receiverSsrc);
+	PutBE32(p, lastRr);
+	PutBE32(p, delay);
 	return p;
 }
 

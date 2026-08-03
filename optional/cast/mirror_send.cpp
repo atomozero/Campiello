@@ -49,6 +49,10 @@ int main(int argc, char** argv)
 	std::printf("schermo %dx%d, %d fps, verso %s\n", w, h, fps, host);
 
 	MirrorSession session(host);
+	if (argc > 4 && std::string(argv[4]) == "key") {
+		session.SetAllKeyframes(true);
+		std::printf("(diagnostica: tutti keyframe)\n");
+	}
 	if (!session.Start(w, h, fps)) {
 		std::fprintf(stderr, "negoziazione/avvio fallito: %s\n", session.LastError().c_str());
 		return 1;

@@ -138,21 +138,27 @@ Milestones (each independently testable, none faked):
    openscreen / Chromium `media/cast` descriptions and are **not yet validated against a physical Cast
    receiver** (none on the dev LAN), so byte-level interop is unverified. No RTCP receiver-feedback
    (ACK/NACK -> retransmit) yet - that lives in the live loop below.
-4. **Live loop - DONE and VALIDATED LIVE.** `optional/cast/MirrorSession.{h,cpp}` ties it all
-   together: it negotiates (keeping the video AES key), then per captured BGRA frame VP8-encodes,
-   AES-128-CTR encrypts, Cast-RTP packetizes and sends over UDP to the receiver's udpPort, emitting an
-   RTCP sender report each second. The dev tool `mirror_send.cpp`
-   (`make -C packaging/cast mirrorsend`, then `./mirror_send <ip> [seconds] [fps]`) captures the Haiku
-   screen with BScreen and drives it. **Confirmed on real hardware:** against a physical Chromecast the
-   receiver launched the mirroring app, answered the OFFER with `udpPort` and `sendIndexes` accepting
-   the video stream, and **the Haiku desktop appeared on the TV** (1366x768 at 15 fps, 180/180 frames
-   sent). So the full path - negotiation, VP8, AES, Cast RTP, UDP - is verified end to end on a device,
-   not just in unit tests.
+4. **Live loop - DONE, and the mirror STREAMS live on real hardware.** `optional/cast/MirrorSession.{h,cpp}`
+   ties it all together: negotiate (keeping the video AES key), then per captured BGRA frame VP8-encode,
+   AES-128-CTR encrypt, Cast-RTP packetize and send over UDP to the receiver's udpPort, plus a full
+   RTCP loop - Sender Reports on a timer, a DLRR reply to the receiver's Reference-Time reports (so it
+   can lock the playout clock), and retransmission of the packets the receiver NACKs in its "CAST"
+   feedback. Exposed in the app as the "Specchia schermo" button, and drivable via the dev tool
+   `mirror_send.cpp` (`make -C packaging/cast mirrorsend`; `./mirror_send <ip> [seconds] [fps]`).
 
-   Remaining polish (honest): no audio yet (an Opus stream was offered but is not encoded/sent); no
-   RTCP receiver-feedback handling (ACK/NACK -> retransmission), so packet loss shows as transient
-   artifacts; frame rate and bitrate are untuned; and it is a dev tool, not yet a button in the shipped
-   app. None of this is faked - the mirror works; these are quality/feature follow-ups.
+   **Confirmed on real hardware:** against a physical Chromecast the receiver launches the mirroring
+   app, accepts the OFFER, and the Haiku desktop **streams continuously on the TV** (1366x768 @ 15 fps).
+
+   The bug that had it stuck on the first frame was the AES per-frame nonce: Cast writes the 32-bit
+   frame_id big-endian into bytes **[8..11]** of the IV mask (openscreen / Chromium `media/cast`), not
+   the first four bytes - so frame 0 (XOR 0) decrypted fine and every later frame decrypted to garbage
+   and failed to decode. The receiver's own RTCP made this diagnosable without watching the TV: its
+   "CAST" ack_frame_id tracked the frames we sent (reception was fine), which pointed at decode/crypto
+   rather than transport. Fixed in `CastNonce` (`CAMP_NONCE` env overrides the offset for probing other
+   receivers).
+
+   Remaining polish (honest, not faked): no audio yet (an Opus stream is offered but not encoded/sent);
+   frame rate/bitrate are untuned; and there is no adaptive bitrate. The video mirror itself works.
 
 The dependency on a real-time encoder (a separate, licensed library) and the RTP/crypto stack make
 this multi-step; the `~1 fps` preview above is the honest, working stand-in until it lands.
