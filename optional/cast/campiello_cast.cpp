@@ -47,6 +47,7 @@
 #include "CastChannel.h"
 #include "DialClient.h"
 #include "MediaServer.h"
+#include "MirrorSession.h"
 
 using namespace campiello::cast;
 
@@ -63,6 +64,8 @@ static const uint32 kMsgVolUp      = 'cvup';
 static const uint32 kMsgVolDown    = 'cvdn';
 static const uint32 kMsgScreenTgl  = 'cscr';
 static const uint32 kMsgScreenEnd  = 'csnd';
+static const uint32 kMsgMirrorTgl  = 'cmir';
+static const uint32 kMsgMirrorEnd  = 'cmen';
 static const uint32 kMsgActionDone = 'cact';
 
 // The DIAL receiver apps this panel can launch by name.
@@ -212,6 +215,59 @@ static bool CaptureJpeg(std::string& out)
 	return true;
 }
 
+// The full screen-mirroring loop (Cast Streaming): negotiate, then capture the screen and send it as
+// encrypted VP8 over Cast RTP for as long as the user leaves it on. ~15 fps, no audio yet.
+struct MirrorJob {
+	std::string host;
+	std::atomic<bool>* stop;
+	BMessenger reply;
+};
+static int32 MirrorThread(void* arg)
+{
+	MirrorJob* job = static_cast<MirrorJob*>(arg);
+	BMessage done(kMsgMirrorEnd);
+
+	BScreen screen(B_MAIN_SCREEN_ID);
+	BBitmap* probe = nullptr;
+	if (!screen.IsValid() || screen.GetBitmap(&probe, false) != B_OK || probe == nullptr) {
+		done.AddString("err", "Cattura schermo non disponibile.");
+		job->reply.SendMessage(&done);
+		delete job;
+		return 0;
+	}
+	int w = ((int)probe->Bounds().Width() + 1) & ~1;
+	int h = ((int)probe->Bounds().Height() + 1) & ~1;
+	delete probe;
+
+	const int fps = 15;
+	MirrorSession session(job->host);
+	if (!session.Start(w, h, fps)) {
+		done.AddString("err", session.LastError().c_str());
+		job->reply.SendMessage(&done);
+		delete job;
+		return 0;
+	}
+
+	const bigtime_t frameInterval = 1000000 / fps;
+	while (!job->stop->load()) {
+		bigtime_t t0 = system_time();
+		BBitmap* f = nullptr;
+		if (screen.GetBitmap(&f, false) == B_OK && f != nullptr) {
+			session.SendFrame(reinterpret_cast<const uint8_t*>(f->Bits()), f->BytesPerRow());
+			delete f;
+		}
+		// Pace to the target frame rate (encode+send already took some time).
+		bigtime_t spent = system_time() - t0;
+		if (spent < frameInterval)
+			snooze(frameInterval - spent);
+	}
+	session.Stop();
+	done.AddBool("ok", true);
+	job->reply.SendMessage(&done);
+	delete job;
+	return 0;
+}
+
 // The ~1 fps "screen on the TV" loop: connect once, launch the media receiver once, then every second
 // grab the screen, publish the JPEG on the media server's buffer, and LOAD a fresh (cache-busting)
 // image URL. Honest limits: no audio, ~1 fps (this is a refreshing still, not smooth mirroring).
@@ -269,6 +325,11 @@ public:
 			status_t r;
 			wait_for_thread(fScreenThread, &r);
 		}
+		fMirrorStop.store(true);
+		if (fMirrorThread >= 0) {
+			status_t r;
+			wait_for_thread(fMirrorThread, &r);
+		}
 		fMediaServer.Stop();
 		delete fFilePanel;
 	}
@@ -279,6 +340,8 @@ private:
 	void RunAction(const std::string& app, const std::string& action);
 	void StartScreen();
 	void StopScreen();
+	void StartMirror();
+	void StopMirror();
 
 	std::string  fHost;
 	std::string  fName;
@@ -295,6 +358,10 @@ private:
 	bool         fScreenOn = false;
 	std::atomic<bool> fScreenStop{false};
 	thread_id    fScreenThread = -1;
+	BButton*     fMirrorBtn = nullptr;
+	bool         fMirrorOn = false;
+	std::atomic<bool> fMirrorStop{false};
+	thread_id    fMirrorThread = -1;
 };
 
 CastWindow::CastWindow(const std::string& host, const std::string& name)
@@ -324,6 +391,7 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 	BButton* bCast = new BButton("cast", "Casta URL", new BMessage(kMsgCastUrl));
 	BButton* bLocal = new BButton("local", "Casta file locale...", new BMessage(kMsgPickFile));
 	fScreenBtn = new BButton("screen", "Schermo su TV", new BMessage(kMsgScreenTgl));
+	fMirrorBtn = new BButton("mirror", "Specchia schermo", new BMessage(kMsgMirrorTgl));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -346,6 +414,11 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 			.Add(fScreenBtn)
 			.AddGlue()
 			.Add(bCast)
+		.End()
+		.AddGroup(B_HORIZONTAL)
+			.Add(fMirrorBtn)
+			.Add(new BStringView("mnote", "(sperimentale, ~15 fps, senza audio)"))
+			.AddGlue()
 		.End()
 		.AddGroup(B_HORIZONTAL)
 			.Add(fStatus = new BStringView("st", fHost.c_str()))
@@ -413,6 +486,37 @@ void CastWindow::StopScreen()
 	fStatus->SetText("Schermo su TV fermato.");
 }
 
+void CastWindow::StartMirror()
+{
+	fMirrorStop.store(false);
+	MirrorJob* job = new MirrorJob{fHost, &fMirrorStop, BMessenger(this)};
+	fMirrorThread = spawn_thread(MirrorThread, "cast_mirror", B_NORMAL_PRIORITY, job);
+	if (fMirrorThread < 0) {
+		delete job;
+		fStatus->SetText("Impossibile avviare il mirroring.");
+		return;
+	}
+	resume_thread(fMirrorThread);
+	fMirrorOn = true;
+	fMirrorBtn->SetLabel("Ferma mirroring");
+	fStatus->SetText("Mirroring in avvio (negoziazione)...");
+}
+
+void CastWindow::StopMirror()
+{
+	if (!fMirrorOn)
+		return;
+	fMirrorStop.store(true);
+	if (fMirrorThread >= 0) {
+		status_t r;
+		wait_for_thread(fMirrorThread, &r);
+		fMirrorThread = -1;
+	}
+	fMirrorOn = false;
+	fMirrorBtn->SetLabel("Specchia schermo");
+	fStatus->SetText("Mirroring fermato.");
+}
+
 void CastWindow::MessageReceived(BMessage* msg)
 {
 	switch (msg->what) {
@@ -477,6 +581,7 @@ void CastWindow::MessageReceived(BMessage* msg)
 				fStatus->SetText("Inserisci un URL media.");
 				return;
 			}
+			if (fMirrorOn) StopMirror();
 			if (fScreenOn) StopScreen();
 			fStatus->SetText("Casting in corso...");
 			CastJob* job = new CastJob{fHost, std::string(url.String()),
@@ -506,6 +611,7 @@ void CastWindow::MessageReceived(BMessage* msg)
 				fStatus->SetText("File non valido.");
 				return;
 			}
+			if (fMirrorOn) StopMirror();
 			if (fScreenOn) StopScreen();
 			std::string filePath = path.Path();
 			std::string leaf = path.Leaf() != nullptr ? path.Leaf() : "stream";
@@ -539,11 +645,35 @@ void CastWindow::MessageReceived(BMessage* msg)
 			return;
 		}
 		case kMsgScreenTgl:
-			if (fScreenOn)
+			if (fScreenOn) {
 				StopScreen();
-			else
+			} else {
+				if (fMirrorOn) StopMirror();
 				StartScreen();
+			}
 			return;
+		case kMsgMirrorTgl:
+			if (fMirrorOn) {
+				StopMirror();
+			} else {
+				if (fScreenOn) StopScreen();
+				StartMirror();
+			}
+			return;
+		case kMsgMirrorEnd: {
+			if (fMirrorThread >= 0) {
+				status_t r;
+				wait_for_thread(fMirrorThread, &r);
+				fMirrorThread = -1;
+			}
+			if (fMirrorOn) {
+				fMirrorOn = false;
+				fMirrorBtn->SetLabel("Specchia schermo");
+				const char* err = ""; msg->FindString("err", &err);
+				fStatus->SetText(err[0] ? err : "Mirroring terminato.");
+			}
+			return;
+		}
 		case kMsgScreenEnd: {
 			// The screen loop ended on its own (an error connecting/launching). Reset the UI.
 			if (fScreenThread >= 0) {

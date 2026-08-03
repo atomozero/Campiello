@@ -8,7 +8,7 @@
 #
 # Haiku-only (needs the `package` tool).
 
-VERSION := 0.4.0-1
+VERSION := 0.5.0-1
 ARCH := x86_64
 PKG := campiello_cast-$(VERSION)-$(ARCH).hpkg
 
@@ -17,7 +17,8 @@ CXXFLAGS ?= -std=c++17 -Wall -Wextra -O2
 
 CAST := ../../optional/cast
 SRC := $(CAST)/campiello_cast.cpp $(CAST)/DialClient.cpp $(CAST)/CastChannel.cpp \
-       $(CAST)/MediaServer.cpp
+       $(CAST)/MediaServer.cpp $(CAST)/MirrorSession.cpp $(CAST)/CastMirror.cpp \
+       $(CAST)/CastTransport.cpp $(CAST)/VpxEncoder.cpp
 STAGE := stage
 
 .PHONY: package clean test
@@ -33,8 +34,11 @@ $(PKG): campiello_cast.PackageInfo campiello_cast
 
 # The Cast panel, with its app_signature resource so be_roster can launch it by signature.
 # Links OpenSSL for the CASTv2 TLS channel (kept optional; the MIT core never depends on it).
-campiello_cast: $(SRC) $(CAST)/DialClient.h $(CAST)/CastChannel.h $(CAST)/MediaServer.h $(CAST)/Cast.rdef
-	$(CXX) $(CXXFLAGS) -o $@ $(SRC) -lbe -ltracker -ltranslation -lnetwork -lssl -lcrypto
+CAST_HDRS := $(CAST)/DialClient.h $(CAST)/CastChannel.h $(CAST)/MediaServer.h \
+             $(CAST)/MirrorSession.h $(CAST)/CastMirror.h $(CAST)/CastTransport.h $(CAST)/VpxEncoder.h
+
+campiello_cast: $(SRC) $(CAST_HDRS) $(CAST)/Cast.rdef
+	$(CXX) $(CXXFLAGS) -o $@ $(SRC) -lbe -ltracker -ltranslation -lnetwork -lssl -lcrypto -lvpx
 	rc -o campiello_cast.rsrc $(CAST)/Cast.rdef
 	xres -o $@ campiello_cast.rsrc
 	mimeset -f $@
