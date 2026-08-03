@@ -1,0 +1,9 @@
+# Campiello device handler manifest for the ESPHome add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered ESPHome node
+# (_esphomelib._tcp) and launches the add-on with the device (CAMPIELLO:host/name/port + the mDNS
+# TXT as CAMPIELLO:txt.<key>). Shows device info and opens the web UI; native API control is a
+# documented follow-up.
+signature   = application/x-vnd.Campiello-esphome
+name        = Dispositivo ESPHome
+match.type  = _esphomelib._tcp
+action.open = Informazioni
