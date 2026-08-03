@@ -1,4 +1,4 @@
-# campiello_matter — Matter add-on
+# campiello_matter - Matter add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) for a Matter device. It shows the device's
 advertised info; it does **not** commission or control it. Twelfth component of the suite in

@@ -1,4 +1,4 @@
-# campiello_webdav — WebDAV add-on
+# campiello_webdav - WebDAV add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) that browses and downloads from a WebDAV
 server. Eighth component of the suite in `docs/ADDONS_SUITE.md`.

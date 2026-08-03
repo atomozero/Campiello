@@ -1,4 +1,4 @@
-# campiello_nfs — NFS add-on
+# campiello_nfs - NFS add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) for an NFS server. It lists the server's
 exports and shows how to mount one on Haiku. It does **not** mount anything itself, and it does not

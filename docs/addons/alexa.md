@@ -1,4 +1,4 @@
-# campiello_alexa — Amazon Alexa add-on
+# campiello_alexa - Amazon Alexa add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) for an Amazon Alexa device. It is
 **informational only**: it shows the device's presence, but cannot control it. Fourteenth component of

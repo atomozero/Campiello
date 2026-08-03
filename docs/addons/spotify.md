@@ -1,4 +1,4 @@
-# campiello_spotify — Spotify Connect add-on
+# campiello_spotify - Spotify Connect add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) for a Spotify Connect receiver. It shows the
 speaker's public info; it does **not** control playback. Thirteenth component of the suite in

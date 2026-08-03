@@ -1,4 +1,4 @@
-# REUSE.md: harvest from existing Haiku projects
+# Reuse: harvesting from existing Haiku projects
 
 What Campiello can lift from four sibling projects by the same author, and what it
 must build fresh. Every claim below was checked by reading the referenced source on
@@ -97,8 +97,8 @@ de-chunker *pattern* carries over.
 | Secret storage via Haiku `BKeyStore`/`BPasswordKey` (purpose `B_KEY_PURPOSE_NETWORK`) | `Sotoportego/src/gui/MainWindow.cpp:1004-1047` | **reuse pattern**; candidate home for the node private identity key (note: system keystore stores blobs, may prompt to unlock) |
 | Local control-socket auth: random 32-hex per-session password in a 0600 `mkstemp` file, required as first line | `Sotoportego/src/backend/OpenVPNBackend.cpp:474-509` | **reuse pattern** if Traghetto ever exposes a local control socket |
 
-**Greenfield in the trust layer:** (a) *persistent* long-lived identity keys — LocalSend
-regenerates per launch; (b) actual peer-certificate pinning/verification — LocalSend runs
+**Greenfield in the trust layer:** (a) *persistent* long-lived identity keys - LocalSend
+regenerates per launch; (b) actual peer-certificate pinning/verification - LocalSend runs
 `SSL_VERIFY_NONE` and trusts a self-reported JSON fingerprint, so it encrypts but never
 authenticates. Pin to the key, never the advertised name (section 9).
 
@@ -152,8 +152,7 @@ for chunked transfer once the file path is solid. Otherwise deferred to M6.
 
 Evidence gathered:
 
-- **OpenSSL 3 (Apache-2.0)** demonstrably builds and links on Haiku and does TLS 1.3 —
-  LocalSend uses it today. Apache-2.0 is core-legal. Downside: LocalSend only ever ran it
+- **OpenSSL 3 (Apache-2.0)** demonstrably builds and links on Haiku and does TLS 1.3 - LocalSend uses it today. Apache-2.0 is core-legal. Downside: LocalSend only ever ran it
   in `SSL_VERIFY_NONE` mode, so mutual-auth + pinning with OpenSSL on Haiku is un-exercised
   (but well-trodden on other platforms).
 - **mbedTLS (Apache-2.0)** gives version-pinned control over TLS 1.3, mutual auth

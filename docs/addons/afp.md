@@ -1,4 +1,4 @@
-# campiello_afp — AFP add-on
+# campiello_afp - AFP add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) for an AFP (Apple Filing Protocol) server. It
 shows the server's public info via an unauthenticated probe. Tenth component of the suite in

@@ -1,4 +1,4 @@
-# campiello_airplay — AirPlay add-on
+# campiello_airplay - AirPlay add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) for an AirPlay receiver. It shows the
 receiver's info and capabilities; it does **not** stream or mirror. Sixteenth (last) component of the

@@ -1,4 +1,4 @@
-# campiello_vnc — VNC remote-desktop add-on
+# campiello_vnc - VNC remote-desktop add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) for a VNC / RFB remote desktop discovered on
 the network. It hands the connection to an installed VNC viewer rather than implementing the RFB

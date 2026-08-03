@@ -1,4 +1,4 @@
-# campiello_homekit — HomeKit add-on
+# campiello_homekit - HomeKit add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) for an Apple HomeKit (HAP) accessory. It shows
 the accessory's advertised info; it does **not** control it. Eleventh component of the suite in

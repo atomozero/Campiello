@@ -1,4 +1,4 @@
-# campiello_ftp — FTP add-on
+# campiello_ftp - FTP add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) that browses and downloads from an FTP server.
 Seventh component of the suite in `docs/ADDONS_SUITE.md`.

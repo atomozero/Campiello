@@ -1,4 +1,4 @@
-# campiello_ipp — IPP printing add-on
+# campiello_ipp - IPP printing add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) that talks to a network printer over the
 Internet Printing Protocol (IPP), the protocol behind AirPrint and modern CUPS printers. Second
@@ -52,9 +52,9 @@ core rule (kept under `optional/` only because it is device-specific).
 
 ## Reference material
 
-- PWG "How to Use the Internet Printing Protocol" (`istopwg.github.io/ipp/ippguide.html`) — the
+- PWG "How to Use the Internet Printing Protocol" (`istopwg.github.io/ipp/ippguide.html`) - the
   operations, attribute tags, and message layout.
-- `github.com/williamkapke/ipp` and `github.com/watson/ipp-encoder` (Node.js) — cross-checked the
+- `github.com/williamkapke/ipp` and `github.com/watson/ipp-encoder` (Node.js) - cross-checked the
   binary header (version/operation/request-id) and the attribute encoding.
 
 ## Testing status

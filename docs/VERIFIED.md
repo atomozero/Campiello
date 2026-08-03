@@ -1,4 +1,4 @@
-# VERIFIED.md
+# Verified ground truth: facts checked against real source
 
 Facts checked against real source, with the paths that were read. This file is
 authoritative: when a verified fact changes, update it in the same commit that depends

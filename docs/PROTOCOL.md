@@ -1,4 +1,4 @@
-# PROTOCOL.md: Campiello Native Protocol (CNP)
+# Campiello Native Protocol (CNP)
 
 Authoritative wire spec for native mode (Traghetto). This is a **draft seed**; the
 framing and message set are frozen during M2 (see `PROPOSAL.md` section 18). When the

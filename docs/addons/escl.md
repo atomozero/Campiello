@@ -1,4 +1,4 @@
-# campiello_escl — eSCL / AirScan scanning add-on
+# campiello_escl - eSCL / AirScan scanning add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) that scans from a network scanner over eSCL
 (Apple AirScan), the driverless scanning protocol behind most modern multifunction printers. Third
@@ -41,7 +41,7 @@ MIT core rule (kept under `optional/` only because it is device-specific).
 
 ## Reference material
 
-- `github.com/alexpevzner/sane-airscan` — the reference eSCL/WSD SANE backend; used to confirm the
+- `github.com/alexpevzner/sane-airscan` - the reference eSCL/WSD SANE backend; used to confirm the
   endpoints, the `201`/`Location` job flow, and the `200`/`202` `NextDocument` polling.
 - The "Reverse Engineering eSCL / Apple AirScan" write-up corroborates the `ScanSettings` element
   names and namespaces.

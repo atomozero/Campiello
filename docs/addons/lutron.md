@@ -1,4 +1,4 @@
-# campiello_lutron — Lutron add-on
+# campiello_lutron - Lutron add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) for a Lutron Caseta / RA smart bridge. It
 shows the device presence and its LEAP connection info; it does **not** control it. Fifteenth

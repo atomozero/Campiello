@@ -1,4 +1,4 @@
-# campiello_daap — DAAP music-library add-on
+# campiello_daap - DAAP music-library add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) that browses a shared iTunes / OwnTone music
 library over DAAP. Fifth component of the suite in `docs/ADDONS_SUITE.md`.
@@ -41,9 +41,9 @@ MIT core rule (kept under `optional/` only because it is device-specific).
 
 ## Reference material
 
-- `github.com/bjoernricks/daap-protocol` — DAAP protocol documentation (endpoints, login/session
+- `github.com/bjoernricks/daap-protocol` - DAAP protocol documentation (endpoints, login/session
   flow, meta fields).
-- `github.com/mattstevens/dmap-parser` — the DMAP TLV layout and the `minm`/`asar`/`asal`/`miid`/
+- `github.com/mattstevens/dmap-parser` - the DMAP TLV layout and the `minm`/`asar`/`asal`/`miid`/
   `mlid` content codes.
 
 ## Testing status

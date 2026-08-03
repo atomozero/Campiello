@@ -1,4 +1,4 @@
-# campiello_hue — Philips Hue add-on
+# campiello_hue - Philips Hue add-on
 
 A Campiello device add-on (see `docs/DEVICE_ADDONS.md`) that controls a Philips Hue bridge over its
 local REST API. No cloud, no vendor SDK. First add-on of the suite in `docs/ADDONS_SUITE.md`.
@@ -51,7 +51,7 @@ code is used. The protocol is implemented from the public developer documentatio
 
 ## Reference code (harvested for the protocol, not the implementation)
 
-- `github.com/tigoe/hue-control` — plain, well-commented instructions on the local bridge API
+- `github.com/tigoe/hue-control` - plain, well-commented instructions on the local bridge API
   (pairing, light control) used to confirm the endpoints and request/response shapes.
 - Community clients (`Q42.HueApi`, `python-hue-v2`) corroborate the v2 `clip/v2/resource/light`
   paths, the `hue-application-key` header, and the link-button pairing error (type 101).
