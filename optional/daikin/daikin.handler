@@ -1,0 +1,9 @@
+# Campiello device handler manifest for the Daikin add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered Daikin air
+# conditioner (BRP069/BRP072 adapter, _dkapi._tcp) and launches the add-on with the device
+# (CAMPIELLO:host/name/port + the mDNS TXT as CAMPIELLO:txt.<key>).
+# Real local control over the adapter's plain-HTTP API (no cloud, no account).
+signature   = application/x-vnd.Campiello-daikin
+name        = Condizionatore Daikin
+match.type  = _dkapi._tcp
+action.open = Controlla

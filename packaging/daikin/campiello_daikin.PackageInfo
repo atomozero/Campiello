@@ -1,0 +1,28 @@
+name			campiello_daikin
+version			0.1.0-1
+architecture	x86_64
+summary			"Daikin air conditioner control for Campiello"
+description		"Optional device add-on for Campiello: for a Daikin air conditioner (BRP069/BRP072
+Wi-Fi adapter, _dkapi._tcp) it reads the real state (indoor/outdoor temperature, power, mode, target
+temperature, fan) and controls the unit - power on/off, mode, target temperature, fan speed - over
+the adapter's open local HTTP API. No cloud, no account, no third-party dependency; part of the
+MIT-clean add-on suite. Launched from the WON network neighborhood on a double-click of a discovered
+Daikin device."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_daikin = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}
