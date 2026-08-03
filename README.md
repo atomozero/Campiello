@@ -104,6 +104,76 @@ entry: Philips Hue lighting, Chromecast, IPP/eSCL printers and scanners, DAAP, V
 AirPlay, and more. Each add-on is matched to its service type, is dependency-free, and
 ships as a separate package so the core stays lean. See `docs/ADDONS_SUITE.md`.
 
+## Dispositivi supportati
+
+Campiello riconosce i dispositivi sulla LAN via mDNS/DNS-SD e, quando è installato
+l'add-on corrispondente, offre un'azione reale su un doppio clic nella cartella `~/WON`.
+Alcuni add-on implementano un vero controllo del dispositivo, altri sono "solo
+informazioni" (mostrano lo stato e le istruzioni, con il percorso di controllo pesante
+documentato come sviluppo futuro, mai finto). Ogni riga indica il tipo di servizio mDNS
+e cosa fa Campiello.
+
+Livelli: **Controllo** = azione reale sul dispositivo; **Info** = solo informazioni e
+istruzioni; **Hand-off** = apre un client/viewer installato.
+
+### Multimedia e casting
+
+| Dispositivo | Servizio mDNS | Cosa fa | Livello |
+|-------------|---------------|---------|---------|
+| Chromecast / Google Cast | `_googlecast._tcp` | stato e volume, casting di un URL/file nel Default Media Receiver, avvio/stop app via DIAL, mirroring dello schermo | Controllo |
+| Amazon Fire TV / Android TV | `_amzn-wplay._tcp`, `_androidtvremote2._tcp` | telecomando del dispositivo | Controllo |
+| AirPlay | `_airplay._tcp`, `_raop._tcp` | info del ricevitore e capacità (video, audio, mirroring); streaming come sviluppo futuro | Info |
+| DAAP (libreria iTunes) | `_daap._tcp` | login e elenco dei brani della libreria condivisa | Controllo |
+| Spotify Connect | `_spotify-connect._tcp` | info dello speaker (nome, marca, modello); controllo dall'app Spotify | Info |
+| Amazon Alexa | `_amzn-alexa._tcp` | presenza del dispositivo; nessuna API locale aperta, controllo via app/cloud | Info |
+
+### Stampa e scansione
+
+| Dispositivo | Servizio mDNS | Cosa fa | Livello |
+|-------------|---------------|---------|---------|
+| Stampante IPP | `_ipp._tcp` | riepilogo stampante e attributi, stampa di un file | Controllo |
+| Scanner eSCL / AirScan | `_uscan._tcp` | capacità, scelta di colore/risoluzione/formato, scansione su file | Controllo |
+
+### Condivisione file
+
+| Dispositivo | Servizio mDNS | Cosa fa | Livello |
+|-------------|---------------|---------|---------|
+| Windows / SMB (CIFS) | condivisioni SMB | monta le condivisioni Windows come disco in Tracker (add-on opzionale) | Controllo |
+| FTP | `_ftp._tcp` | navigazione delle cartelle e download di file | Controllo |
+| WebDAV | `_webdav._tcp` | navigazione delle cartelle e download di file | Controllo |
+| NFS | `_nfs._tcp` | elenco degli export (showmount via ONC RPC) e istruzioni di mount | Controllo |
+| AFP | `_afpovertcp._tcp` | info del server (protocollo legacy, si consiglia SMB) | Info |
+
+### Casa e IoT
+
+| Dispositivo | Servizio mDNS | Cosa fa | Livello |
+|-------------|---------------|---------|---------|
+| Philips Hue | `_hue._tcp` | pairing del bridge, elenco luci con on/off e slider di luminosità | Controllo |
+| Daikin (climatizzatore) | `_dkapi._tcp` | accensione, modalità, temperatura target (passi 0,5 °C) e ventola | Controllo |
+| ESPHome | `_esphomelib._tcp` | info del dispositivo (versione, progetto, scheda, MAC) e apertura della web UI | Info |
+| HomeKit (HAP) | `_hap._tcp` | info dell'accessorio (nome, categoria, stato di pairing); controllo via Apple Home | Info |
+| Matter | `_matter._tcp`, `_matterc._udp` | info del dispositivo (vendor/prodotto, stato di commissioning); pairing via app/hub Matter | Info |
+| Lutron Caséta | `_sleap._tcp` | presenza del bridge ed endpoint LEAP; controllo richiede il pairing con certificato | Info |
+
+### Rete e infrastruttura
+
+| Dispositivo | Servizio mDNS | Cosa fa | Livello |
+|-------------|---------------|---------|---------|
+| UPS / NUT | `_nut._tcp` | monitor di sola lettura (stato, batteria, autonomia, carico) | Info |
+| eero (router mesh) | `_eero._tcp` | presenza e base_mac; nessuna API locale aperta | Info |
+
+### Accesso remoto
+
+| Dispositivo | Servizio mDNS | Cosa fa | Livello |
+|-------------|---------------|---------|---------|
+| VNC / desktop remoto | `_rfb._tcp` | costruisce `vnc://host:port` e apre un viewer installato | Hand-off |
+| SSH in Terminal | (azione core) | apre una sessione SSH nel Terminal | Controllo |
+| RDP | (azione core) | avvia una sessione di desktop remoto | Controllo |
+
+Oltre agli add-on, il core WON offre azioni integrate su ogni dispositivo: apertura
+delle condivisioni SMB/CIFS, SSH in un Terminal, desktop remoto RDP, Wake-on-LAN, e
+l'arricchimento LAN (produttore/MAC via ARP/OUI, nome NetBIOS, modello SSDP/UPnP).
+
 ## Install (package)
 
 ```
