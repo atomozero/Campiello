@@ -76,6 +76,16 @@ public:
 	// to the media session. contentType e.g. "video/mp4", "audio/mpeg". Returns true on a LOAD ack.
 	bool CastUrl(const std::string& url, const std::string& contentType, const std::string& title);
 
+	// Launch the Default Media Receiver once and open a virtual connection to its media session
+	// (stores the transportId). Returns true when a media session is ready.
+	bool LaunchMediaReceiver();
+
+	// LOAD a media URL into the current media session (calls LaunchMediaReceiver first if needed).
+	// waitStatus=true blocks for a MEDIA_STATUS/LOAD_FAILED reply; false fires and returns (used by
+	// the ~1 fps screen preview, which LOADs a new image URL every frame and must not block).
+	bool Load(const std::string& url, const std::string& contentType, const std::string& title,
+		bool waitStatus);
+
 	// Set the receiver volume (0..1). Returns true on ack.
 	bool SetVolume(float level);
 
@@ -100,6 +110,7 @@ private:
 	void* fSsl = nullptr;    // SSL*
 	void* fCtx = nullptr;    // SSL_CTX*
 	int fRequestId = 1;
+	std::string fMediaTransportId; // media session destination, once LaunchMediaReceiver succeeds
 	const char* fError = nullptr;
 };
 

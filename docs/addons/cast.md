@@ -41,6 +41,8 @@ launch/stop apps from the computer.
   small built-in HTTP server (`MediaServer`) that serves the chosen file with byte-range support,
   finds this machine's LAN address toward the device, and `LOAD`s `http://<this-pc>:<port>/stream.<ext>`.
   The Chromecast then pulls and plays the file straight from the PC. See "Casting a local file" below.
+- Shows **this computer's screen on the TV** as a low-frame-rate image ("Schermo su TV"): see
+  "Screen on the TV" below.
 - Adjusts volume (Vol +/- in 10% steps) via `SET_VOLUME`.
 - Launches YouTube/Netflix and stops the running app (CASTv2 `STOP` when a session is known, else a
   DIAL stop).
@@ -64,13 +66,55 @@ codec: H.264 (and VP8/VP9) video with AAC/MP3/Opus/Vorbis audio, in MP4/WebM/MKV
 failure rather than pretending. `MediaServer` and the range handling are tested over loopback
 (`test_mediaserver.cpp`: full GET, a `Range` slice with the exact bytes, an open-ended range, HEAD).
 
-## Screen mirroring (honest follow-up, not implemented)
+## Screen on the TV (~1 fps preview - real, low frame rate)
 
-Mirroring your Haiku desktop to the TV is **not** here and is not faked. Cast screen mirroring uses a
-separate, proprietary Cast media-remoting pipeline (a WebRTC/RTP video stream with H.264/VP8,
-negotiated through the cast channel) that has no open client implementation outside Chrome. Loading a
-media URL (above) is the open, documented casting path; mirroring would require reverse-engineering
-the closed remoting channel and a real-time video encoder, a large separate effort.
+"Schermo su TV" puts this computer's desktop on the TV as a **refreshing still image**, built entirely
+on Haiku system APIs plus the media path above:
+
+1. A worker connects once and launches the Default Media Receiver (`LaunchMediaReceiver`).
+2. Every second it grabs the main screen (`BScreen::GetBitmap`), compresses it to JPEG in memory with
+   the **Translation Kit** (`BBitmapStream` -> `BTranslatorRoster` -> `B_JPEG_FORMAT`, no external
+   dependency), publishes it on the media server's in-memory buffer (`MediaServer::ServeBuffer` /
+   `UpdateBuffer`), and `LOAD`s a fresh cache-busting image URL `http://<pc-ip>:<port>/frame<N>.jpg`.
+3. The Chromecast fetches and shows each frame.
+
+**Honest limits.** This is a **~1 fps preview, without audio** - the refresh rate is bounded by the
+per-frame image `LOAD` round-trip, so it is smooth for a dashboard, a photo or slides, and jerky for
+video. It is not smooth mirroring, and it is named accordingly ("Schermo su TV", not "mirroring"). The
+capture-to-JPEG path is validated live (a 1366x768 desktop encodes to a ~280 KB JPEG); the media
+server's buffer mode and range handling are loopback-tested.
+
+## True screen mirroring - Cast Streaming (honest roadmap, not yet implemented)
+
+Smooth, full-frame-rate mirroring with audio is a real but large project, and it is **not faked**.
+Correcting an earlier over-simplification: Cast mirroring is **not** closed WebRTC - it is **Cast
+Streaming**, the protocol implemented by Google's **openscreen** library (semi-documented). The shape:
+
+1. Open the mirroring receiver over CASTv2 and negotiate an **OFFER/ANSWER** on the
+   `urn:x-cast:com.google.cast.webrtc` namespace (codecs, SSRCs, AES key/IV, RTP payload types).
+2. Capture the screen and **encode video in real time** to VP8 (or H.264) and audio to Opus.
+3. Packetize into **Cast RTP** over **UDP**, with the Cast RTCP feedback loop and **AES-128** payload
+   encryption keyed from the OFFER/ANSWER.
+
+Feasibility on Haiku, checked honestly:
+
+| Piece | State on this system |
+|-------|----------------------|
+| Screen capture (`BScreen::ReadBitmap`/`GetBitmap`) | available (used by the preview) |
+| Real-time VP8/H.264 encoder | **not installed** - needs libvpx (BSD, from HaikuPorts) or x264 (GPL, would live under `optional/`, dynamically loaded) |
+| Cast Streaming stack (OFFER/ANSWER, RTP/RTCP, AES) | to be written |
+
+Milestones (each independently testable, none faked):
+
+1. **Negotiation proof**: open the mirroring receiver and complete the OFFER/ANSWER handshake over the
+   `webrtc` namespace, logging the device's ANSWER (no media yet).
+2. **Encoder integration**: bring in libvpx (optional package), encode captured frames to VP8 offline,
+   verify a decodable stream.
+3. **Transport**: implement Cast RTP packetization + AES + the RTCP timing/feedback over UDP.
+4. **Live loop**: capture -> encode -> packetize -> send at 30 fps, then add Opus audio.
+
+The dependency on a real-time encoder (a separate, licensed library) and the RTP/crypto stack make
+this multi-step; the `~1 fps` preview above is the honest, working stand-in until it lands.
 
 ## Integration into Campiello
 
@@ -79,15 +123,17 @@ the closed remoting channel and a real-time video encoder, a large separate effo
   `StopApp`. The codec and JSON readers are unit-tested off-device (`test_cast.cpp`).
 - `optional/cast/DialClient.{h,cpp}`: hand-rolled DIAL over plain HTTP (`FriendlyName`, `AppState`,
   `Launch`, `Stop`; a namespace-agnostic `XmlTag`, unit-tested).
-- `optional/cast/MediaServer.{h,cpp}`: the built-in single-file HTTP server (Range support) used to
-  cast a local file, plus `GuessMediaType` and `LocalIpToward`. Pure sockets, no dependency;
-  loopback-tested.
-- `optional/cast/campiello_cast.cpp`: the panel app; all network I/O on worker threads, the media
-  server is a window member that lives for as long as the window is open. `RefsReceived` reads
+- `optional/cast/MediaServer.{h,cpp}`: the built-in HTTP server (Range support) used to cast a local
+  file (file mode) or the live screen frames (buffer mode: `ServeBuffer` + `UpdateBuffer`), plus
+  `GuessMediaType` and `LocalIpToward`. Pure sockets, no dependency; loopback-tested.
+- `optional/cast/campiello_cast.cpp`: the panel app; all network I/O on worker threads. The screen
+  preview grabs `BScreen` and encodes JPEG via the Translation Kit on its own thread. The media server
+  is a window member that lives for as long as the window is open. `RefsReceived` reads
   `CAMPIELLO:host/name` from the WON device shortcut.
 - `optional/cast/cast.handler`: matches `_googlecast._tcp`. `packaging/cast` builds
-  `campiello_cast-0.3.0-1` and links OpenSSL (`libssl`/`libcrypto`, Apache-2.0) for the TLS channel and
-  `libtracker` for the file panel; the MIT core never depends on it.
+  `campiello_cast-0.4.0-1` and links OpenSSL (`libssl`/`libcrypto`, Apache-2.0) for the TLS channel,
+  `libtracker` for the file panel, and `libtranslation` for JPEG encoding; the MIT core never depends
+  on it.
 
 ## Testing status
 

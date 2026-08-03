@@ -76,15 +76,8 @@ MediaServer::~MediaServer()
 	Stop();
 }
 
-int MediaServer::Serve(const std::string& filePath, const std::string& contentType)
+int MediaServer::StartListener()
 {
-	Stop();
-
-	// The file must exist and be a regular file.
-	struct stat st;
-	if (stat(filePath.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
-		return 0;
-
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
 		return 0;
@@ -109,11 +102,43 @@ int MediaServer::Serve(const std::string& filePath, const std::string& contentTy
 
 	fListen = fd;
 	fPort = ntohs(addr.sin_port);
-	fPath = filePath;
-	fContentType = contentType.empty() ? GuessMediaType(filePath) : contentType;
 	fStop.store(false);
 	fThread = std::thread(&MediaServer::AcceptLoop, this);
 	return fPort;
+}
+
+int MediaServer::Serve(const std::string& filePath, const std::string& contentType)
+{
+	Stop();
+
+	// The file must exist and be a regular file.
+	struct stat st;
+	if (stat(filePath.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
+		return 0;
+
+	fBufferMode = false;
+	fPath = filePath;
+	fContentType = contentType.empty() ? GuessMediaType(filePath) : contentType;
+	return StartListener();
+}
+
+int MediaServer::ServeBuffer(const std::string& contentType)
+{
+	Stop();
+	fBufferMode = true;
+	fPath.clear();
+	fContentType = contentType.empty() ? "application/octet-stream" : contentType;
+	{
+		std::lock_guard<std::mutex> lock(fBufMutex);
+		fBuffer.clear();
+	}
+	return StartListener();
+}
+
+void MediaServer::UpdateBuffer(const std::string& bytes)
+{
+	std::lock_guard<std::mutex> lock(fBufMutex);
+	fBuffer = bytes;
 }
 
 void MediaServer::Stop()
@@ -216,18 +241,30 @@ void MediaServer::HandleClient(int fd)
 		return;
 	bool isHead = head.compare(0, 5, "HEAD ") == 0;
 
-	FILE* f = std::fopen(fPath.c_str(), "rb");
-	if (f == nullptr) {
-		const char* nf = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-		SendAll(fd, nf, std::strlen(nf));
-		return;
+	// Snapshot what to serve. In buffer mode we serve a copy of the current in-memory bytes; in file
+	// mode we open the file (streamed from disk, never fully loaded).
+	std::string mem;      // buffer-mode body
+	FILE* f = nullptr;    // file-mode handle
+	off_t size = 0;
+	if (fBufferMode) {
+		std::lock_guard<std::mutex> lock(fBufMutex);
+		mem = fBuffer;
+		size = static_cast<off_t>(mem.size());
+	} else {
+		f = std::fopen(fPath.c_str(), "rb");
+		if (f == nullptr) {
+			const char* nf =
+				"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+			SendAll(fd, nf, std::strlen(nf));
+			return;
+		}
+		std::fseek(f, 0, SEEK_END);
+		size = std::ftell(f);
 	}
-	std::fseek(f, 0, SEEK_END);
-	off_t size = std::ftell(f);
 
-	off_t start = 0, end = size - 1;
-	bool partial = ParseRange(head, size, start, end);
-	off_t length = end - start + 1;
+	off_t start = 0, end = size > 0 ? size - 1 : 0;
+	bool partial = size > 0 && ParseRange(head, size, start, end);
+	off_t length = size > 0 ? end - start + 1 : 0;
 
 	char header[512];
 	if (partial) {
@@ -249,8 +286,14 @@ void MediaServer::HandleClient(int fd)
 			"Connection: close\r\n\r\n",
 			fContentType.c_str(), (long long)size);
 	}
-	if (!SendAll(fd, header, std::strlen(header)) || isHead) {
-		std::fclose(f);
+	if (!SendAll(fd, header, std::strlen(header)) || isHead || length == 0) {
+		if (f != nullptr)
+			std::fclose(f);
+		return;
+	}
+
+	if (fBufferMode) {
+		SendAll(fd, mem.data() + start, static_cast<size_t>(length));
 		return;
 	}
 

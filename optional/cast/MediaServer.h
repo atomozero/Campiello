@@ -20,6 +20,7 @@
 #define CAMPIELLO_CAST_MEDIASERVER_H
 
 #include <atomic>
+#include <mutex>
 #include <string>
 #include <thread>
 
@@ -37,6 +38,14 @@ public:
 	// 0.0.0.0 and runs an accept loop on a worker thread. Returns the bound port, or 0 on failure.
 	int Serve(const std::string& filePath, const std::string& contentType);
 
+	// Start (or restart) serving an in-memory buffer (initially empty) with the given Content-Type.
+	// Used by the ~1 fps screen preview: each frame calls UpdateBuffer with a fresh JPEG. Returns the
+	// bound port, or 0 on failure.
+	int ServeBuffer(const std::string& contentType);
+
+	// Atomically replace the buffer served in buffer mode (thread-safe). No-op in file mode.
+	void UpdateBuffer(const std::string& bytes);
+
 	// Stop the accept loop and close the listener. Idempotent; also called by the destructor.
 	void Stop();
 
@@ -49,12 +58,17 @@ private:
 	void AcceptLoop();
 	void HandleClient(int fd);
 
+	int StartListener();
+
 	int fListen = -1;
 	int fPort = 0;
 	std::thread fThread;
 	std::atomic<bool> fStop{false};
-	std::string fPath;
+	std::string fPath;         // file mode: the file to serve
 	std::string fContentType;
+	bool fBufferMode = false;  // true: serve fBuffer; false: serve fPath
+	std::mutex fBufMutex;
+	std::string fBuffer;       // buffer mode: current bytes (guarded by fBufMutex)
 };
 
 // Guess a Content-Type from a file name's extension (best-effort, Cast-relevant types).

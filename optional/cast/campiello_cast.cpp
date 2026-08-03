@@ -20,20 +20,27 @@
 
 #include <Application.h>
 #include <Alert.h>
+#include <Bitmap.h>
+#include <BitmapStream.h>
 #include <Button.h>
+#include <DataIO.h>
 #include <Entry.h>
 #include <FilePanel.h>
 #include <LayoutBuilder.h>
 #include <Messenger.h>
 #include <Node.h>
 #include <Path.h>
+#include <Screen.h>
 #include <StringView.h>
 #include <String.h>
 #include <TextControl.h>
+#include <TranslatorFormats.h>
+#include <TranslatorRoster.h>
 #include <Window.h>
 
 #include <fs_attr.h>
 
+#include <atomic>
 #include <cstring>
 #include <string>
 
@@ -54,6 +61,8 @@ static const uint32 kMsgPickFile   = 'cpik';
 static const uint32 kMsgFilePicked = 'cfpk';
 static const uint32 kMsgVolUp      = 'cvup';
 static const uint32 kMsgVolDown    = 'cvdn';
+static const uint32 kMsgScreenTgl  = 'cscr';
+static const uint32 kMsgScreenEnd  = 'csnd';
 static const uint32 kMsgActionDone = 'cact';
 
 // The DIAL receiver apps this panel can launch by name.
@@ -179,17 +188,97 @@ static int32 VolumeThread(void* arg)
 	return 0;
 }
 
+// Grab the main screen and compress it to an in-memory JPEG via the Translation Kit (no external
+// dependency). Returns false if the screen or the encoder is unavailable.
+static bool CaptureJpeg(std::string& out)
+{
+	BScreen screen(B_MAIN_SCREEN_ID);
+	if (!screen.IsValid())
+		return false;
+	BBitmap* shot = nullptr;
+	if (screen.GetBitmap(&shot, false) != B_OK || shot == nullptr)
+		return false;
+
+	BBitmapStream stream(shot); // wraps `shot`; detached again below so we can free it
+	BMallocIO mio;
+	status_t s = BTranslatorRoster::Default()->Translate(&stream, nullptr, nullptr, &mio,
+		B_JPEG_FORMAT);
+	BBitmap* detached = nullptr;
+	stream.DetachBitmap(&detached);
+	delete shot;
+	if (s != B_OK || mio.BufferLength() == 0)
+		return false;
+	out.assign(static_cast<const char*>(mio.Buffer()), mio.BufferLength());
+	return true;
+}
+
+// The ~1 fps "screen on the TV" loop: connect once, launch the media receiver once, then every second
+// grab the screen, publish the JPEG on the media server's buffer, and LOAD a fresh (cache-busting)
+// image URL. Honest limits: no audio, ~1 fps (this is a refreshing still, not smooth mirroring).
+struct ScreenJob {
+	std::string host;
+	MediaServer* server;
+	std::atomic<bool>* stop;
+	int port;
+	BMessenger reply;
+};
+static int32 ScreenThread(void* arg)
+{
+	ScreenJob* job = static_cast<ScreenJob*>(arg);
+	BMessage done(kMsgScreenEnd);
+
+	std::string ip = LocalIpToward(job->host);
+	CastChannel ch(job->host);
+	if (ip.empty() || !ch.Connect() || !ch.LaunchMediaReceiver()) {
+		done.AddString("err", "Impossibile avviare la sessione sul dispositivo.");
+		job->reply.SendMessage(&done);
+		delete job;
+		return 0;
+	}
+
+	int frame = 0;
+	while (!job->stop->load()) {
+		std::string jpeg;
+		if (CaptureJpeg(jpeg)) {
+			job->server->UpdateBuffer(jpeg);
+			BString url;
+			url << "http://" << ip.c_str() << ":" << job->port << "/frame" << frame << ".jpg";
+			ch.Load(std::string(url.String()), "image/jpeg", "Schermo Campiello", false);
+			++frame;
+		}
+		// Sleep ~1 s, but wake quickly when asked to stop.
+		for (int i = 0; i < 10 && !job->stop->load(); ++i)
+			snooze(100000);
+	}
+	ch.Close();
+	done.AddBool("ok", true);
+	job->reply.SendMessage(&done);
+	delete job;
+	return 0;
+}
+
 // --------------------------------------------------------------------------- window
 class CastWindow : public BWindow {
 public:
 	bool QuitRequested() override { be_app->PostMessage(B_QUIT_REQUESTED); return true; }
 	CastWindow(const std::string& host, const std::string& name);
-	~CastWindow() override { fMediaServer.Stop(); delete fFilePanel; }
+	~CastWindow() override
+	{
+		fScreenStop.store(true);
+		if (fScreenThread >= 0) {
+			status_t r;
+			wait_for_thread(fScreenThread, &r);
+		}
+		fMediaServer.Stop();
+		delete fFilePanel;
+	}
 	void MessageReceived(BMessage* msg) override;
 
 private:
 	void StartInfo();
 	void RunAction(const std::string& app, const std::string& action);
+	void StartScreen();
+	void StopScreen();
 
 	std::string  fHost;
 	std::string  fName;
@@ -200,8 +289,12 @@ private:
 	BStringView* fVolView = nullptr;
 	BTextControl* fUrl = nullptr;
 	BStringView* fStatus = nullptr;
-	MediaServer  fMediaServer; // serves a local file over HTTP while the device streams it
+	BButton*     fScreenBtn = nullptr;
+	MediaServer  fMediaServer; // serves a local file (or the live screen JPEG) over HTTP
 	BFilePanel*  fFilePanel = nullptr;
+	bool         fScreenOn = false;
+	std::atomic<bool> fScreenStop{false};
+	thread_id    fScreenThread = -1;
 };
 
 CastWindow::CastWindow(const std::string& host, const std::string& name)
@@ -230,6 +323,7 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 	fUrl = new BTextControl("url", "URL media:", "", nullptr);
 	BButton* bCast = new BButton("cast", "Casta URL", new BMessage(kMsgCastUrl));
 	BButton* bLocal = new BButton("local", "Casta file locale...", new BMessage(kMsgPickFile));
+	fScreenBtn = new BButton("screen", "Schermo su TV", new BMessage(kMsgScreenTgl));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -249,6 +343,7 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 		.Add(fUrl)
 		.AddGroup(B_HORIZONTAL)
 			.Add(bLocal)
+			.Add(fScreenBtn)
 			.AddGlue()
 			.Add(bCast)
 		.End()
@@ -278,6 +373,44 @@ void CastWindow::RunAction(const std::string& app, const std::string& action)
 	ActionJob* job = new ActionJob{fHost, app, action, fSession, BMessenger(this)};
 	thread_id t = spawn_thread(ActionThread, "cast_act", B_NORMAL_PRIORITY, job);
 	if (t < 0) delete job; else resume_thread(t);
+}
+
+void CastWindow::StartScreen()
+{
+	int port = fMediaServer.ServeBuffer("image/jpeg");
+	if (port == 0) {
+		fStatus->SetText("Impossibile avviare il server locale.");
+		return;
+	}
+	fScreenStop.store(false);
+	ScreenJob* job = new ScreenJob{fHost, &fMediaServer, &fScreenStop, port, BMessenger(this)};
+	fScreenThread = spawn_thread(ScreenThread, "cast_screen", B_NORMAL_PRIORITY, job);
+	if (fScreenThread < 0) {
+		delete job;
+		fMediaServer.Stop();
+		fStatus->SetText("Impossibile avviare la cattura schermo.");
+		return;
+	}
+	resume_thread(fScreenThread);
+	fScreenOn = true;
+	fScreenBtn->SetLabel("Ferma schermo su TV");
+	fStatus->SetText("Schermo su TV attivo (~1 fps, senza audio).");
+}
+
+void CastWindow::StopScreen()
+{
+	if (!fScreenOn)
+		return;
+	fScreenStop.store(true);
+	if (fScreenThread >= 0) {
+		status_t r;
+		wait_for_thread(fScreenThread, &r); // the loop exits within ~1 s
+		fScreenThread = -1;
+	}
+	fMediaServer.Stop();
+	fScreenOn = false;
+	fScreenBtn->SetLabel("Schermo su TV");
+	fStatus->SetText("Schermo su TV fermato.");
 }
 
 void CastWindow::MessageReceived(BMessage* msg)
@@ -344,6 +477,7 @@ void CastWindow::MessageReceived(BMessage* msg)
 				fStatus->SetText("Inserisci un URL media.");
 				return;
 			}
+			if (fScreenOn) StopScreen();
 			fStatus->SetText("Casting in corso...");
 			CastJob* job = new CastJob{fHost, std::string(url.String()),
 				GuessContentType(url.String()), "Campiello", BMessenger(this)};
@@ -372,6 +506,7 @@ void CastWindow::MessageReceived(BMessage* msg)
 				fStatus->SetText("File non valido.");
 				return;
 			}
+			if (fScreenOn) StopScreen();
 			std::string filePath = path.Path();
 			std::string leaf = path.Leaf() != nullptr ? path.Leaf() : "stream";
 			std::string ct = GuessMediaType(filePath);
@@ -401,6 +536,28 @@ void CastWindow::MessageReceived(BMessage* msg)
 			thread_id t = spawn_thread(CastThread, "cast_file", B_NORMAL_PRIORITY, job);
 			if (t < 0) { delete job; fMediaServer.Stop(); }
 			else resume_thread(t);
+			return;
+		}
+		case kMsgScreenTgl:
+			if (fScreenOn)
+				StopScreen();
+			else
+				StartScreen();
+			return;
+		case kMsgScreenEnd: {
+			// The screen loop ended on its own (an error connecting/launching). Reset the UI.
+			if (fScreenThread >= 0) {
+				status_t r;
+				wait_for_thread(fScreenThread, &r);
+				fScreenThread = -1;
+			}
+			if (fScreenOn) {
+				fMediaServer.Stop();
+				fScreenOn = false;
+				fScreenBtn->SetLabel("Schermo su TV");
+				const char* err = ""; msg->FindString("err", &err);
+				fStatus->SetText(err[0] ? err : "Schermo su TV terminato.");
+			}
 			return;
 		}
 		case kMsgVolUp:

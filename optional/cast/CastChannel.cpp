@@ -377,9 +377,11 @@ bool CastChannel::StopApp(const std::string& sessionId)
 	return !ReadUntil(kNsReceiver, "RECEIVER_STATUS", 3000).empty();
 }
 
-bool CastChannel::CastUrl(const std::string& url, const std::string& contentType,
-	const std::string& title)
+bool CastChannel::LaunchMediaReceiver()
 {
+	if (!fMediaTransportId.empty())
+		return true;
+
 	// 1. Launch the Default Media Receiver.
 	char launch[128];
 	std::snprintf(launch, sizeof(launch),
@@ -391,7 +393,7 @@ bool CastChannel::CastUrl(const std::string& url, const std::string& contentType
 	}
 
 	// 2. Wait for a RECEIVER_STATUS that carries the media receiver's transportId.
-	std::string transportId, sessionId;
+	std::string transportId;
 	auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(10000);
 	while (std::chrono::steady_clock::now() < deadline) {
 		std::string payload = ReadUntil(kNsReceiver, "RECEIVER_STATUS", 3000);
@@ -400,7 +402,6 @@ bool CastChannel::CastUrl(const std::string& url, const std::string& contentType
 		if (payload.find(kDefaultMediaReceiver) == std::string::npos)
 			continue;
 		transportId = CastJsonString(payload, "transportId");
-		sessionId = CastJsonString(payload, "sessionId");
 		if (!transportId.empty())
 			break;
 	}
@@ -411,21 +412,33 @@ bool CastChannel::CastUrl(const std::string& url, const std::string& contentType
 
 	// 3. Open a virtual connection to the media session.
 	SendJson(kNsConnection, transportId, "{\"type\":\"CONNECT\"}");
+	fMediaTransportId = transportId;
+	return true;
+}
 
-	// 4. LOAD the media URL.
+bool CastChannel::Load(const std::string& url, const std::string& contentType,
+	const std::string& title, bool waitStatus)
+{
+	if (fMediaTransportId.empty() && !LaunchMediaReceiver())
+		return false;
+
 	std::string ct = contentType.empty() ? "video/mp4" : contentType;
+	// Images are shown as stills (streamType NONE); audio/video are buffered streams.
+	std::string streamType = (ct.rfind("image/", 0) == 0) ? "NONE" : "BUFFERED";
 	std::string load = "{\"type\":\"LOAD\",\"requestId\":" + std::to_string(fRequestId++)
 		+ ",\"autoplay\":true,\"currentTime\":0,\"media\":{\"contentId\":\"" + url
-		+ "\",\"streamType\":\"BUFFERED\",\"contentType\":\"" + ct + "\"";
+		+ "\",\"streamType\":\"" + streamType + "\",\"contentType\":\"" + ct + "\"";
 	if (!title.empty())
 		load += ",\"metadata\":{\"metadataType\":0,\"title\":\"" + title + "\"}";
 	load += "}}";
-	if (!SendJson(kNsMedia, transportId, load)) {
+	if (!SendJson(kNsMedia, fMediaTransportId, load)) {
 		fError = "LOAD non inviato";
 		return false;
 	}
+	if (!waitStatus)
+		return true;
 
-	// 5. Expect a MEDIA_STATUS (success) rather than a LOAD_FAILED.
+	// Expect a MEDIA_STATUS (success) rather than a LOAD_FAILED.
 	auto mediaDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(8000);
 	while (std::chrono::steady_clock::now() < mediaDeadline) {
 		std::string frame;
@@ -451,6 +464,12 @@ bool CastChannel::CastUrl(const std::string& url, const std::string& contentType
 	}
 	fError = "nessuna conferma dal ricevitore";
 	return false;
+}
+
+bool CastChannel::CastUrl(const std::string& url, const std::string& contentType,
+	const std::string& title)
+{
+	return Load(url, contentType, title, true);
 }
 
 } // namespace cast

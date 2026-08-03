@@ -1,16 +1,17 @@
 name			campiello_cast
-version			0.3.0-1
+version			0.4.0-1
 architecture	x86_64
 summary			"Google Cast panel for Campiello"
 description		"Optional device add-on for Campiello: a control panel for a Google Cast / Chromecast
 device. Over CASTv2 (the real Cast channel, TLS 8009) it reads the device state (volume, running app),
-casts a media URL, and casts a LOCAL file from this PC by serving it over a built-in HTTP server with
-byte-range support (the Chromecast pulls and plays it), plus a volume control; over DIAL (plain HTTP
-8008) it also launches or stops named apps such as YouTube and Netflix. No transcoding: the file must
-be in a Cast-supported codec. Screen mirroring is not included (it uses a separate proprietary Cast
-channel) and is documented as a follow-up. Launched from the WON network neighborhood on a
-double-click of a discovered Cast device. Links OpenSSL for the CASTv2 TLS channel; part of the
-MIT-clean add-on suite (OpenSSL is Apache-2.0, in this optional package only)."
+casts a media URL, casts a LOCAL file from this PC via a built-in HTTP server with byte-range support,
+and shows this computer's screen on the TV as a ~1 fps refreshing image (BScreen capture + JPEG,
+served the same way); plus a volume control. Over DIAL (plain HTTP 8008) it also launches or stops
+named apps such as YouTube and Netflix. No transcoding: cast files must be in a Cast-supported codec.
+The screen feature is a low-frame-rate preview, not smooth mirroring with audio; true Cast Streaming
+mirroring is a documented roadmap. Launched from the WON network neighborhood on a double-click of a
+discovered Cast device. Links OpenSSL for the CASTv2 TLS channel; part of the MIT-clean add-on suite
+(OpenSSL is Apache-2.0, in this optional package only)."
 packager		"atomozero <atomozero@proton.me>"
 vendor			"atomozero"
 
@@ -23,7 +24,7 @@ licenses {
 }
 
 provides {
-	campiello_cast = 0.3.0
+	campiello_cast = 0.4.0
 }
 
 requires {
