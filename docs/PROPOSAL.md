@@ -469,21 +469,47 @@ Default plan pending that confirmation:
 
 ## 18. Milestones
 
-- **M0 Verification spike (no product code).** Confirm the open items: userlandfs out-of-tree build path, FUSE xattr to Haiku attribute mapping, HaikuPorts availability of libssh2, mbedTLS, and any mDNSResponder, and the TLS backend behind SecureSocket. Output: `docs/VERIFIED.md` updated, build skeleton that compiles an empty userlandfs add-on and mounts an empty volume in Tracker.
-- **M1 Interop read-only.** SftpBackend plus Fondamenta read path. A remote SFTP host appears as a folder in Tracker and you can browse and read files. This is the first visible WON moment.
+Status snapshot (2026-08): the core path M0 to M4 is delivered, including the headline distributed
+live query. Work since then has gone into tracks that were not in the original plan (LAN enrichment,
+the WON device actions, the device add-on suite, and the Google Cast add-on with screen mirroring and
+audio); see 18.1. M5 polish is in progress and M6 Bossolo is still planned.
+
+Legend: **[Done]** delivered and in use, **[In progress]** partially delivered, **[Planned]** not
+started.
+
+- **[Done] M0 Verification spike (no product code).** Confirm the open items: userlandfs out-of-tree build path, FUSE xattr to Haiku attribute mapping, HaikuPorts availability of libssh2, mbedTLS, and any mDNSResponder, and the TLS backend behind SecureSocket. Output: `docs/VERIFIED.md` updated, build skeleton that compiles an empty userlandfs add-on and mounts an empty volume in Tracker.
+- **[Done] M1 Interop read-only.** SftpBackend plus Fondamenta read path. A remote SFTP host appears as a folder in Tracker and you can browse and read files. This is the first visible WON moment.
   - Experience gate: ships as a single installable hpkg. After install, the mount appears with no terminal step. (Discovery and pairing land in M2, so M1 may still require entering a host once, which M2 removes.)
-- **M2 Native core plus zero-config and pairing.** CNP handshake, LIST, STAT, READ over TLS. CnpBackend read path. Bricola discovery live, so two Haiku boxes see each other by themselves. First connection raises the one tap "Allow NomePC?" prompt, then trust is pinned and silent. Protocol frozen enough to write `PROTOCOL.md`.
+- **[Done] M2 Native core plus zero-config and pairing.** CNP handshake, LIST, STAT, READ over TLS. CnpBackend read path. Bricola discovery live, so two Haiku boxes see each other by themselves. First connection raises the one tap "Allow NomePC?" prompt, then trust is pinned and silent. Protocol frozen enough to write `PROTOCOL.md`.
   - Experience gate (the headline "easy" test): a person who has never seen Campiello, with no instructions, installs the hpkg, sees the other machine appear by itself, taps allow once, opens the peer in Tracker, and reads a file. No spoken or written instruction at any step. TLS is always on, and no key, certificate, or CA ever appears in the UI.
-- **M3 Attributes and write.** Extended attribute fidelity end to end, plus write operations in both backends where supported. Copy a file Campiello to Campiello and confirm MIME type and attributes survive.
+- **[Done] M3 Attributes and write.** Extended attribute fidelity end to end, plus write operations in both backends where supported. Copy a file Campiello to Campiello and confirm MIME type and attributes survive.
   - Experience gate: default shared scope is the single "Condivisa" folder. Widening scope is an explicit opt in, never the default.
   - Applies the Sharing, permissions, and write semantics section: read-only default per peer, last write wins, shared-root boundary enforced on both ends.
-- **M4 Distributed live query.** QUERY messages, per-query virtual folders, live updates. A single Tracker window shows live results from several machines. This is the feature no other OS has.
-- **M5 Polish.** Deskbar replicant presence and one click revoke, reconnection, mount management UI, error states that stay friendly and never expose internals.
+- **[Done] M4 Distributed live query.** QUERY messages, per-query virtual folders, live updates. A single Tracker window shows live results from several machines. This is the feature no other OS has. The server runs a live `BQuery` and pushes `QUERY_UPDATE` frames; the client aggregates them into the virtual `/.query/<predicate>` folder.
+- **[In progress] M5 Polish.** Deskbar replicant presence and one click revoke, reconnection, mount management UI, error states that stay friendly and never expose internals. The replicant ships and shows peer presence; one-click revoke, capped-backoff reconnection, and the mount-management UI are the remaining pieces.
   - Experience gate: revoking a paired peer is one click in the replicant, with no key management.
   - Implements the Error handling and reconnection section: fail-fast on offline peers, capped backoff, human-only error text.
-- **M6 Bossolo, BMessage transfer (optional surface, see the Bossolo section).** `DELIVER_MESSAGE` over the existing transport. Drag content onto a peer in the replicant, it arrives on the other machine as a consent notification, then lands on the clipboard or Desktop. Whitelist of payload kinds enforced, incoming messages inert by default, no dispatch to apps, refs only with transferred bytes.
+- **[Planned] M6 Bossolo, BMessage transfer (optional surface, see the Bossolo section).** `DELIVER_MESSAGE` over the existing transport. Drag content onto a peer in the replicant, it arrives on the other machine as a consent notification, then lands on the clipboard or Desktop. Whitelist of payload kinds enforced, incoming messages inert by default, no dispatch to apps, refs only with transferred bytes.
   - Experience gate: drag selected text onto a peer, accept once on the other side, paste it there. No app launch, no key, no instruction needed.
   - Sequencing: starts only after M3, so the core file path is solid first. Never blocks M1 to M5.
+
+### 18.1 Delivered beyond the original plan (2026-08)
+
+These tracks were not in the M0 to M6 plan but are shipped and in use. They grew out of making the WON
+network neighborhood genuinely useful on a real LAN.
+
+- **[Done] LAN enrichment (NetIntel).** Manufacturer and MAC from the ARP/OUI table, NetBIOS name, and SSDP/UPnP model, gathered in the background and shown in the WON details panel; plus Wake-on-LAN. Ported and verified from existing Haiku tooling (see `docs/NETINTEL.md`).
+- **[Done] WON device actions.** Per-device Open, Web UI, SSH-in-a-Terminal, RDP remote desktop, Copy IP, a live online/offline indicator (TCP probe plus ARP reachability), and a collapsible network-details panel.
+- **[Done] Device add-on suite.** A handler framework where a discovered service becomes a real action on a double-click, each add-on a separate optional package matched to its mDNS service type. Twenty-one handlers ship: Hue, Chromecast/Google Cast, IPP and eSCL printers/scanners, DAAP, VNC, FTP, WebDAV, NFS, AFP, HomeKit, Matter, Spotify Connect, Alexa, Lutron, AirPlay, Fire TV, Daikin, NUT/UPS, ESPHome and eero. Some are full device control, some are honestly info-only with the control path documented as future work, never faked (see `docs/ADDONS_SUITE.md`).
+- **[Done] Google Cast add-on.** CASTv2 status and volume, cast a media URL, cast a local file from this PC over a built-in HTTP server, launch/stop apps over DIAL, and live screen mirroring over Cast Streaming: real-time VP8 video with the system audio mirrored as Opus, over encrypted Cast RTP, validated on physical hardware (see `docs/addons/cast.md`).
+- **[Done] Packaging and release.** A per-add-on hpkg for each device, plus a `campiello_complete` all-in-one bundle (core plus every device add-on), and a tagged `v0.4.0` GitHub release with the packages attached.
+
+### 18.2 Next
+
+- **M5 polish**: one-click revoke in the replicant, reconnection with capped backoff, a mount-management UI, and friendly, internals-free error states.
+- **M6 Bossolo** (optional): `DELIVER_MESSAGE` BMessage transfer, sequenced after the core file path.
+- **Add-on suite**: generalize the encrypted per-add-on secret store (Fire TV currently keeps its token in a 0600 file); move info-only add-ons toward real control where a protocol allows it (for example AirPlay streaming, HomeKit/Matter pairing).
+- **Cast mirror**: bitrate and frame-rate tuning, adaptive bitrate, and confirming the system-audio loopback level across different sound hardware.
 
 ---
 
