@@ -1,0 +1,63 @@
+name			campiello_complete
+version			0.4.0-1
+architecture	x86_64
+summary			"Campiello with every device add-on, all in one package"
+description		"The complete Campiello in a single package: the core application (the WON network
+neighborhood, the resident campiello_daemon that starts at login, the /Campiello network-neighborhood
+volume, the SFTP interop helpers and the Deskbar replicant) together with the entire device add-on
+suite, so every discovered device becomes a real action on a double-click. Bundled add-ons: Philips
+Hue, Chromecast / Google Cast (with screen mirroring and system audio), IPP and eSCL printers and
+scanners, DAAP, VNC, FTP, WebDAV, NFS, AFP, HomeKit, Matter, Spotify Connect, Amazon Alexa, Lutron,
+AirPlay, Amazon Fire TV / Android TV, Daikin, NUT/UPS, ESPHome and eero. Install this instead of the
+separate core and add-on packages - it ships the same files, so it conflicts with them. The optional
+Windows/SMB interop add-on stays separate (it is a userlandfs volume with an LGPL dependency). The
+Cast mirroring uses libvpx and libopus at runtime (present in the standard Haiku library set)."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_complete = 0.4.0
+}
+
+requires {
+	haiku >= r1~beta5
+	userland_fs
+	lib:libssh2 >= 1
+	lib:libssl >= 3
+	lib:libcrypto >= 3
+}
+
+# Ships the same files as the core and the individual add-on packages, so it cannot be installed
+# alongside them - it replaces the lot.
+conflicts {
+	campiello
+	campiello_afp
+	campiello_airplay
+	campiello_alexa
+	campiello_cast
+	campiello_daap
+	campiello_daikin
+	campiello_eero
+	campiello_escl
+	campiello_esphome
+	campiello_firetv
+	campiello_ftp
+	campiello_homekit
+	campiello_hue
+	campiello_ipp
+	campiello_lutron
+	campiello_matter
+	campiello_nfs
+	campiello_nut
+	campiello_spotify
+	campiello_vnc
+	campiello_webdav
+}
