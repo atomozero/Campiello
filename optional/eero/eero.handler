@@ -1,0 +1,9 @@
+# Campiello device handler manifest for the eero add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered eero mesh node
+# (_eero._tcp) and launches the add-on with the device (CAMPIELLO:host/name + the mDNS TXT as
+# CAMPIELLO:txt.<key>). Informational only: eero has no open local control API (configuration is
+# app/cloud, account-bound).
+signature   = application/x-vnd.Campiello-eero
+name        = Router mesh eero
+match.type  = _eero._tcp
+action.open = Informazioni

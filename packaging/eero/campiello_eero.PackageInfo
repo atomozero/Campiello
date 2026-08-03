@@ -1,0 +1,27 @@
+name			campiello_eero
+version			0.1.0-1
+architecture	x86_64
+summary			"eero mesh node info for Campiello"
+description		"Optional device add-on for Campiello: for an eero mesh Wi-Fi node on the network
+(_eero._tcp) it shows the node's presence and advertised mDNS info (base MAC). It does not control
+eero: there is no open local control API (configuration goes through the eero app and cloud, bound to
+an account). Informational only. No network, no third-party dependency; part of the MIT-clean add-on
+suite. Launched from the WON network neighborhood on a double-click of a discovered eero node."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_eero = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}
