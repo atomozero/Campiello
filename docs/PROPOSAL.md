@@ -498,6 +498,7 @@ started.
 These tracks were not in the M0 to M6 plan but are shipped and in use. They grew out of making the WON
 network neighborhood genuinely useful on a real LAN.
 
+- **[Done] Read-write interop mounts.** The SFTP interop volume can now be mounted read-write (create, write, mkdir, delete, rename, truncate over libssh2 SFTP), opt-in via a "Consenti la scrittura" checkbox in the connect window. Read-only stays the default, honoring the M3 principle that widening scope is always an explicit choice.
 - **[Done] LAN enrichment (NetIntel).** Manufacturer and MAC from the ARP/OUI table, NetBIOS name, and SSDP/UPnP model, gathered in the background and shown in the WON details panel; plus Wake-on-LAN. Ported and verified from existing Haiku tooling (see `docs/NETINTEL.md`).
 - **[Done] WON device actions.** Per-device Open, Web UI, SSH-in-a-Terminal, RDP remote desktop, Copy IP, a live online/offline indicator (TCP probe plus ARP reachability), and a collapsible network-details panel.
 - **[Done] Device add-on suite.** A handler framework where a discovered service becomes a real action on a double-click, each add-on a separate optional package matched to its mDNS service type. Twenty-one handlers ship: Hue, Chromecast/Google Cast, IPP and eSCL printers/scanners, DAAP, VNC, FTP, WebDAV, NFS, AFP, HomeKit, Matter, Spotify Connect, Alexa, Lutron, AirPlay, Fire TV, Daikin, NUT/UPS, ESPHome and eero. Some are full device control, some are honestly info-only with the control path documented as future work, never faked (see `docs/ADDONS_SUITE.md`).

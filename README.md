@@ -26,8 +26,9 @@ configuration, and security that is strong under the hood but invisible on the s
 * **One-click actions** per device: open, Web UI, SSH-in-a-Terminal, RDP remote
   desktop, Wake-on-LAN, and a collapsible network-details panel
 * Two modes, one browser:
-  * **Interop** mounts remote shares from the rest of the world - SFTP now, Windows/SMB
-    via the optional add-on - so Haiku talks to Windows, Linux, macOS, and NAS boxes
+  * **Interop** mounts remote shares from the rest of the world - SFTP now (read-only by
+    default, with an opt-in read-write mount), Windows/SMB via the optional add-on - so Haiku
+    talks to Windows, Linux, macOS, and NAS boxes
   * **Native** is a Campiello-to-Campiello protocol (CNP) with full BFS attribute
     fidelity over **mutual TLS 1.3**
 * **Distributed live query** - the headline native feature: a query predicate fans out
@@ -70,8 +71,9 @@ the resident daemon are always available regardless.
 ### The two modes
 
 **Interop** lets Haiku mount the rest of the world. The `campiello_mount` helper and the
-`campiello_sftp` userlandfs add-on mount a remote SFTP host as a read-only disk in
-Tracker; the optional SMB package does the same for Windows shares.
+`campiello_sftp` userlandfs add-on mount a remote SFTP host as a disk in Tracker - read-only by
+default, or read-write when you tick "Consenti la scrittura" in the connect window; the optional
+SMB package does the same for Windows shares.
 
 **Native** is Campiello talking to another Campiello. The resident `campiello_daemon`
 advertises `_campiello._tcp`, serves your shared folder over mutual-TLS CNP, and the
@@ -179,7 +181,7 @@ l'arricchimento LAN (produttore/MAC via ARP/OUI, nome NetBIOS, modello SSDP/UPnP
 
 ```
 make packages
-pkgman install ./packaging/campiello-0.3.29-1-x86_64.hpkg
+pkgman install ./packaging/campiello-0.3.30-1-x86_64.hpkg
 pkgman install ./packaging/smb/campiello_smb-0.2.0-14-x86_64.hpkg     # optional, Windows shares
 pkgman install ./packaging/cast/campiello_cast-0.6.0-1-x86_64.hpkg    # optional, Google Cast + mirroring
 ```

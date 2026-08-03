@@ -45,9 +45,10 @@ panel built from the decoded service metadata. See `NEIGHBORHOOD.md`.
 
 ### Interop mounts and the native protocol
 
-Remote shares from the rest of the world mount as read-only Tracker volumes
-through a userlandfs FUSE front end over a common `PeerBackend` abstraction: SFTP
-over SSH (`M1.md`) and Windows SMB via libsmb2 in an optional package (`SMB.md`).
+Remote shares from the rest of the world mount as Tracker volumes through a
+userlandfs FUSE front end over a common `PeerBackend` abstraction: SFTP over SSH
+(`M1.md`, read-only by default with an opt-in read-write mount) and Windows SMB via
+libsmb2 in an optional package (`SMB.md`).
 Alongside interop, the Campiello Native Protocol (CNP) is a TLS 1.3, mutually
 authenticated, SPKI-pinned wire protocol for Haiku-to-Haiku sharing that preserves
 BFS extended attributes and MIME types end to end, with distributed live queries

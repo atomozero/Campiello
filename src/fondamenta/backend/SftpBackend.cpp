@@ -383,5 +383,135 @@ BackendStatus SftpBackend::Close(uint64_t handle)
 	return BackendStatus::kOk;
 }
 
+// ---- Write subset --------------------------------------------------------------------------
+// Only reached on a read-write mount (a read-only mount blocks write-intent opens in the kernel).
+// Following PeerBackend::OpenWrite's contract, a write open creates and truncates the file; the
+// FUSE front end routes both create() and write-mode open() here. Random in-place edits therefore
+// start from an empty file, the same as the native CnpBackend - a known limitation, not a bug.
+
+BackendStatus SftpBackend::OpenWrite(const std::string& path, uint64_t& handle)
+{
+	std::string remote = RemotePath(path);
+	for (int attempt = 0; attempt < 2; ++attempt) {
+		if (!IsConnected() && !Reconnect())
+			return BackendStatus::kTransportError;
+		long mode = LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR
+			| LIBSSH2_SFTP_S_IRGRP | LIBSSH2_SFTP_S_IROTH; // 0644
+		LIBSSH2_SFTP_HANDLE* h = libssh2_sftp_open(fSftp, remote.c_str(),
+			LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC, mode);
+		if (h == nullptr) {
+			if (attempt == 0 && ReconnectIfDead())
+				continue;
+			return SftpError();
+		}
+		handle = fNextHandle++;
+		fOpen[handle] = h;
+		return BackendStatus::kOk;
+	}
+	return BackendStatus::kIoError;
+}
+
+BackendStatus SftpBackend::Write(uint64_t handle, uint64_t offset,
+	const std::vector<uint8_t>& data, uint64_t& written)
+{
+	written = 0;
+	auto it = fOpen.find(handle);
+	if (it == fOpen.end())
+		return BackendStatus::kBadHandle;
+	LIBSSH2_SFTP_HANDLE* h = it->second;
+
+	// A write handle does not survive a reconnect, so there is no retry here: a mid-write session
+	// death surfaces as an I/O error the caller (and the app) can react to.
+	libssh2_sftp_seek64(h, offset);
+	size_t sent = 0;
+	while (sent < data.size()) {
+		ssize_t n = libssh2_sftp_write(h,
+			reinterpret_cast<const char*>(data.data()) + sent, data.size() - sent);
+		if (n < 0)
+			return BackendStatus::kIoError;
+		if (n == 0)
+			break; // no progress; treat as done to avoid a busy loop
+		sent += static_cast<size_t>(n);
+	}
+	written = sent;
+	return BackendStatus::kOk;
+}
+
+BackendStatus SftpBackend::Mkdir(const std::string& path, uint32_t mode)
+{
+	std::string remote = RemotePath(path);
+	long m = (mode & 0777) != 0 ? static_cast<long>(mode & 0777) : 0755;
+	for (int attempt = 0; attempt < 2; ++attempt) {
+		if (!IsConnected() && !Reconnect())
+			return BackendStatus::kTransportError;
+		if (libssh2_sftp_mkdir(fSftp, remote.c_str(), m) == 0)
+			return BackendStatus::kOk;
+		if (attempt == 0 && ReconnectIfDead())
+			continue;
+		return SftpError();
+	}
+	return BackendStatus::kIoError;
+}
+
+BackendStatus SftpBackend::Unlink(const std::string& path)
+{
+	std::string remote = RemotePath(path);
+	for (int attempt = 0; attempt < 2; ++attempt) {
+		if (!IsConnected() && !Reconnect())
+			return BackendStatus::kTransportError;
+		// The FUSE front end funnels both unlink() and rmdir() here, so pick the right SFTP op by
+		// looking at the node type: a directory needs rmdir, everything else unlink.
+		bool isDir = false;
+		LIBSSH2_SFTP_ATTRIBUTES attrs;
+		std::memset(&attrs, 0, sizeof(attrs));
+		if (libssh2_sftp_stat(fSftp, remote.c_str(), &attrs) == 0
+			&& (attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS))
+			isDir = LIBSSH2_SFTP_S_ISDIR(attrs.permissions);
+		int rc = isDir ? libssh2_sftp_rmdir(fSftp, remote.c_str())
+					   : libssh2_sftp_unlink(fSftp, remote.c_str());
+		if (rc == 0)
+			return BackendStatus::kOk;
+		if (attempt == 0 && ReconnectIfDead())
+			continue;
+		return SftpError();
+	}
+	return BackendStatus::kIoError;
+}
+
+BackendStatus SftpBackend::Rename(const std::string& from, const std::string& to)
+{
+	std::string remoteFrom = RemotePath(from);
+	std::string remoteTo = RemotePath(to);
+	for (int attempt = 0; attempt < 2; ++attempt) {
+		if (!IsConnected() && !Reconnect())
+			return BackendStatus::kTransportError;
+		if (libssh2_sftp_rename(fSftp, remoteFrom.c_str(), remoteTo.c_str()) == 0)
+			return BackendStatus::kOk;
+		if (attempt == 0 && ReconnectIfDead())
+			continue;
+		return SftpError();
+	}
+	return BackendStatus::kIoError;
+}
+
+BackendStatus SftpBackend::Truncate(const std::string& path, uint64_t size)
+{
+	std::string remote = RemotePath(path);
+	for (int attempt = 0; attempt < 2; ++attempt) {
+		if (!IsConnected() && !Reconnect())
+			return BackendStatus::kTransportError;
+		LIBSSH2_SFTP_ATTRIBUTES attrs;
+		std::memset(&attrs, 0, sizeof(attrs));
+		attrs.flags = LIBSSH2_SFTP_ATTR_SIZE;
+		attrs.filesize = size;
+		if (libssh2_sftp_setstat(fSftp, remote.c_str(), &attrs) == 0)
+			return BackendStatus::kOk;
+		if (attempt == 0 && ReconnectIfDead())
+			continue;
+		return SftpError();
+	}
+	return BackendStatus::kIoError;
+}
+
 } // namespace fondamenta
 } // namespace campiello

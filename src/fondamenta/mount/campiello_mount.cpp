@@ -2,8 +2,9 @@
 //
 // The Campiello connect helper (M1): a small GUI that collects an SFTP host, user, and
 // credentials, verifies them (validating the login and pinning the host key on first use with
-// a one-tap prompt), mounts the host as a read-only userlandfs volume, and opens it in Tracker.
-// This is the piece that removes the terminal step from M1's experience gate.
+// a one-tap prompt), mounts the host as a userlandfs volume, and opens it in Tracker. The mount
+// is read-only by default; a checkbox opts in to a read-write mount (the SFTP backend implements
+// the write path). This is the piece that removes the terminal step from M1's experience gate.
 //
 // Haiku-only. End-user strings are Italian (working agreement rule 4). The connect blocks the
 // window thread briefly during the SSH handshake; a worker thread is a later refinement.
@@ -12,6 +13,7 @@
 #include <Application.h>
 #include <Box.h>
 #include <Button.h>
+#include <CheckBox.h>
 #include <Entry.h>
 #include <FindDirectory.h>
 #include <Font.h>
@@ -108,6 +110,7 @@ private:
 	BTextControl* fKey;
 	BTextControl* fRemotePath;
 	BTextControl* fMountPoint;
+	BCheckBox*    fWritable;
 	BStringView*  fStatus;
 };
 
@@ -207,7 +210,12 @@ ConnectWindow::ConnectWindow(const SftpConfig& initial)
 	title->SetFont(&titleFont);
 
 	BStringView* subtitle = new BStringView("subtitle",
-		"Il server appare come disco sul Desktop, in sola lettura.");
+		"Il server appare come disco sul Desktop.");
+
+	// Write access is an explicit opt-in: the default is a safe read-only mount, and ticking this
+	// box mounts the volume read-write so you can also save and delete on the server.
+	fWritable = new BCheckBox("writable",
+		"Consenti la scrittura (monta in lettura e scrittura)", nullptr);
 
 	BButton* connect = new BButton("connect", "Connetti", new BMessage(kMsgConnect));
 	fStatus = new BStringView("status", "");
@@ -218,6 +226,7 @@ ConnectWindow::ConnectWindow(const SftpConfig& initial)
 		.Add(subtitle)
 		.Add(FieldBox("Server", {fHost, fPort, fUser, fPassword, fKey}, fPassword))
 		.Add(FieldBox("Volume", {fRemotePath, fMountPoint}))
+		.Add(fWritable)
 		.AddGroup(B_HORIZONTAL)
 			.Add(fStatus)
 			.AddGlue()
@@ -307,8 +316,12 @@ void ConnectWindow::DoConnect()
 
 	MakeDirs(mountPoint);
 	std::string params = BuildMountParameters(config);
+	// Read-only by default; the checkbox opts in to a read-write mount (no B_MOUNT_READ_ONLY, so
+	// the kernel lets write-intent opens through to the backend's SFTP write path).
+	bool writable = fWritable->Value() == B_CONTROL_ON;
+	uint32 mountFlags = writable ? 0 : B_MOUNT_READ_ONLY;
 	dev_t dev = fs_mount_volume(mountPoint.c_str(), nullptr, "userlandfs",
-		B_MOUNT_READ_ONLY, params.c_str());
+		mountFlags, params.c_str());
 	if (dev < 0) {
 		SetStatus("Montaggio fallito. Il pacchetto Campiello e' installato?");
 		return;
@@ -320,7 +333,8 @@ void ConnectWindow::DoConnect()
 	if (entry.GetRef(&ref) == B_OK)
 		be_roster->Launch(&ref);
 
-	std::string ok = "Montato come disco \"" + diskName + "\": lo trovi sul Desktop.";
+	std::string ok = "Montato come disco \"" + diskName + "\" ("
+		+ (writable ? "lettura e scrittura" : "sola lettura") + "): lo trovi sul Desktop.";
 	SetStatus(ok.c_str());
 }
 

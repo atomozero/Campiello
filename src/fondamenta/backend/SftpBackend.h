@@ -1,8 +1,10 @@
 // SftpBackend.h
 //
 // The interop (SFTP) backend: implements the PeerBackend read subset over libssh2's SFTP
-// subsystem, so a remote SSH/SFTP host can be browsed and read as a Fondamenta volume (M1).
-// The write methods inherit PeerBackend's kUnsupported default: M1 is read-only.
+// subsystem, so a remote SSH/SFTP host can be browsed and read as a Fondamenta volume (M1). It
+// also implements the write subset (OpenWrite/Write/Mkdir/Unlink/Rename/Truncate) over the same
+// SFTP session, so the volume can be mounted read-write when the user opts in; a read-only mount
+// simply never reaches these paths (the kernel blocks write-intent opens).
 //
 // Trust: on connect the host's public key is checked against an SftpKnownHosts store (host-key
 // trust-on-first-use, mirroring the CNP model). An unknown or changed key is referred to an
@@ -72,6 +74,15 @@ public:
 	BackendStatus Read(uint64_t handle, uint64_t offset, uint32_t length,
 		std::vector<uint8_t>& out) override;
 	BackendStatus Close(uint64_t handle) override;
+
+	// PeerBackend write subset (used only on a read-write mount).
+	BackendStatus OpenWrite(const std::string& path, uint64_t& handle) override;
+	BackendStatus Write(uint64_t handle, uint64_t offset, const std::vector<uint8_t>& data,
+		uint64_t& written) override;
+	BackendStatus Mkdir(const std::string& path, uint32_t mode) override;
+	BackendStatus Unlink(const std::string& path) override;
+	BackendStatus Rename(const std::string& from, const std::string& to) override;
+	BackendStatus Truncate(const std::string& path, uint64_t size) override;
 
 	// Human-readable reason for the last failure, developer log only.
 	const char* Error() const { return fError; }
