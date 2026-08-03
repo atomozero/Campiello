@@ -1,0 +1,8 @@
+# Campiello device handler manifest for the NUT (UPS) add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered Network UPS Tools
+# server (_nut._tcp) and launches the add-on with the device (CAMPIELLO:host/name/port).
+# Strictly read-only: it monitors the UPS, it never sends a shutdown or other command.
+signature   = application/x-vnd.Campiello-nut
+name        = Gruppo di continuita (UPS)
+match.type  = _nut._tcp
+action.open = Monitor

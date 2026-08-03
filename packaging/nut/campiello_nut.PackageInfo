@@ -1,0 +1,28 @@
+name			campiello_nut
+version			0.1.0-1
+architecture	x86_64
+summary			"UPS monitor (Network UPS Tools) for Campiello"
+description		"Optional device add-on for Campiello: for a UPS exposed by a Network UPS Tools
+server (_nut._tcp, TCP 3493) it reads the real state - status (on line / on battery / low battery),
+battery charge, estimated runtime, load, input/battery voltage - and lists every variable the server
+publishes. Strictly read-only: it never sends a shutdown or other command. No third-party dependency;
+part of the MIT-clean add-on suite. Launched from the WON network neighborhood on a double-click of a
+discovered UPS."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_nut = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}
