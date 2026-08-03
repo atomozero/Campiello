@@ -100,9 +100,10 @@ make apps
 ## Device add-ons
 
 An optional suite turns a discovered device into a real action instead of a bare list
-entry: Philips Hue lighting, Chromecast, IPP/eSCL printers and scanners, DAAP, VNC,
-AirPlay, and more. Each add-on is matched to its service type, is dependency-free, and
-ships as a separate package so the core stays lean. See `docs/ADDONS_SUITE.md`.
+entry: Philips Hue lighting, Chromecast (with live screen mirroring and system audio over
+Cast Streaming), IPP/eSCL printers and scanners, DAAP, VNC, AirPlay, and more. Each add-on
+is matched to its service type, is dependency-free, and ships as a separate package so the
+core stays lean. See `docs/ADDONS_SUITE.md`.
 
 ## Dispositivi supportati
 
@@ -120,7 +121,7 @@ istruzioni; **Hand-off** = apre un client/viewer installato.
 
 | Dispositivo | Servizio mDNS | Cosa fa | Livello |
 |-------------|---------------|---------|---------|
-| Chromecast / Google Cast | `_googlecast._tcp` | stato e volume, casting di un URL/file nel Default Media Receiver, avvio/stop app via DIAL, mirroring dello schermo | Controllo |
+| Chromecast / Google Cast | `_googlecast._tcp` | stato e volume, casting di un URL/file nel Default Media Receiver, avvio/stop app via DIAL, mirroring dello schermo con audio di sistema | Controllo |
 | Amazon Fire TV / Android TV | `_amzn-wplay._tcp`, `_androidtvremote2._tcp` | telecomando del dispositivo | Controllo |
 | AirPlay | `_airplay._tcp`, `_raop._tcp` | info del ricevitore e capacità (video, audio, mirroring); streaming come sviluppo futuro | Info |
 | DAAP (libreria iTunes) | `_daap._tcp` | login e elenco dei brani della libreria condivisa | Controllo |
@@ -178,8 +179,9 @@ l'arricchimento LAN (produttore/MAC via ARP/OUI, nome NetBIOS, modello SSDP/UPnP
 
 ```
 make packages
-pkgman install ./packaging/campiello-0.3.28-1-x86_64.hpkg
-pkgman install ./packaging/smb/campiello_smb-0.2.0-14-x86_64.hpkg   # optional, Windows shares
+pkgman install ./packaging/campiello-0.3.29-1-x86_64.hpkg
+pkgman install ./packaging/smb/campiello_smb-0.2.0-14-x86_64.hpkg     # optional, Windows shares
+pkgman install ./packaging/cast/campiello_cast-0.6.0-1-x86_64.hpkg    # optional, Google Cast + mirroring
 ```
 
 The core package installs the WON app, the resident `campiello_daemon` (auto-starts at
