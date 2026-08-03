@@ -1,19 +1,22 @@
 // campiello_cast.cpp
 //
-// The Campiello Google Cast add-on: a small panel for a Chromecast / Google Cast device discovered
-// via _googlecast._tcp. Over DIAL (plain HTTP, port 8008) it shows the device name and which
-// receiver app is running, and launches or stops apps (YouTube, Netflix). Network I/O runs on worker
-// threads so the UI never blocks.
+// The Campiello Google Cast add-on: a control panel for a Chromecast / Google Cast device discovered
+// via _googlecast._tcp. It speaks two protocols:
+//   - CASTv2 (TLS 8009, the real Cast control channel): reads the device's true state (volume, the
+//     running app) and casts a media URL into the Default Media Receiver, with a volume control.
+//   - DIAL (plain HTTP 8008): a simple launch/stop of named receiver apps (YouTube, Netflix), kept as
+//     a convenient fallback that also works when CASTv2 is unavailable.
+// Network I/O runs on worker threads so the UI never blocks.
 //
-// Launching a specific media URL with transport controls needs the CASTv2 protobuf channel (TLS
-// 8009), a documented follow-up (docs/addons/cast.md); this add-on covers launch/stop/status.
+// Screen mirroring is deliberately NOT here: casting a mirrored desktop uses a separate proprietary
+// Cast media-remoting channel (a closed WebRTC/RTP pipeline) with no open client implementation; it
+// is documented as a follow-up in docs/addons/cast.md and is not faked.
 //
 // Launched from the WON neighborhood on a double-click of a Cast device (the cast.handler manifest),
-// which passes the device via CAMPIELLO:host/name, or from the command line with host=<ip>
-// [name=<label>]. No third-party dependency (DIAL is plain HTTP): links only libbe + the network kit.
-// End-user strings are Italian.
+// which passes CAMPIELLO:host/name, or from the command line with host=<ip> [name=<label>]. Links
+// libbe + the network kit + OpenSSL (for the CASTv2 TLS channel). End-user strings are Italian.
 //
-//   g++ -std=c++17 campiello_cast.cpp DialClient.cpp -lbe -lnetwork
+//   g++ -std=c++17 campiello_cast.cpp DialClient.cpp CastChannel.cpp -lbe -lnetwork -lssl -lcrypto
 
 #include <Application.h>
 #include <Alert.h>
@@ -24,35 +27,82 @@
 #include <Node.h>
 #include <StringView.h>
 #include <String.h>
+#include <TextControl.h>
 #include <Window.h>
 
 #include <fs_attr.h>
 
+#include <cstring>
 #include <string>
 
+#include "CastChannel.h"
 #include "DialClient.h"
 
 using namespace campiello::cast;
 
 static const char* const kSignature = "application/x-vnd.Campiello-cast";
 
-static const uint32 kMsgInfo      = 'cinf';
-static const uint32 kMsgInfoReady = 'cinr';
-static const uint32 kMsgLaunch    = 'clau'; // "app" = receiver app name
-static const uint32 kMsgStop      = 'csto';
-static const uint32 kMsgActionDone= 'cact';
+static const uint32 kMsgInfo       = 'cinf';
+static const uint32 kMsgInfoReady  = 'cinr';
+static const uint32 kMsgLaunch     = 'clau'; // "app" = receiver app name (DIAL)
+static const uint32 kMsgStop       = 'csto';
+static const uint32 kMsgCastUrl    = 'curl';
+static const uint32 kMsgVolUp      = 'cvup';
+static const uint32 kMsgVolDown    = 'cvdn';
+static const uint32 kMsgActionDone = 'cact';
 
-// The receiver apps this panel can launch by DIAL name.
+// The DIAL receiver apps this panel can launch by name.
 static const char* const kApps[] = {"YouTube", "Netflix"};
 static const int kNumApps = 2;
+
+// Guess a Cast contentType from the URL's extension (best-effort; the receiver is the final judge).
+static std::string GuessContentType(const std::string& url)
+{
+	auto ends = [&](const char* ext) {
+		size_t n = std::strlen(ext);
+		return url.size() >= n && url.compare(url.size() - n, n, ext) == 0;
+	};
+	if (ends(".mp3")) return "audio/mpeg";
+	if (ends(".m4a") || ends(".aac")) return "audio/aac";
+	if (ends(".ogg") || ends(".opus")) return "audio/ogg";
+	if (ends(".flac")) return "audio/flac";
+	if (ends(".wav")) return "audio/wav";
+	if (ends(".webm")) return "video/webm";
+	if (ends(".mkv")) return "video/x-matroska";
+	if (ends(".m3u8")) return "application/x-mpegurl";
+	if (ends(".mpd")) return "application/dash+xml";
+	if (ends(".jpg") || ends(".jpeg")) return "image/jpeg";
+	if (ends(".png")) return "image/png";
+	return "video/mp4";
+}
 
 // --------------------------------------------------------------------------- workers
 struct InfoJob { std::string host; BMessenger reply; };
 static int32 InfoThread(void* arg)
 {
 	InfoJob* job = static_cast<InfoJob*>(arg);
-	DialClient d(job->host);
 	BMessage m(kMsgInfoReady);
+
+	// Prefer the CASTv2 truth (volume + running app); fall back to DIAL if it will not connect.
+	CastChannel ch(job->host);
+	bool v2 = ch.Connect();
+	if (v2) {
+		CastStatus st = ch.GetStatus();
+		ch.Close();
+		m.AddBool("v2", st.ok);
+		if (st.ok) {
+			m.AddString("app", st.displayName.c_str());
+			m.AddString("status", st.statusText.c_str());
+			m.AddString("session", st.sessionId.c_str());
+			m.AddFloat("vol", st.volumeLevel);
+			m.AddBool("muted", st.muted);
+		}
+	} else {
+		m.AddBool("v2", false);
+	}
+
+	// Always fetch the DIAL friendly name (nice title) and which named app is running.
+	DialClient d(job->host);
 	m.AddString("name", d.FriendlyName().c_str());
 	std::string running;
 	for (int i = 0; i < kNumApps; ++i) {
@@ -67,12 +117,56 @@ static int32 InfoThread(void* arg)
 	return 0;
 }
 
-struct ActionJob { std::string host, app, action; BMessenger reply; };
+struct ActionJob { std::string host, app, action, session; BMessenger reply; };
 static int32 ActionThread(void* arg)
 {
 	ActionJob* job = static_cast<ActionJob*>(arg);
-	DialClient d(job->host);
-	bool ok = (job->action == "launch") ? d.Launch(job->app) : d.Stop(job->app);
+	bool ok = false;
+	if (job->action == "stop-v2") {
+		CastChannel ch(job->host);
+		if (ch.Connect()) { ok = ch.StopApp(job->session); ch.Close(); }
+	} else {
+		DialClient d(job->host);
+		ok = (job->action == "launch") ? d.Launch(job->app) : d.Stop(job->app);
+	}
+	BMessage m(kMsgActionDone);
+	m.AddBool("ok", ok);
+	job->reply.SendMessage(&m);
+	delete job;
+	return 0;
+}
+
+struct CastJob { std::string host, url, contentType, title; BMessenger reply; };
+static int32 CastThread(void* arg)
+{
+	CastJob* job = static_cast<CastJob*>(arg);
+	CastChannel ch(job->host);
+	bool ok = false;
+	BString err;
+	if (ch.Connect()) {
+		ok = ch.CastUrl(job->url, job->contentType, job->title);
+		if (!ok && ch.Error() != nullptr)
+			err = ch.Error();
+		ch.Close();
+	} else {
+		err = ch.Error() != nullptr ? ch.Error() : "connessione non riuscita";
+	}
+	BMessage m(kMsgActionDone);
+	m.AddBool("ok", ok);
+	if (!ok)
+		m.AddString("err", err.String());
+	job->reply.SendMessage(&m);
+	delete job;
+	return 0;
+}
+
+struct VolumeJob { std::string host; float level; BMessenger reply; };
+static int32 VolumeThread(void* arg)
+{
+	VolumeJob* job = static_cast<VolumeJob*>(arg);
+	CastChannel ch(job->host);
+	bool ok = false;
+	if (ch.Connect()) { ok = ch.SetVolume(job->level); ch.Close(); }
 	BMessage m(kMsgActionDone);
 	m.AddBool("ok", ok);
 	job->reply.SendMessage(&m);
@@ -93,13 +187,18 @@ private:
 
 	std::string  fHost;
 	std::string  fName;
-	std::string  fRunning; // the receiver app currently running, if known
+	std::string  fRunning;    // DIAL app currently running, if known
+	std::string  fSession;    // CASTv2 sessionId (for STOP)
+	float        fVolume = -1.0f;
 	BStringView* fSummary = nullptr;
+	BStringView* fVolView = nullptr;
+	BTextControl* fUrl = nullptr;
 	BStringView* fStatus = nullptr;
 };
 
 CastWindow::CastWindow(const std::string& host, const std::string& name)
-	: BWindow(BRect(100, 100, 400, 320), "Google Cast", B_TITLED_WINDOW, B_AUTO_UPDATE_SIZE_LIMITS),
+	: BWindow(BRect(100, 100, 460, 420), "Google Cast", B_TITLED_WINDOW,
+		B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS),
 	  fHost(host), fName(name)
 {
 	BStringView* title = new BStringView("t", fName.empty() ? "Dispositivo Cast" : fName.c_str());
@@ -108,7 +207,7 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 	title->SetFont(&f);
 
 	fSummary = new BStringView("sum", "Interrogo il dispositivo...");
-	fStatus = new BStringView("st", fHost.c_str());
+	fVolView = new BStringView("vol", "Volume: -");
 
 	BMessage* yt = new BMessage(kMsgLaunch); yt->AddString("app", "YouTube");
 	BMessage* nf = new BMessage(kMsgLaunch); nf->AddString("app", "Netflix");
@@ -117,20 +216,37 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 	BButton* bStop = new BButton("stop", "Ferma app", new BMessage(kMsgStop));
 	BButton* bRefresh = new BButton("refresh", "Aggiorna", new BMessage(kMsgInfo));
 
+	BButton* bVolDn = new BButton("vd", "Vol -", new BMessage(kMsgVolDown));
+	BButton* bVolUp = new BButton("vu", "Vol +", new BMessage(kMsgVolUp));
+
+	fUrl = new BTextControl("url", "URL media:", "", nullptr);
+	BButton* bCast = new BButton("cast", "Casta URL", new BMessage(kMsgCastUrl));
+
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
 		.Add(title)
 		.Add(fSummary)
 		.AddGroup(B_HORIZONTAL)
-			.Add(bYt)
-			.Add(bNf)
+			.Add(fVolView)
+			.AddGlue()
+			.Add(bVolDn)
+			.Add(bVolUp)
 		.End()
 		.AddGroup(B_HORIZONTAL)
+			.Add(bYt)
+			.Add(bNf)
 			.Add(bStop)
+		.End()
+		.Add(fUrl)
+		.AddGroup(B_HORIZONTAL)
+			.AddGlue()
+			.Add(bCast)
+		.End()
+		.AddGroup(B_HORIZONTAL)
+			.Add(fStatus = new BStringView("st", fHost.c_str()))
 			.AddGlue()
 			.Add(bRefresh)
 		.End()
-		.Add(fStatus)
 	.End();
 
 	CenterOnScreen();
@@ -148,8 +264,8 @@ void CastWindow::StartInfo()
 
 void CastWindow::RunAction(const std::string& app, const std::string& action)
 {
-	fStatus->SetText(action == "launch" ? "Avvio in corso..." : "Arresto in corso...");
-	ActionJob* job = new ActionJob{fHost, app, action, BMessenger(this)};
+	fStatus->SetText(action == "launch" ? "Avvio in corso..." : "Comando in corso...");
+	ActionJob* job = new ActionJob{fHost, app, action, fSession, BMessenger(this)};
 	thread_id t = spawn_thread(ActionThread, "cast_act", B_NORMAL_PRIORITY, job);
 	if (t < 0) delete job; else resume_thread(t);
 }
@@ -164,11 +280,36 @@ void CastWindow::MessageReceived(BMessage* msg)
 			const char* name = ""; msg->FindString("name", &name);
 			const char* running = ""; msg->FindString("running", &running);
 			fRunning = running;
+			bool v2 = false; msg->FindBool("v2", &v2);
+
 			BString sum(name[0] ? name : fHost.c_str());
-			if (fRunning.empty())
-				sum << "\nNessuna app in esecuzione.";
-			else
-				sum << "\nIn esecuzione: " << fRunning.c_str();
+			if (v2) {
+				const char* app = ""; msg->FindString("app", &app);
+				const char* status = ""; msg->FindString("status", &status);
+				const char* session = ""; msg->FindString("session", &session);
+				fSession = session;
+				if (app[0] != '\0') {
+					sum << "\nIn esecuzione: " << app;
+					if (status[0] != '\0')
+						sum << " (" << status << ")";
+				} else {
+					sum << "\nNessuna app in esecuzione.";
+				}
+				float vol = -1.0f; msg->FindFloat("vol", &vol);
+				bool muted = false; msg->FindBool("muted", &muted);
+				fVolume = vol;
+				BString v("Volume: ");
+				if (vol >= 0.0f) v << (int)(vol * 100 + 0.5f) << " %"; else v << "-";
+				if (muted) v << " (muto)";
+				fVolView->SetText(v.String());
+			} else {
+				fSession.clear();
+				if (fRunning.empty())
+					sum << "\nNessuna app in esecuzione (CASTv2 non disponibile).";
+				else
+					sum << "\nIn esecuzione: " << fRunning.c_str() << " (via DIAL)";
+				fVolView->SetText("Volume: - (CASTv2 non disponibile)");
+			}
 			fSummary->SetText(sum.String());
 			fStatus->SetText("Pronto.");
 			return;
@@ -180,12 +321,52 @@ void CastWindow::MessageReceived(BMessage* msg)
 			return;
 		}
 		case kMsgStop:
-			RunAction(fRunning.empty() ? "YouTube" : fRunning, "stop");
+			// Prefer the CASTv2 STOP (stops any app) when we have a session; else DIAL-stop a known app.
+			if (!fSession.empty())
+				RunAction("", "stop-v2");
+			else
+				RunAction(fRunning.empty() ? "YouTube" : fRunning, "stop");
 			return;
+		case kMsgCastUrl: {
+			BString url(fUrl != nullptr ? fUrl->Text() : "");
+			url.Trim();
+			if (url.Length() == 0) {
+				fStatus->SetText("Inserisci un URL media.");
+				return;
+			}
+			fStatus->SetText("Casting in corso...");
+			CastJob* job = new CastJob{fHost, std::string(url.String()),
+				GuessContentType(url.String()), "Campiello", BMessenger(this)};
+			thread_id t = spawn_thread(CastThread, "cast_url", B_NORMAL_PRIORITY, job);
+			if (t < 0) delete job; else resume_thread(t);
+			return;
+		}
+		case kMsgVolUp:
+		case kMsgVolDown: {
+			if (fVolume < 0.0f) {
+				fStatus->SetText("Volume non disponibile (serve CASTv2).");
+				return;
+			}
+			float level = fVolume + (msg->what == kMsgVolUp ? 0.1f : -0.1f);
+			if (level < 0.0f) level = 0.0f;
+			if (level > 1.0f) level = 1.0f;
+			fVolume = level;
+			BString v("Volume: "); v << (int)(level * 100 + 0.5f) << " %";
+			fVolView->SetText(v.String());
+			fStatus->SetText("Regolo il volume...");
+			VolumeJob* job = new VolumeJob{fHost, level, BMessenger(this)};
+			thread_id t = spawn_thread(VolumeThread, "cast_vol", B_NORMAL_PRIORITY, job);
+			if (t < 0) delete job; else resume_thread(t);
+			return;
+		}
 		case kMsgActionDone: {
 			bool ok = false; msg->FindBool("ok", &ok);
-			fStatus->SetText(ok ? "Fatto." : "Comando non riuscito.");
-			if (ok) StartInfo(); // refresh what is running
+			const char* err = ""; msg->FindString("err", &err);
+			if (ok)
+				fStatus->SetText("Fatto.");
+			else
+				fStatus->SetText(err[0] ? err : "Comando non riuscito.");
+			if (ok) StartInfo(); // refresh state
 			return;
 		}
 	}

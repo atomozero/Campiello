@@ -8,7 +8,7 @@
 #
 # Haiku-only (needs the `package` tool).
 
-VERSION := 0.1.0-2
+VERSION := 0.2.0-1
 ARCH := x86_64
 PKG := campiello_cast-$(VERSION)-$(ARCH).hpkg
 
@@ -16,10 +16,10 @@ CXX ?= g++
 CXXFLAGS ?= -std=c++17 -Wall -Wextra -O2
 
 CAST := ../../optional/cast
-SRC := $(CAST)/campiello_cast.cpp $(CAST)/DialClient.cpp
+SRC := $(CAST)/campiello_cast.cpp $(CAST)/DialClient.cpp $(CAST)/CastChannel.cpp
 STAGE := stage
 
-.PHONY: package clean
+.PHONY: package clean test
 package: $(PKG)
 
 $(PKG): campiello_cast.PackageInfo campiello_cast
@@ -31,12 +31,19 @@ $(PKG): campiello_cast.PackageInfo campiello_cast
 	@echo "Built $(PKG)"
 
 # The Cast panel, with its app_signature resource so be_roster can launch it by signature.
-campiello_cast: $(SRC) $(CAST)/DialClient.h $(CAST)/Cast.rdef
-	$(CXX) $(CXXFLAGS) -o $@ $(SRC) -lbe -lnetwork
+# Links OpenSSL for the CASTv2 TLS channel (kept optional; the MIT core never depends on it).
+campiello_cast: $(SRC) $(CAST)/DialClient.h $(CAST)/CastChannel.h $(CAST)/Cast.rdef
+	$(CXX) $(CXXFLAGS) -o $@ $(SRC) -lbe -lnetwork -lssl -lcrypto
 	rc -o campiello_cast.rsrc $(CAST)/Cast.rdef
 	xres -o $@ campiello_cast.rsrc
 	mimeset -f $@
 	rm -f campiello_cast.rsrc
 
+# Protocol codec unit test (no network).
+test:
+	$(CXX) $(CXXFLAGS) -o test_cast $(CAST)/test_cast.cpp $(CAST)/CastChannel.cpp \
+		$(CAST)/DialClient.cpp -lssl -lcrypto -lnetwork
+	./test_cast
+
 clean:
-	rm -rf $(STAGE) campiello_cast $(PKG)
+	rm -rf $(STAGE) campiello_cast test_cast $(PKG)

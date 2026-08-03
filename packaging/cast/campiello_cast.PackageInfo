@@ -1,12 +1,15 @@
 name			campiello_cast
-version			0.1.0-2
+version			0.2.0-1
 architecture	x86_64
 summary			"Google Cast panel for Campiello"
-description		"Optional device add-on for Campiello: a panel for a Google Cast / Chromecast device.
-Over DIAL (plain HTTP, port 8008) it shows the device name and running receiver app, and launches or
-stops apps such as YouTube and Netflix. Launched from the WON network neighborhood on a double-click
-of a discovered Cast device. Pure HTTP, no third-party dependency; part of the MIT-clean add-on
-suite. Full media casting (CASTv2 over TLS) is a documented follow-up."
+description		"Optional device add-on for Campiello: a control panel for a Google Cast / Chromecast
+device. Over CASTv2 (the real Cast channel, TLS 8009) it reads the device state (volume, running app)
+and casts a media URL into the Default Media Receiver, with a volume control; over DIAL (plain HTTP
+8008) it also launches or stops named apps such as YouTube and Netflix. Screen mirroring is not
+included (it uses a separate proprietary Cast channel) and is documented as a follow-up. Launched from
+the WON network neighborhood on a double-click of a discovered Cast device. Links OpenSSL for the
+CASTv2 TLS channel; part of the MIT-clean add-on suite (OpenSSL is Apache-2.0, in this optional
+package only)."
 packager		"atomozero <atomozero@proton.me>"
 vendor			"atomozero"
 
@@ -19,7 +22,7 @@ licenses {
 }
 
 provides {
-	campiello_cast = 0.1.0
+	campiello_cast = 0.2.0
 }
 
 requires {
