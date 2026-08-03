@@ -33,6 +33,11 @@ mount/unmount userlandfs on this machine.
 Already shipped: Campiello (native), SMB (`campiello_smb`), SFTP/SSH (`campiello_sftp`/`_mount`),
 Web (bookmark), Amazon Fire TV (`campiello_firetv`, `_amzn-wplay._tcp`).
 
+Later, network-driven additions (from a real LAN scan, see "Network-driven additions" below):
+Daikin AC (`campiello_daikin`, `_dkapi._tcp`), UPS/NUT (`campiello_nut`, `_nut._tcp`), ESPHome
+(`campiello_esphome`, `_esphomelib._tcp`), eero (`campiello_eero`, `_eero._tcp`), plus a CASTv2
+upgrade of `campiello_cast`.
+
 | # | Add-on | mDNS type(s) | Kind | Feasibility | Status |
 |---|--------|--------------|------|-------------|--------|
 | 1 | **campiello_hue** | `_hue._tcp` | Home | high — local HTTP/JSON REST, no heavy crypto | functional (needs live bridge) |
@@ -218,3 +223,49 @@ without re-querying mDNS (campiello 0.3.10).
 
 Each module ships a developer note in `docs/addons/<name>.md`. Follow-ups (TLS variants, full clients,
 account/crypto control paths) are recorded there and in the table above; none require faking behavior.
+
+## Network-driven additions (from a live LAN scan)
+
+The original 16 came from the service types Campiello already recognized. A later pass ran a real
+mDNS/DNS-SD scan on a live network (the Radar engine's `_services._dns-sd._udp` meta-query) and turned
+the device types found there - that had no handler yet - into add-ons, keeping the same honesty rule
+(real protocol where one is open and documented; info-only, with the heavy path recorded as a
+follow-up, where it is not).
+
+| Add-on | mDNS type | Kind | Feasibility | Status |
+|--------|-----------|------|-------------|--------|
+| **campiello_daikin** | `_dkapi._tcp` | Casa | high - open local HTTP "aircon" API | functional, control; **validated live** on 2 units |
+| **campiello_nut** | `_nut._tcp` | Sistema | high - simple text protocol, read-only | functional, monitor (parsers tested; server was localhost-bound) |
+| **campiello_esphome** | `_esphomelib._tcp` | Casa | medium - info now, native API later | info + web UI (native protobuf API = follow-up) |
+| **campiello_eero** | `_eero._tcp` | Rete | low - no open local API | info only |
+
+And a real upgrade of an existing component:
+
+- **campiello_cast -> CASTv2.** The Cast add-on went from DIAL-only to the real Cast control channel:
+  a TLS 8009 connection carrying `CastMessage` protobuf frames. It now reads the device's true state
+  (volume, running app) and casts a media URL into the Default Media Receiver, with a volume control;
+  DIAL launch/stop is kept as a fallback. Screen mirroring stays a documented follow-up (a proprietary
+  Cast remoting channel), not faked. Bumps `campiello_cast` to 0.2.0.
+
+Two core enhancements accompany these (WON neighborhood): `RadarLabels` and `NetworkDirectory` now
+recognize, label and classify `_dkapi`/`_esphomelib`/`_nut`/`_eero`, so the devices appear named and
+grouped (Daikin and ESPHome under Casa with the web-UI action; NUT and eero as their own entries)
+before any add-on is even installed.
+
+### Progress log (network-driven)
+
+- **campiello_daikin (_dkapi._tcp).** Daikin BRP069/BRP072 adapters expose an open, unauthenticated
+  local HTTP API (text `ret=OK,key=value`). `DaikinClient` reads control/sensor/basic info and sends
+  the stateful `set_control_info` (full pow/mode/stemp/shum set; `stemp=M` for fan/dry; a mode change
+  powers on). The panel controls power, mode, target (0.5 C steps, 16-30) and fan. Parser unit-tested;
+  the read path was validated live against two real units (firmware 4_2_303). References: pydaikin,
+  ael-code/daikin-control.
+- **campiello_nut (_nut._tcp).** A read-only UPS monitor over the NUT text protocol (LIST UPS / LIST
+  VAR), decoding status/battery/runtime/load. `NutClient` + parsers are unit-tested. The UPS on the
+  test LAN was not reachable (upsd commonly `LISTEN`s on localhost only), so the live read path is
+  documented, not faked. Strictly read-only: never sends INSTCMD/SET.
+- **campiello_esphome (_esphomelib._tcp).** Shows the device info from the mDNS TXT (ESPHome/firmware
+  version, project, board, platform, MAC) and opens its web UI. The native protobuf API on 6053
+  (plaintext or Noise-encrypted) is documented as a real follow-up, not faked. No network dependency.
+- **campiello_eero (_eero._tcp).** Info-only, like alexa: eero has no open local control API
+  (configuration is app + cloud, account-bound). Shows presence + base_mac + a clear note.
