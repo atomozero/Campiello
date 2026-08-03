@@ -42,7 +42,10 @@ NetworkService ClassifyServiceType(const std::string& serviceType)
 	} else if (serviceType == "_hue._tcp.local" || serviceType == "_hap._tcp.local"
 		|| serviceType == "_matter._tcp.local" || serviceType == "_matterc._udp.local"
 		|| serviceType == "_matterd._udp.local"
-		|| serviceType == "_homekit._tcp.local" || serviceType == "_sleap._tcp.local") {
+		|| serviceType == "_homekit._tcp.local" || serviceType == "_sleap._tcp.local"
+		|| serviceType == "_dkapi._tcp.local" || serviceType == "_esphomelib._tcp.local") {
+		// Home/IoT: Daikin air conditioners (_dkapi) and ESPHome nodes (_esphomelib) both expose a
+		// local HTTP UI, so they group with the home devices and get the "open web UI" action.
 		s.kind = ServiceKind::Home;
 	} else if (serviceType == "_http._tcp.local" || serviceType == "_https._tcp.local") {
 		s.kind = ServiceKind::Web;

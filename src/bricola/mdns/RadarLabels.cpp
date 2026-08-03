@@ -60,6 +60,10 @@ const KnownService kKnown[] = {
 	{"_device-info._tcp.local",    "Info dispositivo",           "Sistema"},
 	{"_rfb._tcp.local",            "Desktop remoto (VNC)",       "Sistema"},
 	{"_sleap._tcp.local",          "Lutron",                     "Casa"},
+	{"_dkapi._tcp.local",          "Condizionatore Daikin",      "Casa"},
+	{"_esphomelib._tcp.local",     "Dispositivo ESPHome",        "Casa"},
+	{"_nut._tcp.local",            "Gruppo di continuita (UPS)", "Sistema"},
+	{"_eero._tcp.local",           "Router mesh eero",           "Rete"},
 };
 
 bool EndsWith(const std::string& s, const std::string& suffix)
@@ -245,6 +249,27 @@ std::string TxtKeyLabel(const std::string& serviceType, const std::string& key)
 		if (key == "PH") return "Suggerimento abbinamento";
 		if (key == "PI") return "Istruzioni abbinamento";
 	}
+	if (serviceType == "_dkapi._tcp.local") {
+		if (key == "type") return "Tipo";
+		if (key == "reg") return "Regione";
+		if (key == "ver") return "Versione firmware";
+		if (key == "adp_kind") return "Tipo adattatore";
+		if (key == "adp_mode") return "Modo adattatore";
+		if (key == "pow") return "Accensione";
+		if (key == "led") return "LED";
+	}
+	if (serviceType == "_esphomelib._tcp.local") {
+		if (key == "project_name") return "Progetto";
+		if (key == "project_version") return "Versione progetto";
+		if (key == "version") return "Versione ESPHome";
+		if (key == "board") return "Scheda";
+		if (key == "platform") return "Piattaforma";
+		if (key == "network") return "Rete";
+		if (key == "mac") return "Indirizzo MAC";
+	}
+	if (serviceType == "_eero._tcp.local") {
+		if (key == "base_mac") return "MAC base";
+	}
 	// Generic keys shared across many services.
 	if (key == "md" || key == "model" || key == "ty" || key == "usb_MDL") return "Modello";
 	if (key == "fn") return "Nome";
@@ -357,6 +382,12 @@ std::string InstanceSummary(const std::string& serviceType,
 			return decodedDt;
 		if (!dn.empty())
 			return dn;
+	}
+	// ESPHome: the firmware project name is the most descriptive label.
+	if (serviceType == "_esphomelib._tcp.local") {
+		std::string proj;
+		if (TxtGet(txt, "project_name", proj) && !proj.empty())
+			return proj;
 	}
 	// Cast / generic: friendly name and/or model.
 	if (TxtGet(txt, "fn", v) && !v.empty()) {
