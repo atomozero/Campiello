@@ -67,6 +67,14 @@ vpxtest:
 	$(CXX) $(CXXFLAGS) -o test_vpx $(CAST)/test_vpx.cpp $(CAST)/VpxEncoder.cpp -lvpx
 	./test_vpx
 
+# Milestone-4 dev tool: mirror this desktop to a real Cast device (needs libvpx + a physical Cast
+# video receiver). Build only; run as ./mirror_send <ip> [seconds] [fps].
+mirrorsend:
+	$(CXX) $(CXXFLAGS) -o mirror_send $(CAST)/mirror_send.cpp $(CAST)/MirrorSession.cpp \
+		$(CAST)/CastChannel.cpp $(CAST)/CastMirror.cpp $(CAST)/CastTransport.cpp \
+		$(CAST)/VpxEncoder.cpp -lbe -lvpx -lssl -lcrypto -lnetwork
+	@echo "Built mirror_send. Run: ./mirror_send <ip-del-chromecast> [secondi] [fps]"
+
 clean:
 	rm -rf $(STAGE) campiello_cast test_cast test_mediaserver test_mirror test_transport \
-		mirror_probe test_vpx $(PKG)
+		mirror_probe mirror_send test_vpx $(PKG)

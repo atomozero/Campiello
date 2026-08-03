@@ -84,11 +84,12 @@ video. It is not smooth mirroring, and it is named accordingly ("Schermo su TV",
 capture-to-JPEG path is validated live (a 1366x768 desktop encodes to a ~280 KB JPEG); the media
 server's buffer mode and range handling are loopback-tested.
 
-## True screen mirroring - Cast Streaming (honest roadmap, not yet implemented)
+## True screen mirroring - Cast Streaming (WORKING as a dev tool, validated on hardware)
 
-Smooth, full-frame-rate mirroring with audio is a real but large project, and it is **not faked**.
-Correcting an earlier over-simplification: Cast mirroring is **not** closed WebRTC - it is **Cast
-Streaming**, the protocol implemented by Google's **openscreen** library (semi-documented). The shape:
+Mirroring the Haiku desktop to the TV is **implemented and confirmed working on a real Chromecast**
+(as the `mirror_send` dev tool; not yet a button in the shipped app). Correcting an earlier
+over-simplification: Cast mirroring is **not** closed WebRTC - it is **Cast Streaming**, the protocol
+implemented by Google's **openscreen** library (semi-documented). The shape:
 
 1. Open the mirroring receiver over CASTv2 and negotiate an **OFFER/ANSWER** on the
    `urn:x-cast:com.google.cast.webrtc` namespace (codecs, SSRCs, AES key/IV, RTP payload types).
@@ -137,9 +138,21 @@ Milestones (each independently testable, none faked):
    openscreen / Chromium `media/cast` descriptions and are **not yet validated against a physical Cast
    receiver** (none on the dev LAN), so byte-level interop is unverified. No RTCP receiver-feedback
    (ACK/NACK -> retransmit) yet - that lives in the live loop below.
-4. **Live loop**: capture -> encode -> packetize -> send at 30 fps, wire the receiver RTCP feedback
-   (ACK/NACK) for retransmission, then add Opus audio. This is where milestones 1-3 combine into a
-   real mirror; it also needs a physical Cast video receiver to validate end to end.
+4. **Live loop - DONE and VALIDATED LIVE.** `optional/cast/MirrorSession.{h,cpp}` ties it all
+   together: it negotiates (keeping the video AES key), then per captured BGRA frame VP8-encodes,
+   AES-128-CTR encrypts, Cast-RTP packetizes and sends over UDP to the receiver's udpPort, emitting an
+   RTCP sender report each second. The dev tool `mirror_send.cpp`
+   (`make -C packaging/cast mirrorsend`, then `./mirror_send <ip> [seconds] [fps]`) captures the Haiku
+   screen with BScreen and drives it. **Confirmed on real hardware:** against a physical Chromecast the
+   receiver launched the mirroring app, answered the OFFER with `udpPort` and `sendIndexes` accepting
+   the video stream, and **the Haiku desktop appeared on the TV** (1366x768 at 15 fps, 180/180 frames
+   sent). So the full path - negotiation, VP8, AES, Cast RTP, UDP - is verified end to end on a device,
+   not just in unit tests.
+
+   Remaining polish (honest): no audio yet (an Opus stream was offered but is not encoded/sent); no
+   RTCP receiver-feedback handling (ACK/NACK -> retransmission), so packet loss shows as transient
+   artifacts; frame rate and bitrate are untuned; and it is a dev tool, not yet a button in the shipped
+   app. None of this is faked - the mirror works; these are quality/feature follow-ups.
 
 The dependency on a real-time encoder (a separate, licensed library) and the RTP/crypto stack make
 this multi-step; the `~1 fps` preview above is the honest, working stand-in until it lands.
