@@ -1811,10 +1811,14 @@ void VicinatoWindow::ApplyEnrichment(std::vector<NetworkService>& hood) const
 					s.vendor = v;
 			}
 		}
-		// Give SMB hosts a real computer name when NetBIOS answered and we only had the IP.
+		// Give SMB/computer hosts a real name when NetBIOS (or the reverse-DNS fallback) answered
+		// and the label is still just the address: a bare IP, empty, or the SMB sweep's
+		// "Condivisione Windows (IP)" placeholder, which embeds the host. A real, mDNS-advertised
+		// name never contains the raw IP, so it is left untouched.
 		auto nit = fNetbiosByIp.find(s.host);
 		if (nit != fNetbiosByIp.end() && !nit->second.empty()
-			&& (s.label == s.host || s.label.empty()))
+			&& (s.label.empty() || s.label == s.host
+				|| s.label.find(s.host) != std::string::npos))
 			s.label = nit->second;
 	}
 }

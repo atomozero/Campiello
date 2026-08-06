@@ -12,7 +12,7 @@
 #
 # Haiku-only (needs the `package` tool, the userlandfs FUSE headers, libssh2, and OpenSSL).
 
-VERSION := 0.3.31-1
+VERSION := 0.3.32-1
 ARCH := x86_64
 PKG := campiello-$(VERSION)-$(ARCH).hpkg
 
