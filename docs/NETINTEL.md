@@ -14,6 +14,7 @@ on Haiku); the pure encode/parse helpers are unit-tested off Haiku in `tests/bri
 | `OuiDatabase` | MAC prefix -> manufacturer | reads an IEEE `oui.txt`; the DATA is reused, never Wireshark's GPL `manuf` |
 | `SendWakeOnLan()` | wakes a host | 102-byte magic packet (6x 0xFF + 16x MAC), UDP broadcast, port 9 |
 | `QueryNetBiosName()` | Windows computer name of an SMB host | UDP 137 NBSTAT (RFC 1001/1002) |
+| `ResolveReverseDns()` | hostname fallback when 137 is closed | reverse-DNS PTR via `getnameinfo(NI_NAMEREQD)` |
 | `DiscoverSsdp()` | finds TVs, Sonos, NAS, routers mDNS misses | SSDP M-SEARCH to 239.255.255.250:1900 |
 
 ## How the WON app uses it
@@ -23,7 +24,9 @@ the results back into the service list and the details pane:
 
 - **Produttore + MAC** in the details pane: the ARP table gives each dotted-IP device its MAC, and
   the OUI database resolves the manufacturer (when an `oui.txt` is installed - see below).
-- **NetBIOS names**: SMB hosts that were only an IP get their real Windows computer name.
+- **NetBIOS names**: SMB hosts that were only an IP get their real Windows computer name. When a
+  host has NetBIOS over TCP/IP disabled (UDP 137 closed or filtered), a reverse-DNS (PTR) lookup is
+  tried as a fallback, so a host the resolver knows by name is still labelled instead of a bare IP.
 - **SSDP/UPnP devices** are folded into the list under a "UPnP" category, deduped against mDNS/SMB
   by address.
 - **Wake-on-LAN**: a context-menu action on any device we have a MAC for. Learned MACs are persisted

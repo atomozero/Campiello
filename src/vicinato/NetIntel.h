@@ -11,7 +11,8 @@
 //                            looked up in the Campiello data dirs and the feature degrades silently
 //                            when absent (zero-config: absence just hides the vendor line).
 //   3. SendWakeOnLan()     - a Wake-on-LAN magic packet to a MAC (UDP broadcast).
-//   4. QueryNetBiosName()  - the Windows/NetBIOS computer name of an SMB host (UDP 137 NBSTAT).
+//   4. QueryNetBiosName()  - the Windows/NetBIOS computer name of an SMB host (UDP 137 NBSTAT), with
+//                            ResolveReverseDns() as a PTR fallback when 137 is closed or filtered.
 //   5. DiscoverSsdp()      - SSDP/UPnP M-SEARCH: finds TVs, Sonos, NAS and routers that mDNS misses.
 //
 // Portable POSIX sockets only (the same surface SmbHostFinder / TcpPing already use on Haiku). The
@@ -83,6 +84,12 @@ bool QueryNetBiosName(const std::string& ip, int timeoutMs, std::string& name,
 // Pure helpers (testable without a socket):
 std::string BuildNbstatQuery();
 bool ParseNbstatResponse(const uint8_t* buf, size_t len, std::string& name, std::string& workgroup);
+
+// Reverse-DNS (PTR) fallback for when NetBIOS (UDP 137) is closed or filtered: ask the configured
+// resolver for the hostname of `ip` (dotted quad). On success fills `hostname` (trailing dot
+// stripped) and returns true; returns false when there is no PTR record, the resolver echoes the IP
+// back, or the lookup fails. Blocks on the system resolver, so call it off the UI thread.
+bool ResolveReverseDns(const std::string& ip, std::string& hostname);
 
 // ---------------------------------------------------------------------------------------------
 // 5. SSDP / UPnP discovery.

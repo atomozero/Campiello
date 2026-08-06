@@ -256,13 +256,18 @@ static int32 IntelThread(void* arg)
 		m.AddString("mac", it->second.c_str());
 	}
 
-	// 2. NetBIOS: name each SMB host that answers on UDP 137.
+	// 2. NetBIOS: name each SMB host that answers on UDP 137. Where 137 is closed or filtered
+	//    (NetBIOS over TCP/IP disabled), fall back to a reverse-DNS (PTR) lookup for the hostname.
 	for (const std::string& ip : job->smbIps) {
 		std::string name, workgroup;
 		if (campiello::vicinato::QueryNetBiosName(ip, 700, name, workgroup)) {
 			m.AddString("nb_ip", ip.c_str());
 			m.AddString("nb_name", name.c_str());
 			m.AddString("nb_wg", workgroup.c_str());
+		} else if (campiello::vicinato::ResolveReverseDns(ip, name)) {
+			m.AddString("nb_ip", ip.c_str());
+			m.AddString("nb_name", name.c_str());
+			m.AddString("nb_wg", "");
 		}
 	}
 

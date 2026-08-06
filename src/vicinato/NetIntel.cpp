@@ -8,6 +8,7 @@
 
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <sys/socket.h>
@@ -347,6 +348,31 @@ bool QueryNetBiosName(const std::string& ip, int timeoutMs, std::string& name,
 	if (n <= 0)
 		return false;
 	return ParseNbstatResponse(buf, static_cast<size_t>(n), name, workgroup);
+}
+
+bool ResolveReverseDns(const std::string& ip, std::string& hostname)
+{
+	struct sockaddr_in sa {};
+	sa.sin_family = AF_INET;
+	if (inet_pton(AF_INET, ip.c_str(), &sa.sin_addr) != 1)
+		return false;
+
+	// NI_MAXHOST is gated behind _DEFAULT_SOURCE, which -std=c++17 does not set; use its value.
+	char host[1025];
+	// NI_NAMEREQD makes getnameinfo fail (rather than return the numeric IP) when there is no PTR
+	// record, so a plain no-name host does not masquerade as having a hostname.
+	int rc = getnameinfo(reinterpret_cast<struct sockaddr*>(&sa), sizeof(sa),
+		host, sizeof(host), nullptr, 0, NI_NAMEREQD);
+	if (rc != 0)
+		return false;
+
+	hostname = host;
+	if (!hostname.empty() && hostname.back() == '.')
+		hostname.pop_back();
+	// A resolver that echoed the address back (some do despite NI_NAMEREQD) is not a real name.
+	if (hostname == ip)
+		return false;
+	return !hostname.empty();
 }
 
 // ============================================================================================
