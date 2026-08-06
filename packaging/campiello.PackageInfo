@@ -1,5 +1,5 @@
 name			campiello
-version			0.3.30-1
+version			0.3.31-1
 architecture	x86_64
 summary			"Modern, native file sharing for Haiku"
 description		"Campiello shares folders between machines with a native Tracker
