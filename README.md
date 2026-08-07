@@ -43,6 +43,8 @@ configuration, and security that is strong under the hood but invisible on the s
 * Optional **device add-on suite** that turns a discovered device into a real action
   (Philips Hue, Chromecast, printers/scanners, and more)
 * Optional **Windows/SMB** shares via libsmb2 (LGPL, kept out of the MIT core)
+* **Localized** through the Haiku Locale Kit: the WON app and every device add-on ship
+  Italian and English catalogs and follow the user's language, with Italian as the fallback
 * MIT licensed, with no external dependencies in the core beyond Haiku system libraries,
   OpenSSL, and libfuse
 
@@ -181,9 +183,9 @@ l'arricchimento LAN (produttore/MAC via ARP/OUI, nome NetBIOS, modello SSDP/UPnP
 
 ```
 make packages
-pkgman install ./packaging/campiello-0.3.30-1-x86_64.hpkg
-pkgman install ./packaging/smb/campiello_smb-0.2.0-14-x86_64.hpkg     # optional, Windows shares
-pkgman install ./packaging/cast/campiello_cast-0.6.0-1-x86_64.hpkg    # optional, Google Cast + mirroring
+pkgman install ./packaging/campiello-0.3.33-1-x86_64.hpkg
+pkgman install ./packaging/smb/campiello_smb-0.2.0-15-x86_64.hpkg     # optional, Windows shares
+pkgman install ./packaging/cast/campiello_cast-0.6.0-2-x86_64.hpkg    # optional, Google Cast + mirroring
 ```
 
 The core package installs the WON app, the resident `campiello_daemon` (auto-starts at
@@ -236,6 +238,7 @@ See `docs/PROPOSAL.md` for the full picture.
 - `docs/NETINTEL.md` - the LAN enrichment module (vendor/MAC, NetBIOS, SSDP, Wake-on-LAN)
 - `docs/ICONS.md` - the per-service device icon set and its sources
 - `docs/ADDONS_SUITE.md` - the optional device add-on suite
+- `docs/LOCALIZATION.md` - the Haiku Locale Kit wiring, catalogs, and refresh workflow
 - `docs/REUSE.md` - what was harvested from existing Haiku projects and what is greenfield
 
 ## License
