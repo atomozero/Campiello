@@ -15,6 +15,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <LayoutBuilder.h>
 #include <Messenger.h>
@@ -32,6 +33,12 @@
 #include "SpotifyProbe.h"
 
 using namespace campiello::spotify;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Spotify"
 
 static const char* const kSignature = "application/x-vnd.Campiello-spotify";
 
@@ -95,12 +102,13 @@ SpotifyWindow::SpotifyWindow(const std::string& host, int port, const std::strin
 	note->MakeEditable(false);
 	note->SetExplicitMinSize(BSize(320, 70));
 	note->SetText(
-		"Campiello mostra le informazioni pubbliche dell'altoparlante. Avviare e controllare la "
-		"riproduzione richiede un account Spotify Premium e l'autenticazione (Web API OAuth), non "
-		"ancora disponibile. Per ora usa l'app Spotify e scegli questo dispositivo con Spotify Connect.");
+		B_TRANSLATE("Campiello mostra le informazioni pubbliche dell'altoparlante. Avviare e "
+			"controllare la riproduzione richiede un account Spotify Premium e l'autenticazione "
+			"(Web API OAuth), non ancora disponibile. Per ora usa l'app Spotify e scegli questo "
+			"dispositivo con Spotify Connect."));
 
 	fStatus = new BStringView("st", fHost.c_str());
-	BButton* refresh = new BButton("r", "Aggiorna", new BMessage(kMsgProbe));
+	BButton* refresh = new BButton("r", B_TRANSLATE("Aggiorna"), new BMessage(kMsgProbe));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -118,10 +126,10 @@ void SpotifyWindow::StartProbe()
 {
 	if (fPort == 0) {
 		fInfo->SetText("");
-		fStatus->SetText("Porta del dispositivo non disponibile.");
+		fStatus->SetText(B_TRANSLATE("Porta del dispositivo non disponibile."));
 		return;
 	}
-	fStatus->SetText("Interrogo il dispositivo...");
+	fStatus->SetText(B_TRANSLATE("Interrogo il dispositivo..."));
 	ProbeJob* job = new ProbeJob{fHost, fPort, fCPath, BMessenger(this)};
 	thread_id t = spawn_thread(ProbeThread, "spotify_probe", B_NORMAL_PRIORITY, job);
 	if (t < 0) { delete job; return; }
@@ -138,7 +146,7 @@ void SpotifyWindow::MessageReceived(BMessage* msg)
 			bool ok = false; msg->FindBool("ok", &ok);
 			if (!ok) {
 				fInfo->SetText("");
-				fStatus->SetText("Dispositivo non raggiungibile o non Spotify Connect.");
+				fStatus->SetText(B_TRANSLATE("Dispositivo non raggiungibile o non Spotify Connect."));
 				return;
 			}
 			const char* remoteName = ""; msg->FindString("remoteName", &remoteName);
@@ -148,14 +156,14 @@ void SpotifyWindow::MessageReceived(BMessage* msg)
 			const char* version = ""; msg->FindString("version", &version);
 			const char* activeUser = ""; msg->FindString("activeUser", &activeUser);
 			BString s;
-			if (remoteName[0]) s << "Nome: " << remoteName << "\n";
-			if (brand[0] || model[0]) s << "Dispositivo: " << brand << " " << model << "\n";
-			if (deviceType[0]) s << "Tipo: " << deviceType << "\n";
-			if (version[0]) s << "Versione: " << version << "\n";
-			s << "Account attivo: " << (activeUser[0] ? activeUser : "(nessuno)") << "\n";
-			s << "Indirizzo: " << fHost.c_str() << ":" << fPort << "\n";
+			if (remoteName[0]) s << B_TRANSLATE("Nome: ") << remoteName << "\n";
+			if (brand[0] || model[0]) s << B_TRANSLATE("Dispositivo: ") << brand << " " << model << "\n";
+			if (deviceType[0]) s << B_TRANSLATE("Tipo: ") << deviceType << "\n";
+			if (version[0]) s << B_TRANSLATE("Versione: ") << version << "\n";
+			s << B_TRANSLATE("Account attivo: ") << (activeUser[0] ? activeUser : B_TRANSLATE("(nessuno)")) << "\n";
+			s << B_TRANSLATE("Indirizzo: ") << fHost.c_str() << ":" << fPort << "\n";
 			fInfo->SetText(s.String());
-			fStatus->SetText("Pronto.");
+			fStatus->SetText(B_TRANSLATE("Pronto."));
 			return;
 		}
 	}
@@ -197,8 +205,8 @@ public:
 			return;
 		if (fHost.empty()) {
 			(new BAlert("Spotify Connect",
-				"Nessun dispositivo. Aprilo dal vicinato WON, o passa host=<ip> port=<n>.",
-				"Chiudi"))->Go();
+				B_TRANSLATE("Nessun dispositivo. Aprilo dal vicinato WON, o passa host=<ip> port=<n>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

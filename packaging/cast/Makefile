@@ -8,7 +8,7 @@
 #
 # Haiku-only (needs the `package` tool).
 
-VERSION := 0.6.0-1
+VERSION := 0.6.0-2
 ARCH := x86_64
 PKG := campiello_cast-$(VERSION)-$(ARCH).hpkg
 
@@ -22,30 +22,58 @@ SRC := $(CAST)/campiello_cast.cpp $(CAST)/DialClient.cpp $(CAST)/CastChannel.cpp
        $(CAST)/AudioCapture.cpp
 STAGE := stage
 
+# Localization (Haiku Locale Kit). Source strings are Italian and show when no catalog matches the
+# user's language; the catalogs here translate them. CATALOG_DIR is the signature with the
+# "application/" prefix dropped, which is where BLocaleRoster looks (see the system catalogs).
+CATALOG_SIG := application/x-vnd.Campiello-cast
+CATALOG_DIR := x-vnd.Campiello-cast
+LANGS := en
+CATALOGS := $(LANGS:%=%.catalog)
+
 .PHONY: package clean test
 package: $(PKG)
 
-$(PKG): campiello_cast.PackageInfo campiello_cast
+$(PKG): campiello_cast.PackageInfo campiello_cast $(CATALOGS)
 	rm -rf $(STAGE)
 	mkdir -p $(STAGE)/apps $(STAGE)/data/campiello/handlers
+	mkdir -p $(STAGE)/data/locale/catalogs/$(CATALOG_DIR)
 	cp campiello_cast $(STAGE)/apps/campiello_cast
 	cp $(CAST)/cast.handler $(STAGE)/data/campiello/handlers/cast.handler
+	for l in $(LANGS); do cp $$l.catalog $(STAGE)/data/locale/catalogs/$(CATALOG_DIR)/$$l.catalog; done
 	package create -C $(STAGE) -i campiello_cast.PackageInfo $(PKG)
 	@echo "Built $(PKG)"
 
 # The Cast panel, with its app_signature resource so be_roster can launch it by signature.
 # Links OpenSSL for the CASTv2 TLS channel (kept optional; the MIT core never depends on it).
+# liblocalestub so B_TRANSLATE resolves the app's catalog at runtime.
 CAST_HDRS := $(CAST)/DialClient.h $(CAST)/CastChannel.h $(CAST)/MediaServer.h \
              $(CAST)/MirrorSession.h $(CAST)/CastMirror.h $(CAST)/CastTransport.h \
              $(CAST)/VpxEncoder.h $(CAST)/OpusEncoder.h $(CAST)/AudioCapture.h
 
 campiello_cast: $(SRC) $(CAST_HDRS) $(CAST)/Cast.rdef
 	$(CXX) $(CXXFLAGS) -o $@ $(SRC) -lbe -ltracker -ltranslation -lmedia -lnetwork \
-		-lssl -lcrypto -lvpx -lopus
+		-lssl -lcrypto -lvpx -lopus -llocalestub
 	rc -o campiello_cast.rsrc $(CAST)/Cast.rdef
 	xres -o $@ campiello_cast.rsrc
 	mimeset -f $@
 	rm -f campiello_cast.rsrc
+
+# Build a catalog from its checked-in catkeys. To refresh the catkeys after changing strings, see
+# `make catkeys` below.
+%.catalog: $(CAST)/locales/%.catkeys
+	linkcatkeys -l $* -s $(CATALOG_SIG) -o $@ $<
+
+# Regenerate the catkeys template from the source (run after adding/changing B_TRANSLATE strings):
+# preprocess in collecting mode (-P drops the line markers that break the key scanner), then collect.
+# Only campiello_cast.cpp carries user-facing strings; the other translation units in $(SRC) are
+# protocol/transport/encoder internals with no B_TRANSLATE calls, so preprocessing just the one file
+# is enough to collect every key.
+.PHONY: catkeys
+catkeys:
+	$(CXX) -DB_COLLECTING_CATKEYS -E -P -x c++ -std=c++17 $(CAST)/campiello_cast.cpp > cast.pre
+	collectcatkeys -s $(CATALOG_SIG) -l it -o $(CAST)/locales/it.catkeys cast.pre
+	rm -f cast.pre
+	@echo "Refreshed locales/it.catkeys; merge new keys into the other locales/*.catkeys by hand."
 
 # Protocol codec + media-server + mirroring-negotiation unit tests (loopback sockets only).
 test:
@@ -99,4 +127,4 @@ rtcpprobe:
 
 clean:
 	rm -rf $(STAGE) campiello_cast test_cast test_mediaserver test_mirror test_transport test_opus \
-		mirror_probe mirror_send test_vpx $(PKG)
+		mirror_probe mirror_send test_vpx $(PKG) $(CATALOGS) cast.pre

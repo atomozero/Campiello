@@ -16,6 +16,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Clipboard.h>
 #include <Entry.h>
 #include <LayoutBuilder.h>
@@ -36,6 +37,12 @@
 #include "NfsProbe.h"
 
 using namespace campiello::nfs;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "NFS"
 
 static const char* const kSignature = "application/x-vnd.Campiello-nfs";
 
@@ -78,7 +85,8 @@ private:
 };
 
 NfsWindow::NfsWindow(const std::string& host, const std::string& name)
-	: BWindow(BRect(100, 100, 480, 460), "Server NFS", B_TITLED_WINDOW, B_AUTO_UPDATE_SIZE_LIMITS),
+	: BWindow(BRect(100, 100, 480, 460), B_TRANSLATE("Server NFS"), B_TITLED_WINDOW,
+		B_AUTO_UPDATE_SIZE_LIMITS),
 	  fHost(host)
 {
 	BStringView* title = new BStringView("t", name.empty() ? host.c_str() : name.c_str());
@@ -86,17 +94,17 @@ NfsWindow::NfsWindow(const std::string& host, const std::string& name)
 	f.SetSize(f.Size() * 1.2f);
 	title->SetFont(&f);
 
-	BStringView* hint = new BStringView("h", "Condivisioni esportate dal server NFS:");
+	BStringView* hint = new BStringView("h", B_TRANSLATE("Condivisioni esportate dal server NFS:"));
 	fList = new BListView("exports");
 	BScrollView* scroll = new BScrollView("sv", fList, 0, false, true);
 
 	BStringView* howto = new BStringView("ht",
-		"Per montarla: Tracker, menu Dischi > Monta, oppure da Terminale\n"
-		"mount -t nfs4 -p \"indirizzo\" /boot/home/nfs   (crea prima la cartella).");
+		B_TRANSLATE("Per montarla: Tracker, menu Dischi > Monta, oppure da Terminale\n"
+		"mount -t nfs4 -p \"indirizzo\" /boot/home/nfs   (crea prima la cartella)."));
 	fStatus = new BStringView("st", fHost.c_str());
 
-	BButton* refresh = new BButton("r", "Aggiorna", new BMessage(kMsgProbe));
-	BButton* copy = new BButton("c", "Copia indirizzo", new BMessage(kMsgCopy));
+	BButton* refresh = new BButton("r", B_TRANSLATE("Aggiorna"), new BMessage(kMsgProbe));
+	BButton* copy = new BButton("c", B_TRANSLATE("Copia indirizzo"), new BMessage(kMsgCopy));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -126,7 +134,7 @@ std::string NfsWindow::SelectedAddress() const
 
 void NfsWindow::StartProbe()
 {
-	fStatus->SetText("Interrogo il server...");
+	fStatus->SetText(B_TRANSLATE("Interrogo il server..."));
 	ProbeJob* job = new ProbeJob{fHost, BMessenger(this)};
 	thread_id t = spawn_thread(ProbeThread, "nfs_probe", B_NORMAL_PRIORITY, job);
 	if (t < 0) { delete job; return; }
@@ -150,12 +158,14 @@ void NfsWindow::MessageReceived(BMessage* msg)
 				fList->AddItem(new BStringItem((fHost + ":" + e).c_str()));
 			}
 			if (!ok)
-				fStatus->SetText("Elenco export non disponibile. Usa l'indirizzo host:/percorso.");
+				fStatus->SetText(
+					B_TRANSLATE("Elenco export non disponibile. Usa l'indirizzo host:/percorso."));
 			else if (fExports.empty())
-				fStatus->SetText("Nessuna condivisione esportata.");
+				fStatus->SetText(B_TRANSLATE("Nessuna condivisione esportata."));
 			else {
 				BString st;
-				st << (int)fExports.size() << " condivisioni. Selezionane una e copia l'indirizzo.";
+				st << (int)fExports.size()
+					<< B_TRANSLATE(" condivisioni. Selezionane una e copia l'indirizzo.");
 				fStatus->SetText(st.String());
 			}
 			return;
@@ -170,7 +180,7 @@ void NfsWindow::MessageReceived(BMessage* msg)
 					be_clipboard->Commit();
 				}
 				be_clipboard->Unlock();
-				fStatus->SetText(("Copiato: " + addr).c_str());
+				fStatus->SetText((std::string(B_TRANSLATE("Copiato: ")) + addr).c_str());
 			}
 			return;
 		}
@@ -206,9 +216,9 @@ public:
 		if (fShown)
 			return;
 		if (fHost.empty()) {
-			(new BAlert("Server NFS",
-				"Nessun server. Apri un server NFS dal vicinato WON, o passa host=<ip>.",
-				"Chiudi"))->Go();
+			(new BAlert(B_TRANSLATE("Server NFS"),
+				B_TRANSLATE("Nessun server. Apri un server NFS dal vicinato WON, o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

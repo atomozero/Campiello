@@ -16,6 +16,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <LayoutBuilder.h>
 #include <Node.h>
@@ -30,6 +31,12 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Lutron"
 
 static const char* const kSignature = "application/x-vnd.Campiello-lutron";
 static const int kLeapPort = 8081; // Secure LEAP over TLS
@@ -53,8 +60,8 @@ public:
 		details->MakeEditable(false);
 		details->SetExplicitMinSize(BSize(330, 110));
 		BString s;
-		s << "Nome: " << (name.empty() ? host.c_str() : name.c_str()) << "\n";
-		s << "LEAP sicuro: " << host.c_str() << ":" << leap << " (TLS)\n";
+		s << B_TRANSLATE("Nome: ") << (name.empty() ? host.c_str() : name.c_str()) << "\n";
+		s << B_TRANSLATE("LEAP sicuro: ") << host.c_str() << ":" << leap << " (TLS)\n";
 		for (const std::pair<std::string, std::string>& kv : txt)
 			s << kv.first.c_str() << ": " << kv.second.c_str() << "\n";
 		details->SetText(s.String());
@@ -63,12 +70,12 @@ public:
 		note->MakeEditable(false);
 		note->SetExplicitMinSize(BSize(330, 90));
 		note->SetText(
-			"Il controllo di luci e tapparelle usa il protocollo Lutron Secure LEAP: richiede "
-			"l'accoppiamento con un certificato client TLS (si preme il pulsante sul bridge per "
-			"registrarsi) e poi messaggi LEAP in JSON su TLS. Questo accoppiamento non e' ancora "
-			"disponibile in Campiello. Per ora usa l'app Lutron.");
+			B_TRANSLATE("Il controllo di luci e tapparelle usa il protocollo Lutron Secure LEAP: "
+				"richiede l'accoppiamento con un certificato client TLS (si preme il pulsante sul "
+				"bridge per registrarsi) e poi messaggi LEAP in JSON su TLS. Questo accoppiamento "
+				"non e' ancora disponibile in Campiello. Per ora usa l'app Lutron."));
 
-		BButton* close = new BButton("c", "Chiudi", new BMessage(B_QUIT_REQUESTED));
+		BButton* close = new BButton("c", B_TRANSLATE("Chiudi"), new BMessage(B_QUIT_REQUESTED));
 
 		BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 			.SetInsets(B_USE_WINDOW_INSETS)
@@ -112,7 +119,7 @@ public:
 			return;
 		if (fHost.empty()) {
 			(new BAlert("Bridge Lutron",
-				"Nessun bridge. Aprilo dal vicinato WON.", "Chiudi"))->Go();
+				B_TRANSLATE("Nessun bridge. Aprilo dal vicinato WON."), B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

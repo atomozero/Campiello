@@ -23,6 +23,7 @@
 #include <Bitmap.h>
 #include <BitmapStream.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <DataIO.h>
 #include <Entry.h>
 #include <FilePanel.h>
@@ -51,6 +52,12 @@
 #include "AudioCapture.h"
 
 using namespace campiello::cast;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Cast"
 
 static const char* const kSignature = "application/x-vnd.Campiello-cast";
 
@@ -168,7 +175,7 @@ static int32 CastThread(void* arg)
 			err = ch.Error();
 		ch.Close();
 	} else {
-		err = ch.Error() != nullptr ? ch.Error() : "connessione non riuscita";
+		err = ch.Error() != nullptr ? ch.Error() : B_TRANSLATE("connessione non riuscita");
 	}
 	BMessage m(kMsgActionDone);
 	m.AddBool("ok", ok);
@@ -240,7 +247,7 @@ static int32 MirrorThread(void* arg)
 	BScreen screen(B_MAIN_SCREEN_ID);
 	BBitmap* probe = nullptr;
 	if (!screen.IsValid() || screen.GetBitmap(&probe, false) != B_OK || probe == nullptr) {
-		done.AddString("err", "Cattura schermo non disponibile.");
+		done.AddString("err", B_TRANSLATE("Cattura schermo non disponibile."));
 		job->reply.SendMessage(&done);
 		delete job;
 		return 0;
@@ -268,13 +275,13 @@ static int32 MirrorThread(void* arg)
 	// Tell the window what actually came up (video only, or video + audio and from which source).
 	BMessage stat(kMsgMirrorStat);
 	if (audioOn) {
-		std::string txt = "Mirroring attivo: video + audio";
+		std::string txt = B_TRANSLATE("Mirroring attivo: video + audio");
 		if (!audio.SourceName().empty())
 			txt += " (" + audio.SourceName() + ")";
 		txt += ".";
 		stat.AddString("txt", txt.c_str());
 	} else {
-		stat.AddString("txt", "Mirroring attivo: solo video.");
+		stat.AddString("txt", B_TRANSLATE("Mirroring attivo: solo video."));
 	}
 	job->reply.SendMessage(&stat);
 
@@ -318,7 +325,7 @@ static int32 ScreenThread(void* arg)
 	std::string ip = LocalIpToward(job->host);
 	CastChannel ch(job->host);
 	if (ip.empty() || !ch.Connect() || !ch.LaunchMediaReceiver()) {
-		done.AddString("err", "Impossibile avviare la sessione sul dispositivo.");
+		done.AddString("err", B_TRANSLATE("Impossibile avviare la sessione sul dispositivo."));
 		job->reply.SendMessage(&done);
 		delete job;
 		return 0;
@@ -401,29 +408,31 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 		B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS),
 	  fHost(host), fName(name)
 {
-	BStringView* title = new BStringView("t", fName.empty() ? "Dispositivo Cast" : fName.c_str());
+	BStringView* title = new BStringView("t",
+		fName.empty() ? B_TRANSLATE("Dispositivo Cast") : fName.c_str());
 	BFont f(be_bold_font);
 	f.SetSize(f.Size() * 1.2f);
 	title->SetFont(&f);
 
-	fSummary = new BStringView("sum", "Interrogo il dispositivo...");
-	fVolView = new BStringView("vol", "Volume: -");
+	fSummary = new BStringView("sum", B_TRANSLATE("Interrogo il dispositivo..."));
+	fVolView = new BStringView("vol", B_TRANSLATE("Volume: -"));
 
 	BMessage* yt = new BMessage(kMsgLaunch); yt->AddString("app", "YouTube");
 	BMessage* nf = new BMessage(kMsgLaunch); nf->AddString("app", "Netflix");
-	BButton* bYt = new BButton("yt", "Avvia YouTube", yt);
-	BButton* bNf = new BButton("nf", "Avvia Netflix", nf);
-	BButton* bStop = new BButton("stop", "Ferma app", new BMessage(kMsgStop));
-	BButton* bRefresh = new BButton("refresh", "Aggiorna", new BMessage(kMsgInfo));
+	BButton* bYt = new BButton("yt", B_TRANSLATE("Avvia YouTube"), yt);
+	BButton* bNf = new BButton("nf", B_TRANSLATE("Avvia Netflix"), nf);
+	BButton* bStop = new BButton("stop", B_TRANSLATE("Ferma app"), new BMessage(kMsgStop));
+	BButton* bRefresh = new BButton("refresh", B_TRANSLATE("Aggiorna"), new BMessage(kMsgInfo));
 
-	BButton* bVolDn = new BButton("vd", "Vol -", new BMessage(kMsgVolDown));
-	BButton* bVolUp = new BButton("vu", "Vol +", new BMessage(kMsgVolUp));
+	BButton* bVolDn = new BButton("vd", B_TRANSLATE("Vol -"), new BMessage(kMsgVolDown));
+	BButton* bVolUp = new BButton("vu", B_TRANSLATE("Vol +"), new BMessage(kMsgVolUp));
 
-	fUrl = new BTextControl("url", "URL media:", "", nullptr);
-	BButton* bCast = new BButton("cast", "Casta URL", new BMessage(kMsgCastUrl));
-	BButton* bLocal = new BButton("local", "Casta file locale...", new BMessage(kMsgPickFile));
-	fScreenBtn = new BButton("screen", "Schermo su TV", new BMessage(kMsgScreenTgl));
-	fMirrorBtn = new BButton("mirror", "Specchia schermo", new BMessage(kMsgMirrorTgl));
+	fUrl = new BTextControl("url", B_TRANSLATE("URL media:"), "", nullptr);
+	BButton* bCast = new BButton("cast", B_TRANSLATE("Casta URL"), new BMessage(kMsgCastUrl));
+	BButton* bLocal = new BButton("local", B_TRANSLATE("Casta file locale..."),
+		new BMessage(kMsgPickFile));
+	fScreenBtn = new BButton("screen", B_TRANSLATE("Schermo su TV"), new BMessage(kMsgScreenTgl));
+	fMirrorBtn = new BButton("mirror", B_TRANSLATE("Specchia schermo"), new BMessage(kMsgMirrorTgl));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -449,7 +458,8 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 		.End()
 		.AddGroup(B_HORIZONTAL)
 			.Add(fMirrorBtn)
-			.Add(new BStringView("mnote", "(sperimentale, ~15 fps, con audio di sistema)"))
+			.Add(new BStringView("mnote",
+				B_TRANSLATE("(sperimentale, ~15 fps, con audio di sistema)")))
 			.AddGlue()
 		.End()
 		.AddGroup(B_HORIZONTAL)
@@ -465,7 +475,7 @@ CastWindow::CastWindow(const std::string& host, const std::string& name)
 
 void CastWindow::StartInfo()
 {
-	fStatus->SetText("Aggiorno...");
+	fStatus->SetText(B_TRANSLATE("Aggiorno..."));
 	InfoJob* job = new InfoJob{fHost, BMessenger(this)};
 	thread_id t = spawn_thread(InfoThread, "cast_info", B_NORMAL_PRIORITY, job);
 	if (t < 0) { delete job; return; }
@@ -474,7 +484,8 @@ void CastWindow::StartInfo()
 
 void CastWindow::RunAction(const std::string& app, const std::string& action)
 {
-	fStatus->SetText(action == "launch" ? "Avvio in corso..." : "Comando in corso...");
+	fStatus->SetText(action == "launch" ? B_TRANSLATE("Avvio in corso...")
+		: B_TRANSLATE("Comando in corso..."));
 	ActionJob* job = new ActionJob{fHost, app, action, fSession, BMessenger(this)};
 	thread_id t = spawn_thread(ActionThread, "cast_act", B_NORMAL_PRIORITY, job);
 	if (t < 0) delete job; else resume_thread(t);
@@ -484,7 +495,7 @@ void CastWindow::StartScreen()
 {
 	int port = fMediaServer.ServeBuffer("image/jpeg");
 	if (port == 0) {
-		fStatus->SetText("Impossibile avviare il server locale.");
+		fStatus->SetText(B_TRANSLATE("Impossibile avviare il server locale."));
 		return;
 	}
 	fScreenStop.store(false);
@@ -493,13 +504,13 @@ void CastWindow::StartScreen()
 	if (fScreenThread < 0) {
 		delete job;
 		fMediaServer.Stop();
-		fStatus->SetText("Impossibile avviare la cattura schermo.");
+		fStatus->SetText(B_TRANSLATE("Impossibile avviare la cattura schermo."));
 		return;
 	}
 	resume_thread(fScreenThread);
 	fScreenOn = true;
-	fScreenBtn->SetLabel("Ferma schermo su TV");
-	fStatus->SetText("Schermo su TV attivo (~1 fps, senza audio).");
+	fScreenBtn->SetLabel(B_TRANSLATE("Ferma schermo su TV"));
+	fStatus->SetText(B_TRANSLATE("Schermo su TV attivo (~1 fps, senza audio)."));
 }
 
 void CastWindow::StopScreen()
@@ -514,8 +525,8 @@ void CastWindow::StopScreen()
 	}
 	fMediaServer.Stop();
 	fScreenOn = false;
-	fScreenBtn->SetLabel("Schermo su TV");
-	fStatus->SetText("Schermo su TV fermato.");
+	fScreenBtn->SetLabel(B_TRANSLATE("Schermo su TV"));
+	fStatus->SetText(B_TRANSLATE("Schermo su TV fermato."));
 }
 
 void CastWindow::StartMirror()
@@ -525,13 +536,13 @@ void CastWindow::StartMirror()
 	fMirrorThread = spawn_thread(MirrorThread, "cast_mirror", B_NORMAL_PRIORITY, job);
 	if (fMirrorThread < 0) {
 		delete job;
-		fStatus->SetText("Impossibile avviare il mirroring.");
+		fStatus->SetText(B_TRANSLATE("Impossibile avviare il mirroring."));
 		return;
 	}
 	resume_thread(fMirrorThread);
 	fMirrorOn = true;
-	fMirrorBtn->SetLabel("Ferma mirroring");
-	fStatus->SetText("Mirroring in avvio (negoziazione)...");
+	fMirrorBtn->SetLabel(B_TRANSLATE("Ferma mirroring"));
+	fStatus->SetText(B_TRANSLATE("Mirroring in avvio (negoziazione)..."));
 }
 
 void CastWindow::StopMirror()
@@ -545,8 +556,8 @@ void CastWindow::StopMirror()
 		fMirrorThread = -1;
 	}
 	fMirrorOn = false;
-	fMirrorBtn->SetLabel("Specchia schermo");
-	fStatus->SetText("Mirroring fermato.");
+	fMirrorBtn->SetLabel(B_TRANSLATE("Specchia schermo"));
+	fStatus->SetText(B_TRANSLATE("Mirroring fermato."));
 }
 
 void CastWindow::MessageReceived(BMessage* msg)
@@ -568,29 +579,30 @@ void CastWindow::MessageReceived(BMessage* msg)
 				const char* session = ""; msg->FindString("session", &session);
 				fSession = session;
 				if (app[0] != '\0') {
-					sum << "\nIn esecuzione: " << app;
+					sum << "\n" << B_TRANSLATE("In esecuzione: ") << app;
 					if (status[0] != '\0')
 						sum << " (" << status << ")";
 				} else {
-					sum << "\nNessuna app in esecuzione.";
+					sum << "\n" << B_TRANSLATE("Nessuna app in esecuzione.");
 				}
 				float vol = -1.0f; msg->FindFloat("vol", &vol);
 				bool muted = false; msg->FindBool("muted", &muted);
 				fVolume = vol;
-				BString v("Volume: ");
+				BString v(B_TRANSLATE("Volume: "));
 				if (vol >= 0.0f) v << (int)(vol * 100 + 0.5f) << " %"; else v << "-";
-				if (muted) v << " (muto)";
+				if (muted) v << " " << B_TRANSLATE("(muto)");
 				fVolView->SetText(v.String());
 			} else {
 				fSession.clear();
 				if (fRunning.empty())
-					sum << "\nNessuna app in esecuzione (CASTv2 non disponibile).";
+					sum << "\n" << B_TRANSLATE("Nessuna app in esecuzione (CASTv2 non disponibile).");
 				else
-					sum << "\nIn esecuzione: " << fRunning.c_str() << " (via DIAL)";
-				fVolView->SetText("Volume: - (CASTv2 non disponibile)");
+					sum << "\n" << B_TRANSLATE("In esecuzione: ") << fRunning.c_str()
+						<< " " << B_TRANSLATE("(via DIAL)");
+				fVolView->SetText(B_TRANSLATE("Volume: - (CASTv2 non disponibile)"));
 			}
 			fSummary->SetText(sum.String());
-			fStatus->SetText("Pronto.");
+			fStatus->SetText(B_TRANSLATE("Pronto."));
 			return;
 		}
 		case kMsgLaunch: {
@@ -610,12 +622,12 @@ void CastWindow::MessageReceived(BMessage* msg)
 			BString url(fUrl != nullptr ? fUrl->Text() : "");
 			url.Trim();
 			if (url.Length() == 0) {
-				fStatus->SetText("Inserisci un URL media.");
+				fStatus->SetText(B_TRANSLATE("Inserisci un URL media."));
 				return;
 			}
 			if (fMirrorOn) StopMirror();
 			if (fScreenOn) StopScreen();
-			fStatus->SetText("Casting in corso...");
+			fStatus->SetText(B_TRANSLATE("Casting in corso..."));
 			CastJob* job = new CastJob{fHost, std::string(url.String()),
 				GuessContentType(url.String()), "Campiello", BMessenger(this)};
 			thread_id t = spawn_thread(CastThread, "cast_url", B_NORMAL_PRIORITY, job);
@@ -626,7 +638,7 @@ void CastWindow::MessageReceived(BMessage* msg)
 			if (fFilePanel == nullptr) {
 				fFilePanel = new BFilePanel(B_OPEN_PANEL, new BMessenger(this), nullptr,
 					B_FILE_NODE, false, new BMessage(kMsgFilePicked));
-				fFilePanel->Window()->SetTitle("Scegli un file da castare");
+				fFilePanel->Window()->SetTitle(B_TRANSLATE("Scegli un file da castare"));
 			}
 			fFilePanel->Show();
 			return;
@@ -634,13 +646,13 @@ void CastWindow::MessageReceived(BMessage* msg)
 		case kMsgFilePicked: {
 			entry_ref ref;
 			if (msg->FindRef("refs", &ref) != B_OK) {
-				fStatus->SetText("Nessun file scelto.");
+				fStatus->SetText(B_TRANSLATE("Nessun file scelto."));
 				return;
 			}
 			BEntry entry(&ref);
 			BPath path;
 			if (entry.GetPath(&path) != B_OK || path.Path() == nullptr) {
-				fStatus->SetText("File non valido.");
+				fStatus->SetText(B_TRANSLATE("File non valido."));
 				return;
 			}
 			if (fMirrorOn) StopMirror();
@@ -651,12 +663,12 @@ void CastWindow::MessageReceived(BMessage* msg)
 
 			int port = fMediaServer.Serve(filePath, ct);
 			if (port == 0) {
-				fStatus->SetText("Impossibile avviare il server locale.");
+				fStatus->SetText(B_TRANSLATE("Impossibile avviare il server locale."));
 				return;
 			}
 			std::string ip = LocalIpToward(fHost);
 			if (ip.empty()) {
-				fStatus->SetText("Impossibile determinare l'IP locale.");
+				fStatus->SetText(B_TRANSLATE("Impossibile determinare l'IP locale."));
 				fMediaServer.Stop();
 				return;
 			}
@@ -669,7 +681,7 @@ void CastWindow::MessageReceived(BMessage* msg)
 			BString url;
 			url << "http://" << ip.c_str() << ":" << port << "/stream" << ext.c_str();
 
-			fStatus->SetText("Casting del file locale...");
+			fStatus->SetText(B_TRANSLATE("Casting del file locale..."));
 			CastJob* job = new CastJob{fHost, std::string(url.String()), ct, leaf, BMessenger(this)};
 			thread_id t = spawn_thread(CastThread, "cast_file", B_NORMAL_PRIORITY, job);
 			if (t < 0) { delete job; fMediaServer.Stop(); }
@@ -707,9 +719,9 @@ void CastWindow::MessageReceived(BMessage* msg)
 			}
 			if (fMirrorOn) {
 				fMirrorOn = false;
-				fMirrorBtn->SetLabel("Specchia schermo");
+				fMirrorBtn->SetLabel(B_TRANSLATE("Specchia schermo"));
 				const char* err = ""; msg->FindString("err", &err);
-				fStatus->SetText(err[0] ? err : "Mirroring terminato.");
+				fStatus->SetText(err[0] ? err : B_TRANSLATE("Mirroring terminato."));
 			}
 			return;
 		}
@@ -723,25 +735,25 @@ void CastWindow::MessageReceived(BMessage* msg)
 			if (fScreenOn) {
 				fMediaServer.Stop();
 				fScreenOn = false;
-				fScreenBtn->SetLabel("Schermo su TV");
+				fScreenBtn->SetLabel(B_TRANSLATE("Schermo su TV"));
 				const char* err = ""; msg->FindString("err", &err);
-				fStatus->SetText(err[0] ? err : "Schermo su TV terminato.");
+				fStatus->SetText(err[0] ? err : B_TRANSLATE("Schermo su TV terminato."));
 			}
 			return;
 		}
 		case kMsgVolUp:
 		case kMsgVolDown: {
 			if (fVolume < 0.0f) {
-				fStatus->SetText("Volume non disponibile (serve CASTv2).");
+				fStatus->SetText(B_TRANSLATE("Volume non disponibile (serve CASTv2)."));
 				return;
 			}
 			float level = fVolume + (msg->what == kMsgVolUp ? 0.1f : -0.1f);
 			if (level < 0.0f) level = 0.0f;
 			if (level > 1.0f) level = 1.0f;
 			fVolume = level;
-			BString v("Volume: "); v << (int)(level * 100 + 0.5f) << " %";
+			BString v(B_TRANSLATE("Volume: ")); v << (int)(level * 100 + 0.5f) << " %";
 			fVolView->SetText(v.String());
-			fStatus->SetText("Regolo il volume...");
+			fStatus->SetText(B_TRANSLATE("Regolo il volume..."));
 			VolumeJob* job = new VolumeJob{fHost, level, BMessenger(this)};
 			thread_id t = spawn_thread(VolumeThread, "cast_vol", B_NORMAL_PRIORITY, job);
 			if (t < 0) delete job; else resume_thread(t);
@@ -751,9 +763,9 @@ void CastWindow::MessageReceived(BMessage* msg)
 			bool ok = false; msg->FindBool("ok", &ok);
 			const char* err = ""; msg->FindString("err", &err);
 			if (ok)
-				fStatus->SetText("Fatto.");
+				fStatus->SetText(B_TRANSLATE("Fatto."));
 			else
-				fStatus->SetText(err[0] ? err : "Comando non riuscito.");
+				fStatus->SetText(err[0] ? err : B_TRANSLATE("Comando non riuscito."));
 			if (ok) StartInfo(); // refresh state
 			return;
 		}
@@ -790,8 +802,9 @@ public:
 			return;
 		if (fHost.empty()) {
 			(new BAlert("Google Cast",
-				"Nessun dispositivo. Apri un dispositivo Cast dal vicinato WON, o passa host=<ip>.",
-				"Chiudi"))->Go();
+				B_TRANSLATE("Nessun dispositivo. Apri un dispositivo Cast dal vicinato WON, "
+					"o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

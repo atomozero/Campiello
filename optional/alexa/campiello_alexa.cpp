@@ -15,6 +15,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <LayoutBuilder.h>
 #include <Node.h>
@@ -30,6 +31,9 @@
 #include <utility>
 #include <vector>
 
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Alexa"
+
 static const char* const kSignature = "application/x-vnd.Campiello-alexa";
 
 // --------------------------------------------------------------------------- window
@@ -38,7 +42,7 @@ public:
 	bool QuitRequested() override { be_app->PostMessage(B_QUIT_REQUESTED); return true; }
 	AlexaWindow(const std::string& host, const std::string& name,
 		const std::vector<std::pair<std::string, std::string>>& txt)
-		: BWindow(BRect(100, 100, 460, 380), "Dispositivo Alexa", B_TITLED_WINDOW,
+		: BWindow(BRect(100, 100, 460, 380), B_TRANSLATE("Dispositivo Alexa"), B_TITLED_WINDOW,
 			B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS)
 	{
 		BStringView* title = new BStringView("t", name.empty() ? host.c_str() : name.c_str());
@@ -50,8 +54,8 @@ public:
 		details->MakeEditable(false);
 		details->SetExplicitMinSize(BSize(320, 110));
 		BString s;
-		s << "Nome: " << (name.empty() ? host.c_str() : name.c_str()) << "\n";
-		s << "Indirizzo: " << host.c_str() << "\n";
+		s << B_TRANSLATE("Nome:") << " " << (name.empty() ? host.c_str() : name.c_str()) << "\n";
+		s << B_TRANSLATE("Indirizzo:") << " " << host.c_str() << "\n";
 		for (const std::pair<std::string, std::string>& kv : txt)
 			s << kv.first.c_str() << ": " << kv.second.c_str() << "\n";
 		details->SetText(s.String());
@@ -59,13 +63,13 @@ public:
 		BTextView* note = new BTextView("n");
 		note->MakeEditable(false);
 		note->SetExplicitMinSize(BSize(320, 90));
-		note->SetText(
+		note->SetText(B_TRANSLATE(
 			"Amazon Alexa non offre un'interfaccia di controllo locale: i comandi passano dal cloud "
 			"Amazon (Alexa Voice Service e Smart Home Skill API), legato al tuo account. Campiello puo' "
 			"quindi solo mostrare la presenza del dispositivo, non comandarlo. Per usarlo, adopera "
-			"l'app Alexa o la voce.");
+			"l'app Alexa o la voce."));
 
-		BButton* close = new BButton("c", "Chiudi", new BMessage(B_QUIT_REQUESTED));
+		BButton* close = new BButton("c", B_TRANSLATE("Chiudi"), new BMessage(B_QUIT_REQUESTED));
 
 		BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 			.SetInsets(B_USE_WINDOW_INSETS)
@@ -106,8 +110,9 @@ public:
 		if (fShown)
 			return;
 		if (fHost.empty()) {
-			(new BAlert("Dispositivo Alexa",
-				"Nessun dispositivo. Aprilo dal vicinato WON.", "Chiudi"))->Go();
+			(new BAlert(B_TRANSLATE("Dispositivo Alexa"),
+				B_TRANSLATE("Nessun dispositivo. Aprilo dal vicinato WON."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

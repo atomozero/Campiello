@@ -1,0 +1,56 @@
+1	en	application/x-vnd.Campiello-cast	2349989995
+Mirroring terminato.	Cast		Mirroring ended.
+Mirroring attivo: video + audio	Cast		Mirroring active: video + audio
+Volume non disponibile (serve CASTv2).	Cast		Volume not available (needs CASTv2).
+Interrogo il dispositivo...	Cast		Querying the device...
+In esecuzione: 	Cast		Running: 
+(sperimentale, ~15 fps, con audio di sistema)	Cast		(experimental, ~15 fps, with system audio)
+Casta file locale...	Cast		Cast local file...
+Cattura schermo non disponibile.	Cast		Screen capture not available.
+Schermo su TV attivo (~1 fps, senza audio).	Cast		Screen on TV active (~1 fps, no audio).
+Vol -	Cast		Vol -
+Mirroring in avvio (negoziazione)...	Cast		Mirroring starting (negotiating)...
+Impossibile determinare l'IP locale.	Cast		Cannot determine the local IP.
+Pronto.	Cast		Ready.
+URL media:	Cast		Media URL:
+Inserisci un URL media.	Cast		Enter a media URL.
+Impossibile avviare la sessione sul dispositivo.	Cast		Cannot start the session on the device.
+Avvio in corso...	Cast		Starting...
+Nessuna app in esecuzione (CASTv2 non disponibile).	Cast		No app running (CASTv2 not available).
+Casting in corso...	Cast		Casting...
+Vol +	Cast		Vol +
+Specchia schermo	Cast		Mirror screen
+Aggiorna	Cast		Refresh
+Volume: 	Cast		Volume: 
+Volume: -	Cast		Volume: -
+Schermo su TV fermato.	Cast		Screen on TV stopped.
+Nessun file scelto.	Cast		No file chosen.
+Impossibile avviare la cattura schermo.	Cast		Cannot start screen capture.
+Ferma app	Cast		Stop app
+Casting del file locale...	Cast		Casting the local file...
+Ferma schermo su TV	Cast		Stop screen on TV
+(muto)	Cast		(muted)
+Comando in corso...	Cast		Command in progress...
+Ferma mirroring	Cast		Stop mirroring
+connessione non riuscita	Cast		connection failed
+Dispositivo Cast	Cast		Cast device
+Mirroring attivo: solo video.	Cast		Mirroring active: video only.
+Chiudi	Cast		Close
+Fatto.	Cast		Done.
+Mirroring fermato.	Cast		Mirroring stopped.
+Impossibile avviare il mirroring.	Cast		Cannot start mirroring.
+Nessuna app in esecuzione.	Cast		No app running.
+Casta URL	Cast		Cast URL
+(via DIAL)	Cast		(via DIAL)
+Volume: - (CASTv2 non disponibile)	Cast		Volume: - (CASTv2 not available)
+Comando non riuscito.	Cast		Command failed.
+File non valido.	Cast		Invalid file.
+Avvia YouTube	Cast		Launch YouTube
+Avvia Netflix	Cast		Launch Netflix
+Impossibile avviare il server locale.	Cast		Cannot start the local server.
+Aggiorno...	Cast		Refreshing...
+Schermo su TV terminato.	Cast		Screen on TV ended.
+Scegli un file da castare	Cast		Choose a file to cast
+Regolo il volume...	Cast		Adjusting the volume...
+Schermo su TV	Cast		Screen on TV
+Nessun dispositivo. Apri un dispositivo Cast dal vicinato WON, o passa host=<ip>.	Cast		No device. Open a Cast device from the WON neighborhood, or pass host=<ip>.

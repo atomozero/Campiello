@@ -1,0 +1,12 @@
+1	en	application/x-vnd.Campiello-vnc	3000392164
+Nessun visualizzatore VNC registrato per lo schema vnc://.	VNC		No VNC viewer registered for the vnc:// scheme.
+Indirizzo copiato negli appunti.	VNC		Address copied to the clipboard.
+Desktop remoto (VNC)	VNC		Remote desktop (VNC)
+Indirizzo: 	VNC		Address: 
+Chiudi	VNC		Close
+Nessun visualizzatore VNC installato. Installane uno da HaikuDepot\n(cerca \"VNC\"), poi premi \"Apri nel visualizzatore\".	VNC		No VNC viewer installed. Install one from HaikuDepot\n(search \"VNC\"), then press \"Open in viewer\".
+Copia indirizzo	VNC		Copy address
+Apri nel visualizzatore	VNC		Open in viewer
+Aperto nel visualizzatore VNC.	VNC		Opened in the VNC viewer.
+Desktop remoto	VNC		Remote desktop
+Nessun host. Apri un desktop remoto dal vicinato WON, o passa host=<ip>.	VNC		No host. Open a remote desktop from the WON neighborhood, or pass host=<ip>.

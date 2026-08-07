@@ -1,5 +1,5 @@
 name			campiello_matter
-version			0.1.0-2
+version			0.1.0-3
 architecture	x86_64
 summary			"Matter device info for Campiello"
 description		"Optional device add-on for Campiello: for a Matter device on the network it shows the

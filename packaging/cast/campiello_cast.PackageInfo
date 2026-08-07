@@ -1,5 +1,5 @@
 name			campiello_cast
-version			0.6.0-1
+version			0.6.0-2
 architecture	x86_64
 summary			"Google Cast panel for Campiello"
 description		"Optional device add-on for Campiello: a control panel for a Google Cast / Chromecast

@@ -1,0 +1,40 @@
+1	it	application/x-vnd.Campiello-matter	2467026028
+Sensore di contatto	Matter		Sensore di contatto
+Sensore di umidita'	Matter		Sensore di umidita'
+Dispositivo Matter	Matter		Dispositivo Matter
+In accoppiamento (avanzato)	Matter		In accoppiamento (avanzato)
+Nessun dispositivo. Aprilo dal vicinato WON.	Matter		Nessun dispositivo. Aprilo dal vicinato WON.
+Presa on/off	Matter		Presa on/off
+Presa dimmerabile	Matter		Presa dimmerabile
+Ventilatore	Matter		Ventilatore
+Non in accoppiamento	Matter		Non in accoppiamento
+Sensore di presenza	Matter		Sensore di presenza
+Stato: 	Matter		Stato: 
+Nome: 	Matter		Nome: 
+Sconosciuto	Matter		Sconosciuto
+Discriminator: 	Matter		Discriminator: 
+Aggregatore (bridge)	Matter		Aggregatore (bridge)
+TCP + UDP	Matter		TCP + UDP
+Indirizzo: 	Matter		Indirizzo: 
+UDP	Matter		UDP
+Dispositivo Matter.\nIndirizzo: 	Matter		Dispositivo Matter.\nIndirizzo: 
+Interruttore luce on/off	Matter		Interruttore luce on/off
+Tenda / oscurante	Matter		Tenda / oscurante
+In accoppiamento (standard)	Matter		In accoppiamento (standard)
+Rilevatore fumo/CO	Matter		Rilevatore fumo/CO
+Tipo: 	Matter		Tipo: 
+Trasporto: 	Matter		Trasporto: 
+Serratura	Matter		Serratura
+Interruttore dimmer a colori	Matter		Interruttore dimmer a colori
+Sensore di temperatura	Matter		Sensore di temperatura
+Campiello mostra le informazioni pubbliche del dispositivo. L'accoppiamento (commissioning) e il controllo richiedono le sessioni sicure Matter (PASE/CASE), i certificati di attestazione e l'onboarding Thread/Wi-Fi, non ancora disponibili. Per usarlo ora, accoppialo con un'app compatibile Matter e il relativo hub.	Matter		Campiello mostra le informazioni pubbliche del dispositivo. L'accoppiamento (commissioning) e il controllo richiedono le sessioni sicure Matter (PASE/CASE), i certificati di attestazione e l'onboarding Thread/Wi-Fi, non ancora disponibili. Per usarlo ora, accoppialo con un'app compatibile Matter e il relativo hub.
+Luce dimmerabile	Matter		Luce dimmerabile
+Interruttore dimmer	Matter		Interruttore dimmer
+Chiudi	Matter		Chiudi
+Termostato	Matter		Termostato
+Luce on/off	Matter		Luce on/off
+Sensore di luce	Matter		Sensore di luce
+Sensore qualita' aria	Matter		Sensore qualita' aria
+Luce a temperatura colore	Matter		Luce a temperatura colore
+Vendor / Product: 	Matter		Vendor / Product: 
+Luce a colori	Matter		Luce a colori

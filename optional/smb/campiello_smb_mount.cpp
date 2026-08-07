@@ -15,6 +15,7 @@
 #include <Application.h>
 #include <Box.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <CheckBox.h>
 #include <Entry.h>
 #include <Font.h>
@@ -52,6 +53,12 @@
 #include "SmbMount.h"
 
 using namespace campiello::fondamenta;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language); catalogs under
+// data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "SMB"
 
 static const char* const kSignature = "application/x-vnd.Campiello-smb-mount";
 
@@ -693,7 +700,7 @@ public:
 		: BView("eye", B_WILL_DRAW), fTarget(target)
 	{
 		SetViewUIColor(B_PANEL_BACKGROUND_COLOR);
-		SetToolTip("Mostra o nascondi la password");
+		SetToolTip(B_TRANSLATE("Mostra o nascondi la password"));
 	}
 
 	BSize MinSize() override { return BSize(26, 20); }
@@ -784,22 +791,22 @@ ConnectWindow::ConnectWindow(const SmbConfig& initial)
 
 void ConnectWindow::BuildMountedView()
 {
-	BStringView* title = new BStringView("title", "Condivisione montata");
+	BStringView* title = new BStringView("title", B_TRANSLATE("Condivisione montata"));
 	BFont titleFont(be_bold_font);
 	titleFont.SetSize(titleFont.Size() * 1.4f);
 	title->SetFont(&titleFont);
 
 	BString l1;
-	l1 << "Il volume \"" << fMountName.c_str() << "\" e' gia' montato.";
+	l1 << B_TRANSLATE("Il volume \"") << fMountName.c_str() << B_TRANSLATE("\" e' gia' montato.");
 	BString l2;
-	l2 << "Percorso: " << fMountPath.c_str();
+	l2 << B_TRANSLATE("Percorso: ") << fMountPath.c_str();
 	BStringView* line1 = new BStringView("l1", l1.String());
 	BStringView* line2 = new BStringView("l2", l2.String());
 	fStatus = new BStringView("status", "");
 
-	BButton* open = new BButton("open", "Apri", new BMessage(kMsgOpenVolume));
-	fUnmountButton = new BButton("unmount", "Smonta", new BMessage(kMsgUnmount));
-	BButton* close = new BButton("close", "Chiudi", new BMessage(B_QUIT_REQUESTED));
+	BButton* open = new BButton("open", B_TRANSLATE("Apri"), new BMessage(kMsgOpenVolume));
+	fUnmountButton = new BButton("unmount", B_TRANSLATE("Smonta"), new BMessage(kMsgUnmount));
+	BButton* close = new BButton("close", B_TRANSLATE("Chiudi"), new BMessage(B_QUIT_REQUESTED));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -833,50 +840,55 @@ void ConnectWindow::BuildConnectForm(const SmbConfig& initial, const HostPrefs& 
 	std::string savedPw;
 	bool hasSavedPw = LoadPassword(initial.server, user, savedPw);
 
-	fServer = new BTextControl("server", "Server:", initial.server.c_str(), nullptr);
-	fShare = new BTextControl("share", "Condivisione:", share.c_str(), nullptr);
-	fUser = new BTextControl("user", "Utente:", user.c_str(), nullptr);
-	fPassword = new BTextControl("password", "Password:", savedPw.c_str(), nullptr);
+	fServer = new BTextControl("server", B_TRANSLATE("Server:"), initial.server.c_str(), nullptr);
+	fShare = new BTextControl("share", B_TRANSLATE("Condivisione:"), share.c_str(), nullptr);
+	fUser = new BTextControl("user", B_TRANSLATE("Utente:"), user.c_str(), nullptr);
+	fPassword = new BTextControl("password", B_TRANSLATE("Password:"), savedPw.c_str(), nullptr);
 	fPassword->TextView()->HideTyping(true);
-	fDomain = new BTextControl("domain", "Dominio:", domain.c_str(), nullptr);
-	fPath = new BTextControl("path", "Sottocartella:", initial.basePath.c_str(), nullptr);
+	fDomain = new BTextControl("domain", B_TRANSLATE("Dominio:"), domain.c_str(), nullptr);
+	fPath = new BTextControl("path", B_TRANSLATE("Sottocartella:"), initial.basePath.c_str(),
+		nullptr);
 	// A disk NAME, not a path: the volume mounts under ~/WON/<name>. Left empty it defaults to the
 	// server (whole-server mount) or the chosen share.
-	fMountPoint = new BTextControl("mount", "Nome disco:", host.found ? host.diskName.c_str() : "",
-		nullptr);
+	fMountPoint = new BTextControl("mount", B_TRANSLATE("Nome disco:"),
+		host.found ? host.diskName.c_str() : "", nullptr);
 
-	fRemember = new BCheckBox("remember", "Ricorda password su questo computer", nullptr);
+	fRemember = new BCheckBox("remember", B_TRANSLATE("Ricorda password su questo computer"),
+		nullptr);
 	if (hasSavedPw)
 		fRemember->SetValue(B_CONTROL_ON);
-	fAsDisk = new BCheckBox("asdisk", "Monta come disco sulla Scrivania", nullptr);
+	fAsDisk = new BCheckBox("asdisk", B_TRANSLATE("Monta come disco sulla Scrivania"), nullptr);
 	if (host.found && host.asDisk)
 		fAsDisk->SetValue(B_CONTROL_ON);
-	fAutoMount = new BCheckBox("automount", "Monta i miei share all'avvio", nullptr);
+	fAutoMount = new BCheckBox("automount", B_TRANSLATE("Monta i miei share all'avvio"), nullptr);
 	if (LoginHookInstalled())
 		fAutoMount->SetValue(B_CONTROL_ON);
-	fReadOnly = new BCheckBox("readonly", "Sola lettura (non scrivere sulla share)", nullptr);
+	fReadOnly = new BCheckBox("readonly", B_TRANSLATE("Sola lettura (non scrivere sulla share)"),
+		nullptr);
 	if (host.found && host.readOnly)
 		fReadOnly->SetValue(B_CONTROL_ON);
 
-	BStringView* title = new BStringView("title", "Connetti a una cartella condivisa Windows");
+	BStringView* title = new BStringView("title",
+		B_TRANSLATE("Connetti a una cartella condivisa Windows"));
 	BFont titleFont(be_bold_font);
 	titleFont.SetSize(titleFont.Size() * 1.4f);
 	title->SetFont(&titleFont);
 
 	BStringView* subtitle = new BStringView("subtitle",
-		"Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;");
+		B_TRANSLATE("Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;"));
 	BStringView* subtitle2 = new BStringView("subtitle2",
-		"altrimenti premi \"Elenca condivisioni\" e scegline una.");
+		B_TRANSLATE("altrimenti premi \"Elenca condivisioni\" e scegline una."));
 
 	// The share is a first-class choice now (empty = whole server, Windows \\server style); the
 	// "Elenca condivisioni" button fills it. Domain/subfolder/disk-name stay behind Advanced.
-	BBox* shareBox = FieldBox("Condivisione (vuoto = tutto il server)", {fShare});
-	fAdvancedBox = FieldBox("Dettagli", {fDomain, fPath, fMountPoint});
-	BCheckBox* advanced = new BCheckBox("adv", "Opzioni avanzate", new BMessage(kMsgAdvanced));
+	BBox* shareBox = FieldBox(B_TRANSLATE("Condivisione (vuoto = tutto il server)"), {fShare});
+	fAdvancedBox = FieldBox(B_TRANSLATE("Dettagli"), {fDomain, fPath, fMountPoint});
+	BCheckBox* advanced = new BCheckBox("adv", B_TRANSLATE("Opzioni avanzate"),
+		new BMessage(kMsgAdvanced));
 
-	fConnectButton = new BButton("connect", "Connetti", new BMessage(kMsgConnect));
-	fEnumButton = new BButton("enum", "Elenca condivisioni", new BMessage(kMsgEnum));
-	fUnmountButton = new BButton("unmount", "Smonta", new BMessage(kMsgUnmount));
+	fConnectButton = new BButton("connect", B_TRANSLATE("Connetti"), new BMessage(kMsgConnect));
+	fEnumButton = new BButton("enum", B_TRANSLATE("Elenca condivisioni"), new BMessage(kMsgEnum));
+	fUnmountButton = new BButton("unmount", B_TRANSLATE("Smonta"), new BMessage(kMsgUnmount));
 	fStatus = new BStringView("status", "");
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
@@ -884,7 +896,7 @@ void ConnectWindow::BuildConnectForm(const SmbConfig& initial, const HostPrefs& 
 		.Add(title)
 		.Add(subtitle)
 		.Add(subtitle2)
-		.Add(FieldBox("Accesso", {fServer, fUser, fPassword}, fPassword))
+		.Add(FieldBox(B_TRANSLATE("Accesso"), {fServer, fUser, fPassword}, fPassword))
 		.Add(fRemember)
 		.Add(fAsDisk)
 		.Add(fAutoMount)
@@ -958,13 +970,13 @@ void ConnectWindow::MessageReceived(BMessage* message)
 		int32 status = B_ERROR;
 		message->FindInt32("status", &status);
 		if (status != static_cast<int32>(BackendStatus::kOk)) {
-			const char* err = "errore";
+			const char* err = B_TRANSLATE("errore");
 			message->FindString("error", &err);
 			BString msg;
 			if (status == static_cast<int32>(BackendStatus::kAccessDenied))
-				msg = "Accesso negato: ";
+				msg = B_TRANSLATE("Accesso negato: ");
 			else
-				msg = "Impossibile elencare le condivisioni: ";
+				msg = B_TRANSLATE("Impossibile elencare le condivisioni: ");
 			msg << err;
 			SetStatus(msg.String());
 			const char* user = "";
@@ -1006,29 +1018,29 @@ void ConnectWindow::MessageReceived(BMessage* message)
 		BString phase;
 		message->FindString("phase", &phase);
 		if (phase == "mount") {
-			SetStatus("Montaggio fallito. Riprova; se il problema persiste, riavvia.");
+			SetStatus(B_TRANSLATE("Montaggio fallito. Riprova; se il problema persiste, riavvia."));
 			return;
 		}
 		if (phase == "noshares") {
-			SetStatus("Nessuna condivisione visibile su questo server.");
+			SetStatus(B_TRANSLATE("Nessuna condivisione visibile su questo server."));
 			return;
 		}
 		// A validation (login) failure: surface the raw server status and a hint for the common case.
 		int32 status = B_ERROR;
 		message->FindInt32("status", &status);
-		const char* detail = "errore";
+		const char* detail = B_TRANSLATE("errore");
 		message->FindString("detail", &detail);
 		BString msg;
 		if (status == static_cast<int32>(BackendStatus::kAccessDenied)) {
-			msg = "Accesso negato: ";
+			msg = B_TRANSLATE("Accesso negato: ");
 			msg << detail;
 			if (BString(detail).IFindFirst("LOGON_FAILURE") >= 0)
-				msg << " - usa la password dell'account Microsoft, non il PIN";
+				msg << B_TRANSLATE(" - usa la password dell'account Microsoft, non il PIN");
 		} else if (status == static_cast<int32>(BackendStatus::kNotFound)) {
-			msg = "Condivisione non trovata: ";
+			msg = B_TRANSLATE("Condivisione non trovata: ");
 			msg << detail;
 		} else {
-			msg = "Connessione fallita: ";
+			msg = B_TRANSLATE("Connessione fallita: ");
 			msg << detail;
 		}
 		SetStatus(msg.String());
@@ -1072,7 +1084,7 @@ int32 EnumThread(void* arg)
 		for (const std::string& sh : shares)
 			msg.AddString("share", sh.c_str());
 	} else {
-		msg.AddString("error", backend.Error() != nullptr ? backend.Error() : "errore");
+		msg.AddString("error", backend.Error() != nullptr ? backend.Error() : B_TRANSLATE("errore"));
 	}
 	job->reply.SendMessage(&msg); // copies the message; safe once backend is destroyed
 	delete job;
@@ -1083,12 +1095,12 @@ int32 EnumThread(void* arg)
 void ConnectWindow::DoEnumShares()
 {
 	if (std::string(fServer->Text()).empty()) {
-		SetStatus("Inserisci il server.");
+		SetStatus(B_TRANSLATE("Inserisci il server."));
 		return;
 	}
 	if (std::string(fUser->Text()).empty()) {
 		// Modern Windows refuses anonymous enumeration, so a login is required.
-		SetStatus("Inserisci utente e password.");
+		SetStatus(B_TRANSLATE("Inserisci utente e password."));
 		return;
 	}
 	EnumJob* job = new EnumJob;
@@ -1101,10 +1113,10 @@ void ConnectWindow::DoEnumShares()
 	thread_id t = spawn_thread(EnumThread, "smb_enum", B_NORMAL_PRIORITY, job);
 	if (t < 0) {
 		delete job;
-		SetStatus("Impossibile avviare la ricerca.");
+		SetStatus(B_TRANSLATE("Impossibile avviare la ricerca."));
 		return;
 	}
-	SetStatus("Ricerca condivisioni...");
+	SetStatus(B_TRANSLATE("Ricerca condivisioni..."));
 	SetBusy(true);
 	resume_thread(t);
 }
@@ -1114,12 +1126,12 @@ void ConnectWindow::DoEnumShares()
 void ConnectWindow::ShowSharePicker(const std::vector<std::string>& shares)
 {
 	if (shares.empty()) {
-		SetStatus("Nessuna condivisione visibile su questo server.");
+		SetStatus(B_TRANSLATE("Nessuna condivisione visibile su questo server."));
 		return;
 	}
 	if (shares.size() == 1) {
 		fShare->SetText(shares.front().c_str());
-		SetStatus((std::string("Condivisione scelta: ") + shares.front()).c_str());
+		SetStatus((std::string(B_TRANSLATE("Condivisione scelta: ")) + shares.front()).c_str());
 		return;
 	}
 	BPopUpMenu* menu = new BPopUpMenu("shares", false, false);
@@ -1129,9 +1141,9 @@ void ConnectWindow::ShowSharePicker(const std::vector<std::string>& shares)
 	BMenuItem* picked = menu->Go(where, false, true);
 	if (picked != nullptr) {
 		fShare->SetText(picked->Label());
-		SetStatus((std::string("Condivisione scelta: ") + picked->Label()).c_str());
+		SetStatus((std::string(B_TRANSLATE("Condivisione scelta: ")) + picked->Label()).c_str());
 	} else {
-		SetStatus("Scegli una condivisione dall'elenco.");
+		SetStatus(B_TRANSLATE("Scegli una condivisione dall'elenco."));
 	}
 	delete menu;
 }
@@ -1171,7 +1183,7 @@ int32 ConnectThread(void* arg)
 			s = probe.Connect(c);
 			probe.Disconnect();
 		}
-		detail = probe.Error() != nullptr ? probe.Error() : "errore sconosciuto";
+		detail = probe.Error() != nullptr ? probe.Error() : B_TRANSLATE("errore sconosciuto");
 	}
 	if (s != BackendStatus::kOk || noShares) {
 		BMessage msg(kMsgConnectDone);
@@ -1230,7 +1242,7 @@ int32 ConnectThread(void* arg)
 void ConnectWindow::DoConnect()
 {
 	if (std::string(fServer->Text()).empty()) {
-		SetStatus("Inserisci il server.");
+		SetStatus(B_TRANSLATE("Inserisci il server."));
 		return;
 	}
 
@@ -1257,10 +1269,10 @@ void ConnectWindow::DoConnect()
 	thread_id t = spawn_thread(ConnectThread, "smb_connect", B_NORMAL_PRIORITY, job);
 	if (t < 0) {
 		delete job;
-		SetStatus("Impossibile avviare la connessione.");
+		SetStatus(B_TRANSLATE("Impossibile avviare la connessione."));
 		return;
 	}
-	SetStatus("Connessione e montaggio in corso...");
+	SetStatus(B_TRANSLATE("Connessione e montaggio in corso..."));
 	SetBusy(true);
 	resume_thread(t);
 }
@@ -1302,30 +1314,32 @@ void ConnectWindow::DoUnmount()
 	dev_t here = dev_for_path(mountPoint.c_str());
 	dev_t up = dev_for_path(parent.c_str());
 	if (here < 0 || here == up) {
-		SetStatus(("Nessun volume montato in \"" + mountPoint + "\".").c_str());
+		SetStatus((std::string(B_TRANSLATE("Nessun volume montato in \"")) + mountPoint + "\".")
+			.c_str());
 		return;
 	}
 
-	BString msg("ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il sistema (KDL) e "
-		"costringere a un riavvio forzato. Procedi solo se puoi permetterti un riavvio.\n\nSmontare \"");
+	BString msg(B_TRANSLATE("ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il "
+		"sistema (KDL) e costringere a un riavvio forzato. Procedi solo se puoi permetterti un "
+		"riavvio.\n\nSmontare \""));
 	msg << diskName.c_str() << "\"?";
-	BAlert* alert = new BAlert("Smonta", msg.String(), "Smonta", "Annulla", nullptr,
-		B_WIDTH_AS_USUAL, B_WARNING_ALERT);
+	BAlert* alert = new BAlert(B_TRANSLATE("Smonta"), msg.String(), B_TRANSLATE("Smonta"),
+		B_TRANSLATE("Annulla"), nullptr, B_WIDTH_AS_USUAL, B_WARNING_ALERT);
 	alert->SetShortcut(1, B_ESCAPE); // Esc / default = Annulla (the safe choice)
 	if (alert->Go() != 0)            // 0 = Smonta, 1 = Annulla
 		return;
 
-	SetStatus("Smontaggio in corso...");
+	SetStatus(B_TRANSLATE("Smontaggio in corso..."));
 	status_t s = fs_unmount_volume(mountPoint.c_str(), 0);
 	if (s == B_OK) {
 		::rmdir(mountPoint.c_str()); // best-effort: drop the now-empty mount directory
-		SetStatus(("Smontato \"" + diskName + "\".").c_str());
+		SetStatus((std::string(B_TRANSLATE("Smontato \"")) + diskName + "\".").c_str());
 	} else if (s == B_BUSY) {
 		// The usual cause: a Tracker window is still open on the volume (or a file/terminal inside).
-		SetStatus("Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso "
-			"(e i file/terminali dentro), poi riprova.");
+		SetStatus(B_TRANSLATE("Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso "
+			"(e i file/terminali dentro), poi riprova."));
 	} else {
-		SetStatus((std::string("Smontaggio fallito: ") + strerror(s)).c_str());
+		SetStatus((std::string(B_TRANSLATE("Smontaggio fallito: ")) + strerror(s)).c_str());
 	}
 }
 

@@ -12,9 +12,17 @@
 #
 # Haiku-only (needs the `package` tool, the userlandfs FUSE headers, libssh2, and OpenSSL).
 
-VERSION := 0.3.32-1
+VERSION := 0.3.33-1
 ARCH := x86_64
 PKG := campiello-$(VERSION)-$(ARCH).hpkg
+
+# Localization (Haiku Locale Kit) for the WON app. Source strings are Italian and show when no
+# catalog matches the user's language; the catalogs here translate them. CATALOG_DIR is the WON
+# signature with the "application/" prefix dropped, where BLocaleRoster looks for catalogs.
+CATALOG_SIG := application/x-vnd.Campiello-won
+CATALOG_DIR := x-vnd.Campiello-won
+LANGS := en
+CATALOGS := $(LANGS:%=%.catalog)
 
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -Wall -Wextra -Werror -O2 -pthread
@@ -87,10 +95,10 @@ package: $(PKG)
 
 $(PKG): campiello.PackageInfo launch/campiello \
         campiello_sftp campiello_mount campiello_daemon campiello_net campiello_replicant \
-        campiello_won
+        campiello_won $(CATALOGS)
 	rm -rf $(STAGE)
 	mkdir -p $(STAGE)/add-ons/userlandfs $(STAGE)/apps $(STAGE)/bin $(STAGE)/data/user_launch \
-	    $(STAGE)/data/campiello/icons
+	    $(STAGE)/data/campiello/icons $(STAGE)/data/locale/catalogs/$(CATALOG_DIR)
 	cp campiello_sftp $(STAGE)/add-ons/userlandfs/campiello_sftp
 	cp campiello_net  $(STAGE)/add-ons/userlandfs/campiello_net
 	cp campiello_mount $(STAGE)/apps/campiello_mount
@@ -101,6 +109,8 @@ $(PKG): campiello.PackageInfo launch/campiello \
 	# The per-service device icons (MIT, from threedeyes' HVIF-Collection; see optional/icons/
 	# ATTRIBUTION). The WON app renders <name>.hvif per discovered service.
 	cp ../optional/icons/*.hvif $(STAGE)/data/campiello/icons/
+	# The WON app's localization catalogs (Haiku Locale Kit).
+	for l in $(LANGS); do cp $$l.catalog $(STAGE)/data/locale/catalogs/$(CATALOG_DIR)/$$l.catalog; done
 	package create -C $(STAGE) -i campiello.PackageInfo $(PKG)
 	@echo "Built $(PKG)"
 
@@ -143,12 +153,26 @@ campiello_replicant: $(REPLICANT) $(REPL_DIR)/PeerReplicant.rdef
 # The WON app (World O' Networking; codename vicinato): its app_signature resource
 # (mimeset-registered) lets be_roster find it by signature and launch the connect helpers.
 campiello_won: $(VICINATO) $(VIC_DIR)/Vicinato.rdef $(ICON_RDEF)
-	$(CXX) $(CXXFLAGS) -o $@ $(VICINATO) -lbe -lmedia -lnetwork
+	$(CXX) $(CXXFLAGS) -o $@ $(VICINATO) -lbe -lmedia -lnetwork -llocalestub
 	rc -o campiello_won.rsrc $(VIC_DIR)/Vicinato.rdef $(ICON_RDEF)
 	xres -o $@ campiello_won.rsrc
 	mimeset -f $@
 	rm -f campiello_won.rsrc
 
+# Build the WON app's catalog from its checked-in catkeys.
+%.catalog: $(VIC_DIR)/locales/%.catkeys
+	linkcatkeys -l $* -s $(CATALOG_SIG) -o $@ $<
+
+# Regenerate the catkeys template from the WON source (run after adding/changing B_TRANSLATE
+# strings): preprocess in collecting mode (-P drops the line markers that break the key scanner),
+# then collect. Merge new keys into the other locales/*.catkeys by hand.
+.PHONY: catkeys
+catkeys:
+	$(CXX) -DB_COLLECTING_CATKEYS -E -P -x c++ -std=c++17 $(VIC_DIR)/campiello_vicinato.cpp > won.pre
+	collectcatkeys -s $(CATALOG_SIG) -l it -o $(VIC_DIR)/locales/it.catkeys won.pre
+	rm -f won.pre
+	@echo "Refreshed src/vicinato/locales/it.catkeys; merge new keys into the other locales by hand."
+
 clean:
 	rm -rf $(STAGE) campiello_sftp campiello_mount campiello_daemon campiello_net \
-	    campiello_replicant campiello_won $(PKG)
+	    campiello_replicant campiello_won $(CATALOGS) won.pre $(PKG)

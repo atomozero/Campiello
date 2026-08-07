@@ -1,0 +1,21 @@
+1	it	application/x-vnd.Campiello-nut	2151587700
+   Ingresso: 	NUT		   Ingresso: 
+Stato: 	NUT		Stato: 
+Carica batteria: 	NUT		Carica batteria: 
+Chiudi	NUT		Chiudi
+ V	NUT		 V
+Autonomia stimata: 	NUT		Autonomia stimata: 
+Gruppo di continuita (UPS)	NUT		Gruppo di continuita (UPS)
+Stato: nessun UPS o server non raggiungibile.	NUT		Stato: nessun UPS o server non raggiungibile.
+Carico: 	NUT		Carico: 
+Pronto.	NUT		Pronto.
+Carico: -	NUT		Carico: -
+Aggiorno...	NUT		Aggiorno...
+ %	NUT		 %
+Carica batteria: -	NUT		Carica batteria: -
+Non raggiungibile.	NUT		Non raggiungibile.
+Nessun dispositivo. Apri un UPS dal vicinato WON, o passa host=<ip>.	NUT		Nessun dispositivo. Apri un UPS dal vicinato WON, o passa host=<ip>.
+Autonomia stimata: -	NUT		Autonomia stimata: -
+Aggiorna	NUT		Aggiorna
+Tutte le variabili:	NUT		Tutte le variabili:
+Stato: interrogo il server...	NUT		Stato: interrogo il server...

@@ -4,6 +4,8 @@
 
 #include "FtpClient.h"
 
+#include <Catalog.h>
+
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -12,6 +14,11 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+// Haiku Locale Kit: fError carries user-facing text (shown via LastError() in the status bar), so it
+// goes through B_TRANSLATE too, sharing the FTP context/catalog with campiello_ftp.cpp.
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "FTP"
 
 namespace campiello {
 namespace ftp {
@@ -134,14 +141,14 @@ int FtpClient::SendCmd(const std::string& cmd, std::string* reply)
 bool FtpClient::Connect()
 {
 	fControl = TcpConnect(fHost, fPort);
-	if (fControl < 0) { fError = "Connessione non riuscita."; return false; }
-	if (ReadReply(nullptr) != 220) { fError = "Nessun saluto dal server."; return false; }
+	if (fControl < 0) { fError = B_TRANSLATE("Connessione non riuscita."); return false; }
+	if (ReadReply(nullptr) != 220) { fError = B_TRANSLATE("Nessun saluto dal server."); return false; }
 
 	std::string reply;
 	int c = SendCmd("USER " + fUser, &reply);
 	if (c == 331)
 		c = SendCmd("PASS " + fPass, &reply);
-	if (c != 230) { fError = "Accesso negato."; return false; }
+	if (c != 230) { fError = B_TRANSLATE("Accesso negato."); return false; }
 
 	SendCmd("TYPE I", &reply); // binary
 	return true;
@@ -183,14 +190,14 @@ std::vector<Entry> FtpClient::List(const std::string& path, bool* okOut)
 		return {};
 	std::string reply;
 	if (!path.empty() && SendCmd("CWD " + path, &reply) / 100 != 2) {
-		fError = "Cartella non accessibile.";
+		fError = B_TRANSLATE("Cartella non accessibile.");
 		return {};
 	}
 	int data = OpenPasv();
-	if (data < 0) { fError = "Modalita' passiva non riuscita."; return {}; }
+	if (data < 0) { fError = B_TRANSLATE("Modalita' passiva non riuscita."); return {}; }
 
 	int c = SendCmd("LIST", &reply);
-	if (c != 150 && c != 125) { close(data); fError = "LIST rifiutato."; return {}; }
+	if (c != 150 && c != 125) { close(data); fError = B_TRANSLATE("LIST rifiutato."); return {}; }
 
 	std::string raw;
 	char buf[4096];
@@ -209,14 +216,14 @@ bool FtpClient::Retrieve(const std::string& remoteFile, const std::string& local
 	if (fControl < 0)
 		return false;
 	int data = OpenPasv();
-	if (data < 0) { fError = "Modalita' passiva non riuscita."; return false; }
+	if (data < 0) { fError = B_TRANSLATE("Modalita' passiva non riuscita."); return false; }
 
 	std::string reply;
 	int c = SendCmd("RETR " + remoteFile, &reply);
-	if (c != 150 && c != 125) { close(data); fError = "Download rifiutato."; return false; }
+	if (c != 150 && c != 125) { close(data); fError = B_TRANSLATE("Download rifiutato."); return false; }
 
 	FILE* f = std::fopen(localPath.c_str(), "wb");
-	if (f == nullptr) { close(data); fError = "Impossibile scrivere il file locale."; return false; }
+	if (f == nullptr) { close(data); fError = B_TRANSLATE("Impossibile scrivere il file locale."); return false; }
 	char buf[8192];
 	ssize_t n;
 	while ((n = read(data, buf, sizeof(buf))) > 0)

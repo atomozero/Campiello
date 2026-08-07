@@ -1,0 +1,16 @@
+1	en	application/x-vnd.Campiello-ipp	1983604509
+Interrogo la stampante...	IPP		Querying the printer...
+Stampante	IPP		Printer
+Stampa non riuscita.	IPP		Print failed.
+Stampa un file...	IPP		Print a file...
+Ferma	IPP		Stopped
+Aggiorna	IPP		Refresh
+Formati: 	IPP		Formats:
+Nessuna stampante. Apri una stampante dal vicinato WON, o passa host=<ip>.	IPP		No printer. Open a printer from the WON neighborhood, or pass host=<ip>.
+Pronta	IPP		Ready
+Invio in stampa...	IPP		Sending to print...
+In stampa	IPP		Printing
+Inviato in stampa.	IPP		Sent to print.
+Chiudi	IPP		Close
+Stampante di rete	IPP		Network printer
+Stampante non raggiungibile o non IPP.	IPP		Printer unreachable or not IPP.

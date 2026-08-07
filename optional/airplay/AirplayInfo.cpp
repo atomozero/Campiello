@@ -4,8 +4,16 @@
 
 #include "AirplayInfo.h"
 
+#include <Catalog.h>
+
 #include <cctype>
 #include <cstdlib>
+
+// Haiku Locale Kit: the feature labels below are shown to the user (in the AirPlay window's
+// "Funzioni" line), so they are marked here for catkeys collection and translated at the point of
+// display in campiello_airplay.cpp (B_TRANSLATE there; B_TRANSLATE_MARK only marks the source here).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "AirPlay"
 
 namespace campiello {
 namespace airplay {
@@ -27,18 +35,18 @@ std::vector<std::string> DecodeFeatures(unsigned long long f)
 {
 	struct Bit { int bit; const char* label; };
 	static const Bit kBits[] = {
-		{0,  "Video"},
-		{1,  "Foto"},
-		{7,  "Screen mirroring"},
-		{9,  "Audio"},
-		{11, "Audio ridondante"},
-		{14, "MFi (soft AirPlay)"},
-		{18, "Controllo multimediale unificato"},
-		{30, "Pair-Setup unificato (MFi)"},
-		{38, "Audio bufferizzato"},
-		{40, "Sincronizzazione PTP"},
-		{46, "Pairing HomeKit"},
-		{48, "AirPlay 2 (CoreUtils)"},
+		{0,  B_TRANSLATE_MARK("Video")},
+		{1,  B_TRANSLATE_MARK("Foto")},
+		{7,  B_TRANSLATE_MARK("Screen mirroring")},
+		{9,  B_TRANSLATE_MARK("Audio")},
+		{11, B_TRANSLATE_MARK("Audio ridondante")},
+		{14, B_TRANSLATE_MARK("MFi (soft AirPlay)")},
+		{18, B_TRANSLATE_MARK("Controllo multimediale unificato")},
+		{30, B_TRANSLATE_MARK("Pair-Setup unificato (MFi)")},
+		{38, B_TRANSLATE_MARK("Audio bufferizzato")},
+		{40, B_TRANSLATE_MARK("Sincronizzazione PTP")},
+		{46, B_TRANSLATE_MARK("Pairing HomeKit")},
+		{48, B_TRANSLATE_MARK("AirPlay 2 (CoreUtils)")},
 	};
 	std::vector<std::string> out;
 	for (const Bit& b : kBits)

@@ -15,6 +15,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <LayoutBuilder.h>
 #include <Node.h>
@@ -34,6 +35,12 @@
 
 using namespace campiello::airplay;
 
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "AirPlay"
+
 static const char* const kSignature = "application/x-vnd.Campiello-airplay";
 
 // --------------------------------------------------------------------------- window
@@ -41,7 +48,7 @@ class AirplayWindow : public BWindow {
 public:
 	bool QuitRequested() override { be_app->PostMessage(B_QUIT_REQUESTED); return true; }
 	AirplayWindow(const std::string& host, const std::string& name, const AirplayInfo& info)
-		: BWindow(BRect(100, 100, 470, 400), "Ricevitore AirPlay", B_TITLED_WINDOW,
+		: BWindow(BRect(100, 100, 470, 400), B_TRANSLATE("Ricevitore AirPlay"), B_TITLED_WINDOW,
 			B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS)
 	{
 		BStringView* title = new BStringView("t", name.empty() ? host.c_str() : name.c_str());
@@ -53,29 +60,33 @@ public:
 		details->MakeEditable(false);
 		details->SetExplicitMinSize(BSize(330, 130));
 		BString s;
-		s << "Nome: " << (name.empty() ? host.c_str() : name.c_str()) << "\n";
-		if (!info.model.empty())      s << "Modello: " << info.model.c_str() << "\n";
-		if (!info.srcVersion.empty()) s << "Versione AirPlay: " << info.srcVersion.c_str() << "\n";
-		if (!info.deviceId.empty())   s << "ID dispositivo: " << info.deviceId.c_str() << "\n";
+		s << B_TRANSLATE("Nome: ") << (name.empty() ? host.c_str() : name.c_str()) << "\n";
+		if (!info.model.empty())      s << B_TRANSLATE("Modello: ") << info.model.c_str() << "\n";
+		if (!info.srcVersion.empty())
+			s << B_TRANSLATE("Versione AirPlay: ") << info.srcVersion.c_str() << "\n";
+		if (!info.deviceId.empty())
+			s << B_TRANSLATE("ID dispositivo: ") << info.deviceId.c_str() << "\n";
 		if (!info.capabilities.empty()) {
 			BString caps;
 			for (size_t i = 0; i < info.capabilities.size(); ++i)
-				caps << (i ? ", " : "") << info.capabilities[i].c_str();
-			s << "Funzioni: " << caps << "\n";
+				caps << (i ? ", " : "") << B_TRANSLATE(info.capabilities[i].c_str());
+			s << B_TRANSLATE("Funzioni: ") << caps << "\n";
 		}
-		s << "Password: " << (info.passwordRequired ? "richiesta" : "no") << "\n";
-		s << "Indirizzo: " << host.c_str() << "\n";
+		s << B_TRANSLATE("Password: ")
+			<< (info.passwordRequired ? B_TRANSLATE("richiesta") : B_TRANSLATE("no")) << "\n";
+		s << B_TRANSLATE("Indirizzo: ") << host.c_str() << "\n";
 		details->SetText(s.String());
 
 		BTextView* note = new BTextView("n");
 		note->MakeEditable(false);
 		note->SetExplicitMinSize(BSize(330, 80));
 		note->SetText(
-			"Campiello mostra le informazioni pubbliche del ricevitore. Trasmettere audio o video "
-			"(streaming e mirroring) richiede l'handshake AirPlay 2 e FairPlay (crittografia Apple), "
-			"non ancora disponibile. Per ora trasmetti da un dispositivo Apple con AirPlay.");
+			B_TRANSLATE("Campiello mostra le informazioni pubbliche del ricevitore. Trasmettere "
+				"audio o video (streaming e mirroring) richiede l'handshake AirPlay 2 e FairPlay "
+				"(crittografia Apple), non ancora disponibile. Per ora trasmetti da un dispositivo "
+				"Apple con AirPlay."));
 
-		BButton* close = new BButton("c", "Chiudi", new BMessage(B_QUIT_REQUESTED));
+		BButton* close = new BButton("c", B_TRANSLATE("Chiudi"), new BMessage(B_QUIT_REQUESTED));
 
 		BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 			.SetInsets(B_USE_WINDOW_INSETS)
@@ -118,7 +129,8 @@ public:
 			return;
 		if (fHost.empty()) {
 			(new BAlert("Ricevitore AirPlay",
-				"Nessun dispositivo. Aprilo dal vicinato WON.", "Chiudi"))->Go();
+				B_TRANSLATE("Nessun dispositivo. Aprilo dal vicinato WON."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

@@ -16,6 +16,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Clipboard.h>
 #include <Entry.h>
 #include <LayoutBuilder.h>
@@ -28,6 +29,12 @@
 #include <fs_attr.h>
 
 #include <string>
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "VNC"
 
 static const char* const kSignature = "application/x-vnd.Campiello-vnc";
 // Haiku registers a URL scheme "vnc" as this MIME type; a viewer that handles vnc:// claims it.
@@ -61,22 +68,22 @@ private:
 };
 
 VncWindow::VncWindow(const std::string& host, int port, const std::string& name)
-	: BWindow(BRect(100, 100, 420, 300), "Desktop remoto", B_TITLED_WINDOW,
+	: BWindow(BRect(100, 100, 420, 300), B_TRANSLATE("Desktop remoto"), B_TITLED_WINDOW,
 		B_NOT_ZOOMABLE | B_NOT_RESIZABLE | B_AUTO_UPDATE_SIZE_LIMITS)
 {
 	fAddress = host + ":" + std::to_string(port);
 	fUrl = "vnc://" + fAddress;
 
-	BStringView* title = new BStringView("t", name.empty() ? "Desktop remoto (VNC)" : name.c_str());
+	BStringView* title = new BStringView("t", name.empty() ? B_TRANSLATE("Desktop remoto (VNC)") : name.c_str());
 	BFont f(be_bold_font);
 	f.SetSize(f.Size() * 1.2f);
 	title->SetFont(&f);
 
-	BStringView* addr = new BStringView("a", ("Indirizzo: " + fAddress).c_str());
+	BStringView* addr = new BStringView("a", (std::string(B_TRANSLATE("Indirizzo: ")) + fAddress).c_str());
 	fStatus = new BStringView("st", "");
 
-	BButton* open = new BButton("open", "Apri nel visualizzatore", new BMessage(kMsgOpen));
-	BButton* copy = new BButton("copy", "Copia indirizzo", new BMessage(kMsgCopy));
+	BButton* open = new BButton("open", B_TRANSLATE("Apri nel visualizzatore"), new BMessage(kMsgOpen));
+	BButton* copy = new BButton("copy", B_TRANSLATE("Copia indirizzo"), new BMessage(kMsgCopy));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -94,10 +101,10 @@ VncWindow::VncWindow(const std::string& host, int port, const std::string& name)
 
 	// Try to open a viewer immediately; fall back to showing the details.
 	if (LaunchViewer(fUrl))
-		fStatus->SetText("Aperto nel visualizzatore VNC.");
+		fStatus->SetText(B_TRANSLATE("Aperto nel visualizzatore VNC."));
 	else
-		fStatus->SetText("Nessun visualizzatore VNC installato. Installane uno da HaikuDepot\n"
-			"(cerca \"VNC\"), poi premi \"Apri nel visualizzatore\".");
+		fStatus->SetText(B_TRANSLATE("Nessun visualizzatore VNC installato. Installane uno da HaikuDepot\n"
+			"(cerca \"VNC\"), poi premi \"Apri nel visualizzatore\"."));
 }
 
 void VncWindow::MessageReceived(BMessage* msg)
@@ -105,8 +112,8 @@ void VncWindow::MessageReceived(BMessage* msg)
 	switch (msg->what) {
 		case kMsgOpen:
 			fStatus->SetText(LaunchViewer(fUrl)
-				? "Aperto nel visualizzatore VNC."
-				: "Nessun visualizzatore VNC registrato per lo schema vnc://.");
+				? B_TRANSLATE("Aperto nel visualizzatore VNC.")
+				: B_TRANSLATE("Nessun visualizzatore VNC registrato per lo schema vnc://."));
 			return;
 		case kMsgCopy: {
 			if (be_clipboard->Lock()) {
@@ -117,7 +124,7 @@ void VncWindow::MessageReceived(BMessage* msg)
 					be_clipboard->Commit();
 				}
 				be_clipboard->Unlock();
-				fStatus->SetText("Indirizzo copiato negli appunti.");
+				fStatus->SetText(B_TRANSLATE("Indirizzo copiato negli appunti."));
 			}
 			return;
 		}
@@ -153,9 +160,9 @@ public:
 		if (fShown)
 			return;
 		if (fHost.empty()) {
-			(new BAlert("Desktop remoto",
-				"Nessun host. Apri un desktop remoto dal vicinato WON, o passa host=<ip>.",
-				"Chiudi"))->Go();
+			(new BAlert(B_TRANSLATE("Desktop remoto"),
+				B_TRANSLATE("Nessun host. Apri un desktop remoto dal vicinato WON, o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

@@ -14,6 +14,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <LayoutBuilder.h>
 #include <ListItem.h>
@@ -32,6 +33,12 @@
 #include "DaapClient.h"
 
 using namespace campiello::daap;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "DAAP"
 
 static const char* const kSignature = "application/x-vnd.Campiello-daap";
 
@@ -75,19 +82,20 @@ private:
 };
 
 DaapWindow::DaapWindow(const std::string& host, const std::string& name)
-	: BWindow(BRect(100, 100, 520, 500), "Libreria musicale", B_TITLED_WINDOW,
+	: BWindow(BRect(100, 100, 520, 500), B_TRANSLATE("Libreria musicale"), B_TITLED_WINDOW,
 		B_AUTO_UPDATE_SIZE_LIMITS),
 	  fHost(host), fName(name)
 {
-	BStringView* title = new BStringView("t", fName.empty() ? "Libreria musicale" : fName.c_str());
+	BStringView* title = new BStringView("t",
+		fName.empty() ? B_TRANSLATE("Libreria musicale") : fName.c_str());
 	BFont f(be_bold_font);
 	f.SetSize(f.Size() * 1.2f);
 	title->SetFont(&f);
 
 	fList = new BListView("tracks");
 	BScrollView* scroll = new BScrollView("ls", fList, 0, false, true);
-	fStatus = new BStringView("st", "Carico la libreria...");
-	BButton* refresh = new BButton("refresh", "Aggiorna", new BMessage(kMsgLoad));
+	fStatus = new BStringView("st", B_TRANSLATE("Carico la libreria..."));
+	BButton* refresh = new BButton("refresh", B_TRANSLATE("Aggiorna"), new BMessage(kMsgLoad));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -106,7 +114,7 @@ DaapWindow::DaapWindow(const std::string& host, const std::string& name)
 
 void DaapWindow::StartLoad()
 {
-	fStatus->SetText("Carico la libreria...");
+	fStatus->SetText(B_TRANSLATE("Carico la libreria..."));
 	LoadJob* job = new LoadJob{fHost, BMessenger(this)};
 	thread_id t = spawn_thread(LoadThread, "daap_load", B_NORMAL_PRIORITY, job);
 	if (t < 0) { delete job; return; }
@@ -125,7 +133,7 @@ void DaapWindow::MessageReceived(BMessage* msg)
 			for (int32 i = fList->CountItems() - 1; i >= 0; --i)
 				delete fList->RemoveItem(i);
 			if (!ok) {
-				fStatus->SetText("Libreria non raggiungibile o accesso negato.");
+				fStatus->SetText(B_TRANSLATE("Libreria non raggiungibile o accesso negato."));
 				return;
 			}
 			const char* title;
@@ -141,8 +149,8 @@ void DaapWindow::MessageReceived(BMessage* msg)
 				++count;
 			}
 			BString st;
-			st << count << (count == 1 ? " brano" : " brani");
-			fStatus->SetText(count == 0 ? "Nessun brano." : st.String());
+			st << count << (count == 1 ? B_TRANSLATE(" brano") : B_TRANSLATE(" brani"));
+			fStatus->SetText(count == 0 ? B_TRANSLATE("Nessun brano.") : st.String());
 			return;
 		}
 	}
@@ -177,9 +185,9 @@ public:
 		if (fShown)
 			return;
 		if (fHost.empty()) {
-			(new BAlert("Libreria musicale",
-				"Nessuna libreria. Apri una libreria dal vicinato WON, o passa host=<ip>.",
-				"Chiudi"))->Go();
+			(new BAlert(B_TRANSLATE("Libreria musicale"),
+				B_TRANSLATE("Nessuna libreria. Apri una libreria dal vicinato WON, o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

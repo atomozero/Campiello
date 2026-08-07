@@ -1,0 +1,20 @@
+1	en	application/x-vnd.Campiello-ftp	906825569
+Utente:	FTP		User:
+Nessun saluto dal server.	FTP		No greeting from the server.
+Cartella non accessibile.	FTP		Folder not accessible.
+LIST rifiutato.	FTP		LIST refused.
+Nessun server. Apri un server FTP dal vicinato WON, o passa host=<ip>.	FTP		No server. Open an FTP server from the WON neighborhood, or pass host=<ip>.
+Connetti	FTP		Connect
+ byte)	FTP		 bytes)
+Scarico...	FTP		Downloading...
+Download non riuscito.	FTP		Download failed.
+Connessione non riuscita.	FTP		Connection failed.
+Carico...	FTP		Loading...
+Modalita' passiva non riuscita.	FTP		Passive mode failed.
+Accesso negato.	FTP		Access denied.
+Chiudi	FTP		Close
+ elementi	FTP		 items
+Salvato: 	FTP		Saved:
+Download rifiutato.	FTP		Download refused.
+Password:	FTP		Password:
+Impossibile scrivere il file locale.	FTP		Cannot write the local file.

@@ -16,6 +16,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <LayoutBuilder.h>
 #include <Messenger.h>
@@ -32,6 +33,12 @@
 #include "AfpProbe.h"
 
 using namespace campiello::afp;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "AFP"
 
 static const char* const kSignature = "application/x-vnd.Campiello-afp";
 
@@ -73,7 +80,8 @@ private:
 };
 
 AfpWindow::AfpWindow(const std::string& host, const std::string& name)
-	: BWindow(BRect(100, 100, 460, 400), "Server AFP", B_TITLED_WINDOW, B_AUTO_UPDATE_SIZE_LIMITS),
+	: BWindow(BRect(100, 100, 460, 400), B_TRANSLATE("Server AFP"), B_TITLED_WINDOW,
+		B_AUTO_UPDATE_SIZE_LIMITS),
 	  fHost(host)
 {
 	BStringView* title = new BStringView("t", name.empty() ? host.c_str() : name.c_str());
@@ -86,10 +94,10 @@ AfpWindow::AfpWindow(const std::string& host, const std::string& name)
 	fInfo->SetExplicitMinSize(BSize(320, 140));
 
 	BStringView* note = new BStringView("n",
-		"AFP e' un protocollo datato (macOS moderno usa SMB).\n"
-		"Per condividere file, preferisci il modulo SMB di Campiello.");
+		B_TRANSLATE("AFP e' un protocollo datato (macOS moderno usa SMB).\n"
+			"Per condividere file, preferisci il modulo SMB di Campiello."));
 	fStatus = new BStringView("st", fHost.c_str());
-	BButton* refresh = new BButton("r", "Aggiorna", new BMessage(kMsgProbe));
+	BButton* refresh = new BButton("r", B_TRANSLATE("Aggiorna"), new BMessage(kMsgProbe));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -109,7 +117,7 @@ AfpWindow::AfpWindow(const std::string& host, const std::string& name)
 
 void AfpWindow::StartProbe()
 {
-	fStatus->SetText("Interrogo il server...");
+	fStatus->SetText(B_TRANSLATE("Interrogo il server..."));
 	StatusJob* job = new StatusJob{fHost, BMessenger(this)};
 	thread_id t = spawn_thread(StatusThread, "afp_probe", B_NORMAL_PRIORITY, job);
 	if (t < 0) { delete job; return; }
@@ -126,26 +134,26 @@ void AfpWindow::MessageReceived(BMessage* msg)
 			bool ok = false; msg->FindBool("ok", &ok);
 			if (!ok) {
 				fInfo->SetText("");
-				fStatus->SetText("Server non raggiungibile o non AFP.");
+				fStatus->SetText(B_TRANSLATE("Server non raggiungibile o non AFP."));
 				return;
 			}
 			const char* server = ""; msg->FindString("server", &server);
 			const char* machine = ""; msg->FindString("machine", &machine);
 			BString info;
-			info << "Nome server: " << server << "\n";
-			info << "Tipo macchina: " << machine << "\n";
+			info << B_TRANSLATE("Nome server: ") << server << "\n";
+			info << B_TRANSLATE("Tipo macchina: ") << machine << "\n";
 			BString vers;
 			const char* v;
 			for (int32 i = 0; msg->FindString("ver", i, &v) == B_OK; ++i)
 				vers << (vers.Length() ? ", " : "") << v;
-			info << "Versioni AFP: " << (vers.Length() ? vers : BString("-")) << "\n";
+			info << B_TRANSLATE("Versioni AFP: ") << (vers.Length() ? vers : BString("-")) << "\n";
 			BString uams;
 			const char* u;
 			for (int32 i = 0; msg->FindString("uam", i, &u) == B_OK; ++i)
 				uams << (uams.Length() ? ", " : "") << u;
-			info << "Autenticazione: " << (uams.Length() ? uams : BString("-")) << "\n";
+			info << B_TRANSLATE("Autenticazione: ") << (uams.Length() ? uams : BString("-")) << "\n";
 			fInfo->SetText(info.String());
-			fStatus->SetText("Pronto.");
+			fStatus->SetText(B_TRANSLATE("Pronto."));
 			return;
 		}
 	}
@@ -181,8 +189,8 @@ public:
 			return;
 		if (fHost.empty()) {
 			(new BAlert("Server AFP",
-				"Nessun server. Apri un server AFP dal vicinato WON, o passa host=<ip>.",
-				"Chiudi"))->Go();
+				B_TRANSLATE("Nessun server. Apri un server AFP dal vicinato WON, o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

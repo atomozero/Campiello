@@ -17,6 +17,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <LayoutBuilder.h>
 #include <MenuField.h>
@@ -36,6 +37,12 @@
 #include "DaikinClient.h"
 
 using namespace campiello::daikin;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Daikin"
 
 static const char* const kSignature = "application/x-vnd.Campiello-daikin";
 
@@ -147,7 +154,7 @@ private:
 };
 
 DaikinWindow::DaikinWindow(const std::string& host, int port, const std::string& name)
-	: BWindow(BRect(100, 100, 460, 420), "Condizionatore Daikin", B_TITLED_WINDOW,
+	: BWindow(BRect(100, 100, 460, 420), B_TRANSLATE("Condizionatore Daikin"), B_TITLED_WINDOW,
 		B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS),
 	  fHost(host), fPort(port), fName(name)
 {
@@ -156,17 +163,17 @@ DaikinWindow::DaikinWindow(const std::string& host, int port, const std::string&
 	f.SetSize(f.Size() * 1.2f);
 	fTitle->SetFont(&f);
 
-	fRoom = new BStringView("room", "Temperatura interna: -");
-	fOutdoor = new BStringView("out", "Temperatura esterna: -");
-	fTarget = new BStringView("tgt", "Temperatura impostata: -");
-	fState = new BStringView("state", "Stato: interrogo il dispositivo...");
+	fRoom = new BStringView("room", B_TRANSLATE("Temperatura interna: -"));
+	fOutdoor = new BStringView("out", B_TRANSLATE("Temperatura esterna: -"));
+	fTarget = new BStringView("tgt", B_TRANSLATE("Temperatura impostata: -"));
+	fState = new BStringView("state", B_TRANSLATE("Stato: interrogo il dispositivo..."));
 
-	fPower = new BButton("pow", "Accendi/Spegni", new BMessage(kMsgPower));
+	fPower = new BButton("pow", B_TRANSLATE("Accendi/Spegni"), new BMessage(kMsgPower));
 	fModeField = MakeModeMenu();
 	fFanField = MakeFanMenu();
 	fTempDown = new BButton("td", "-", new BMessage(kMsgTempDown));
 	fTempUp = new BButton("tu", "+", new BMessage(kMsgTempUp));
-	BButton* refresh = new BButton("rf", "Aggiorna", new BMessage(kMsgRefresh));
+	BButton* refresh = new BButton("rf", B_TRANSLATE("Aggiorna"), new BMessage(kMsgRefresh));
 
 	fStatus = new BStringView("st", host.c_str());
 
@@ -180,7 +187,7 @@ DaikinWindow::DaikinWindow(const std::string& host, int port, const std::string&
 		.AddGroup(B_HORIZONTAL)
 			.Add(fPower)
 			.AddGlue()
-			.Add(new BStringView("tl", "Target"))
+			.Add(new BStringView("tl", B_TRANSLATE("Target")))
 			.Add(fTempDown)
 			.Add(fTempUp)
 		.End()
@@ -201,35 +208,38 @@ BMenuField* DaikinWindow::MakeModeMenu()
 {
 	BPopUpMenu* menu = new BPopUpMenu("modo");
 	const struct { const char* label; int mode; } modes[] = {
-		{"Automatico", 0}, {"Raffrescamento", 3}, {"Riscaldamento", 4},
-		{"Deumidificazione", 2}, {"Ventilazione", 6},
+		{B_TRANSLATE("Automatico"), 0}, {B_TRANSLATE("Raffrescamento"), 3},
+		{B_TRANSLATE("Riscaldamento"), 4}, {B_TRANSLATE("Deumidificazione"), 2},
+		{B_TRANSLATE("Ventilazione"), 6},
 	};
 	for (const auto& m : modes) {
 		BMessage* msg = new BMessage(kMsgMode);
 		msg->AddInt32("mode", m.mode);
 		menu->AddItem(new BMenuItem(m.label, msg));
 	}
-	return new BMenuField("modeField", "Modo:", menu);
+	return new BMenuField("modeField", B_TRANSLATE("Modo:"), menu);
 }
 
 BMenuField* DaikinWindow::MakeFanMenu()
 {
 	BPopUpMenu* menu = new BPopUpMenu("ventola");
 	const struct { const char* label; const char* rate; } rates[] = {
-		{"Automatica", "A"}, {"Silenziosa", "B"}, {"Livello 1", "3"}, {"Livello 2", "4"},
-		{"Livello 3", "5"}, {"Livello 4", "6"}, {"Livello 5", "7"},
+		{B_TRANSLATE("Automatica"), "A"}, {B_TRANSLATE("Silenziosa"), "B"},
+		{B_TRANSLATE("Livello 1"), "3"}, {B_TRANSLATE("Livello 2"), "4"},
+		{B_TRANSLATE("Livello 3"), "5"}, {B_TRANSLATE("Livello 4"), "6"},
+		{B_TRANSLATE("Livello 5"), "7"},
 	};
 	for (const auto& r : rates) {
 		BMessage* msg = new BMessage(kMsgFan);
 		msg->AddString("rate", r.rate);
 		menu->AddItem(new BMenuItem(r.label, msg));
 	}
-	return new BMenuField("fanField", "Ventola:", menu);
+	return new BMenuField("fanField", B_TRANSLATE("Ventola:"), menu);
 }
 
 void DaikinWindow::StartInfo()
 {
-	fStatus->SetText("Aggiorno...");
+	fStatus->SetText(B_TRANSLATE("Aggiorno..."));
 	InfoJob* job = new InfoJob{fHost, fPort, BMessenger(this)};
 	thread_id t = spawn_thread(InfoThread, "daikin_info", B_NORMAL_PRIORITY, job);
 	if (t < 0) { delete job; return; }
@@ -246,7 +256,7 @@ void DaikinWindow::ApplySet(int pow, int mode, const std::string& stemp, int shu
 	if (temp.empty())
 		temp = "M";
 
-	fStatus->SetText("Invio comando...");
+	fStatus->SetText(B_TRANSLATE("Invio comando..."));
 	SetJob* job = new SetJob{fHost, fPort, pow, mode, shum, fDir, temp, fRate, BMessenger(this)};
 	thread_id t = spawn_thread(SetThread, "daikin_set", B_NORMAL_PRIORITY, job);
 	if (t < 0) delete job; else resume_thread(t);
@@ -254,28 +264,28 @@ void DaikinWindow::ApplySet(int pow, int mode, const std::string& stemp, int shu
 
 void DaikinWindow::UpdateViews()
 {
-	BString room("Temperatura interna: ");
+	BString room(B_TRANSLATE("Temperatura interna: "));
 	room << (fSensor.htemp.empty() || fSensor.htemp == "-" ? "-" : (fSensor.htemp + "°C").c_str());
 	fRoom->SetText(room.String());
 
-	BString out("Temperatura esterna: ");
+	BString out(B_TRANSLATE("Temperatura esterna: "));
 	out << (fSensor.otemp.empty() || fSensor.otemp == "-" ? "-" : (fSensor.otemp + "°C").c_str());
 	fOutdoor->SetText(out.String());
 
-	BString tgt("Temperatura impostata: ");
+	BString tgt(B_TRANSLATE("Temperatura impostata: "));
 	if (NumericTemp(fControl.stemp))
 		tgt << (fControl.stemp + "°C").c_str();
 	else
-		tgt << "non applicabile";
+		tgt << B_TRANSLATE("non applicabile");
 	fTarget->SetText(tgt.String());
 
-	BString state("Stato: ");
-	state << (fControl.pow ? "acceso" : "spento");
+	BString state(B_TRANSLATE("Stato: "));
+	state << (fControl.pow ? B_TRANSLATE("acceso") : B_TRANSLATE("spento"));
 	state << " - " << ModeName(fControl.mode).c_str();
-	state << " - ventola " << FanRateName(fControl.fRate).c_str();
+	state << " - " << B_TRANSLATE("ventola ") << FanRateName(fControl.fRate).c_str();
 	fState->SetText(state.String());
 
-	fPower->SetLabel(fControl.pow ? "Spegni" : "Accendi");
+	fPower->SetLabel(fControl.pow ? B_TRANSLATE("Spegni") : B_TRANSLATE("Accendi"));
 	bool numeric = NumericTemp(fControl.stemp);
 	fTempUp->SetEnabled(numeric);
 	fTempDown->SetEnabled(numeric);
@@ -312,8 +322,8 @@ void DaikinWindow::MessageReceived(BMessage* msg)
 		case kMsgInfoReady: {
 			bool ok = false; msg->FindBool("ok", &ok);
 			if (!ok) {
-				fState->SetText("Stato: nessuna risposta dal dispositivo.");
-				fStatus->SetText("Non raggiungibile.");
+				fState->SetText(B_TRANSLATE("Stato: nessuna risposta dal dispositivo."));
+				fStatus->SetText(B_TRANSLATE("Non raggiungibile."));
 				return;
 			}
 			const char* s = "";
@@ -332,7 +342,7 @@ void DaikinWindow::MessageReceived(BMessage* msg)
 				fTitle->SetText(name);
 			fHave = true;
 			UpdateViews();
-			fStatus->SetText("Pronto.");
+			fStatus->SetText(B_TRANSLATE("Pronto."));
 			return;
 		}
 		case kMsgPower:
@@ -371,7 +381,7 @@ void DaikinWindow::MessageReceived(BMessage* msg)
 		}
 		case kMsgSetDone: {
 			bool ok = false; msg->FindBool("ok", &ok);
-			fStatus->SetText(ok ? "Comando inviato." : "Comando non riuscito.");
+			fStatus->SetText(ok ? B_TRANSLATE("Comando inviato.") : B_TRANSLATE("Comando non riuscito."));
 			if (ok) StartInfo(); // re-read the real state
 			return;
 		}
@@ -411,8 +421,9 @@ public:
 			return;
 		if (fHost.empty()) {
 			(new BAlert("Condizionatore Daikin",
-				"Nessun dispositivo. Apri un condizionatore Daikin dal vicinato WON, o passa host=<ip>.",
-				"Chiudi"))->Go();
+				B_TRANSLATE("Nessun dispositivo. Apri un condizionatore Daikin dal vicinato WON, "
+					"o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

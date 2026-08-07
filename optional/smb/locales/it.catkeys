@@ -1,0 +1,53 @@
+1	it	application/x-vnd.Campiello-smb-mount	570223640
+Percorso: 	SMB		Percorso: 
+Inserisci il server.	SMB		Inserisci il server.
+Impossibile avviare la connessione.	SMB		Impossibile avviare la connessione.
+Dominio:	SMB		Dominio:
+Condivisione montata	SMB		Condivisione montata
+Montaggio fallito. Riprova; se il problema persiste, riavvia.	SMB		Montaggio fallito. Riprova; se il problema persiste, riavvia.
+Condivisione non trovata: 	SMB		Condivisione non trovata: 
+Smontaggio fallito: 	SMB		Smontaggio fallito: 
+Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso (e i file/terminali dentro), poi riprova.	SMB		Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso (e i file/terminali dentro), poi riprova.
+errore	SMB		errore
+Mostra o nascondi la password	SMB		Mostra o nascondi la password
+Accesso negato: 	SMB		Accesso negato: 
+Server:	SMB		Server:
+Scegli una condivisione dall'elenco.	SMB		Scegli una condivisione dall'elenco.
+Opzioni avanzate	SMB		Opzioni avanzate
+Smontaggio in corso...	SMB		Smontaggio in corso...
+Connetti a una cartella condivisa Windows	SMB		Connetti a una cartella condivisa Windows
+Monta i miei share all'avvio	SMB		Monta i miei share all'avvio
+Nessuna condivisione visibile su questo server.	SMB		Nessuna condivisione visibile su questo server.
+errore sconosciuto	SMB		errore sconosciuto
+Password:	SMB		Password:
+Sola lettura (non scrivere sulla share)	SMB		Sola lettura (non scrivere sulla share)
+Apri	SMB		Apri
+Ricorda password su questo computer	SMB		Ricorda password su questo computer
+Sottocartella:	SMB		Sottocartella:
+Condivisione:	SMB		Condivisione:
+Accesso	SMB		Accesso
+Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;	SMB		Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;
+Nessun volume montato in \"	SMB		Nessun volume montato in \"
+\" e' gia' montato.	SMB		\" e' gia' montato.
+Utente:	SMB		Utente:
+ - usa la password dell'account Microsoft, non il PIN	SMB		 - usa la password dell'account Microsoft, non il PIN
+Condivisione (vuoto = tutto il server)	SMB		Condivisione (vuoto = tutto il server)
+Smonta	SMB		Smonta
+Nome disco:	SMB		Nome disco:
+Connetti	SMB		Connetti
+Ricerca condivisioni...	SMB		Ricerca condivisioni...
+Smontato \"	SMB		Smontato \"
+Dettagli	SMB		Dettagli
+altrimenti premi \"Elenca condivisioni\" e scegline una.	SMB		altrimenti premi \"Elenca condivisioni\" e scegline una.
+Annulla	SMB		Annulla
+Chiudi	SMB		Chiudi
+Impossibile avviare la ricerca.	SMB		Impossibile avviare la ricerca.
+Condivisione scelta: 	SMB		Condivisione scelta: 
+Monta come disco sulla Scrivania	SMB		Monta come disco sulla Scrivania
+Connessione fallita: 	SMB		Connessione fallita: 
+Impossibile elencare le condivisioni: 	SMB		Impossibile elencare le condivisioni: 
+ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il sistema (KDL) e costringere a un riavvio forzato. Procedi solo se puoi permetterti un riavvio.\n\nSmontare \"	SMB		ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il sistema (KDL) e costringere a un riavvio forzato. Procedi solo se puoi permetterti un riavvio.\n\nSmontare \"
+Inserisci utente e password.	SMB		Inserisci utente e password.
+Elenca condivisioni	SMB		Elenca condivisioni
+Il volume \"	SMB		Il volume \"
+Connessione e montaggio in corso...	SMB		Connessione e montaggio in corso...

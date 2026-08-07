@@ -1,0 +1,53 @@
+1	en	application/x-vnd.Campiello-smb-mount	570223640
+Percorso: 	SMB		Path:
+Inserisci il server.	SMB		Enter the server.
+Impossibile avviare la connessione.	SMB		Cannot start the connection.
+Dominio:	SMB		Domain:
+Condivisione montata	SMB		Share mounted
+Montaggio fallito. Riprova; se il problema persiste, riavvia.	SMB		Mount failed. Try again; if the problem persists, restart.
+Condivisione non trovata: 	SMB		Share not found:
+Smontaggio fallito: 	SMB		Unmount failed:
+Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso (e i file/terminali dentro), poi riprova.	SMB		The volume is in use: close the Tracker windows open on it (and any files/terminals inside), then try again.
+errore	SMB		error
+Mostra o nascondi la password	SMB		Show or hide the password
+Accesso negato: 	SMB		Access denied:
+Server:	SMB		Server:
+Scegli una condivisione dall'elenco.	SMB		Choose a share from the list.
+Opzioni avanzate	SMB		Advanced options
+Smontaggio in corso...	SMB		Unmounting...
+Connetti a una cartella condivisa Windows	SMB		Connect to a Windows shared folder
+Monta i miei share all'avvio	SMB		Mount my shares at login
+Nessuna condivisione visibile su questo server.	SMB		No shares visible on this server.
+errore sconosciuto	SMB		unknown error
+Password:	SMB		Password:
+Sola lettura (non scrivere sulla share)	SMB		Read-only (do not write to the share)
+Apri	SMB		Open
+Ricorda password su questo computer	SMB		Remember password on this computer
+Sottocartella:	SMB		Subfolder:
+Condivisione:	SMB		Share:
+Accesso	SMB		Login
+Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;	SMB		User and password to sign in. Empty share = browse the whole server;
+Nessun volume montato in \"	SMB		No volume mounted at \"
+\" e' gia' montato.	SMB		\" is already mounted.
+Utente:	SMB		User:
+ - usa la password dell'account Microsoft, non il PIN	SMB		 - use the Microsoft account password, not the PIN
+Condivisione (vuoto = tutto il server)	SMB		Share (empty = whole server)
+Smonta	SMB		Unmount
+Nome disco:	SMB		Disk name:
+Connetti	SMB		Connect
+Ricerca condivisioni...	SMB		Looking up shares...
+Smontato \"	SMB		Unmounted \"
+Dettagli	SMB		Details
+altrimenti premi \"Elenca condivisioni\" e scegline una.	SMB		otherwise press "List shares" and pick one.
+Annulla	SMB		Cancel
+Chiudi	SMB		Close
+Impossibile avviare la ricerca.	SMB		Cannot start the lookup.
+Condivisione scelta: 	SMB		Share chosen:
+Monta come disco sulla Scrivania	SMB		Mount as a disk on the Desktop
+Connessione fallita: 	SMB		Connection failed:
+Impossibile elencare le condivisioni: 	SMB		Cannot list the shares:
+ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il sistema (KDL) e costringere a un riavvio forzato. Procedi solo se puoi permetterti un riavvio.\n\nSmontare \"	SMB		WARNING: unmounting a network volume on Haiku can lock up the system (KDL) and force a hard restart. Proceed only if you can afford a restart.\n\nUnmount \"
+Inserisci utente e password.	SMB		Enter the user and password.
+Elenca condivisioni	SMB		List shares
+Il volume \"	SMB		The volume \"
+Connessione e montaggio in corso...	SMB		Connecting and mounting...

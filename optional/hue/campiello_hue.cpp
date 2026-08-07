@@ -14,6 +14,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <CheckBox.h>
 #include <Entry.h>
 #include <FindDirectory.h>
@@ -37,6 +38,12 @@
 #include "HueBridge.h"
 
 using namespace campiello::hue;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Hue"
 
 static const char* const kSignature = "application/x-vnd.Campiello-hue";
 
@@ -198,14 +205,16 @@ void HueWindow::BuildPairing()
 {
 	while (BView* c = ChildAt(0)) { RemoveChild(c); delete c; }
 
-	BStringView* title = new BStringView("t", "Abbina il bridge Philips Hue");
+	BStringView* title = new BStringView("t", B_TRANSLATE("Abbina il bridge Philips Hue"));
 	BFont f(be_bold_font);
 	f.SetSize(f.Size() * 1.25f);
 	title->SetFont(&f);
-	BStringView* i1 = new BStringView("i1", "1) Premi il grande pulsante rotondo sul bridge Hue.");
-	BStringView* i2 = new BStringView("i2", "2) Entro 30 secondi premi \"Abbina\" qui sotto.");
+	BStringView* i1 = new BStringView("i1",
+		B_TRANSLATE("1) Premi il grande pulsante rotondo sul bridge Hue."));
+	BStringView* i2 = new BStringView("i2",
+		B_TRANSLATE("2) Entro 30 secondi premi \"Abbina\" qui sotto."));
 	fStatus = new BStringView("st", fHost.c_str());
-	BButton* pair = new BButton("pair", "Abbina", new BMessage(kMsgPair));
+	BButton* pair = new BButton("pair", B_TRANSLATE("Abbina"), new BMessage(kMsgPair));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -225,12 +234,13 @@ void HueWindow::BuildLights(BMessage* lights)
 {
 	while (BView* c = ChildAt(0)) { RemoveChild(c); delete c; }
 
-	BStringView* title = new BStringView("t", fName.empty() ? "Luci Hue" : fName.c_str());
+	BStringView* title = new BStringView("t",
+		fName.empty() ? B_TRANSLATE("Luci Hue") : fName.c_str());
 	BFont f(be_bold_font);
 	f.SetSize(f.Size() * 1.2f);
 	title->SetFont(&f);
-	BButton* refresh = new BButton("refresh", "Aggiorna", new BMessage(kMsgRefresh));
-	fStatus = new BStringView("st", lights == nullptr ? "Carico le luci..." : "");
+	BButton* refresh = new BButton("refresh", B_TRANSLATE("Aggiorna"), new BMessage(kMsgRefresh));
+	fStatus = new BStringView("st", lights == nullptr ? B_TRANSLATE("Carico le luci...") : "");
 
 	BLayoutBuilder::Group<> root = BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -254,7 +264,7 @@ void HueWindow::BuildLights(BMessage* lights)
 			BMessage* toggle = new BMessage(kMsgToggle);
 			toggle->AddString("id", id);
 			toggle->AddBool("on", !on); // pressing flips it
-			BButton* btn = new BButton("", on ? "On" : "Off", toggle);
+			BButton* btn = new BButton("", on ? B_TRANSLATE("On") : B_TRANSLATE("Off"), toggle);
 
 			BStringView* label = new BStringView("", name);
 
@@ -275,7 +285,7 @@ void HueWindow::BuildLights(BMessage* lights)
 			++count;
 		}
 		if (count == 0)
-			fStatus->SetText("Nessuna luce trovata (bridge abbinato?).");
+			fStatus->SetText(B_TRANSLATE("Nessuna luce trovata (bridge abbinato?)."));
 	}
 	root.AddGlue().End();
 }
@@ -292,7 +302,7 @@ void HueWindow::MessageReceived(BMessage* msg)
 {
 	switch (msg->what) {
 		case kMsgPair: {
-			if (fStatus != nullptr) fStatus->SetText("Abbinamento in corso...");
+			if (fStatus != nullptr) fStatus->SetText(B_TRANSLATE("Abbinamento in corso..."));
 			PairJob* job = new PairJob{fHost, fName, BMessenger(this)};
 			thread_id t = spawn_thread(PairThread, "hue_pair", B_NORMAL_PRIORITY, job);
 			if (t < 0) delete job; else resume_thread(t);
@@ -303,7 +313,8 @@ void HueWindow::MessageReceived(BMessage* msg)
 			msg->FindString("key", &key);
 			if (key[0] == '\0') {
 				if (fStatus != nullptr)
-					fStatus->SetText("Pulsante non premuto o bridge irraggiungibile. Riprova.");
+					fStatus->SetText(
+						B_TRANSLATE("Pulsante non premuto o bridge irraggiungibile. Riprova."));
 				return;
 			}
 			fKey = key;
@@ -313,7 +324,7 @@ void HueWindow::MessageReceived(BMessage* msg)
 			return;
 		}
 		case kMsgRefresh:
-			if (fStatus != nullptr) fStatus->SetText("Aggiorno...");
+			if (fStatus != nullptr) fStatus->SetText(B_TRANSLATE("Aggiorno..."));
 			StartListing();
 			return;
 		case kMsgLightsReady:
@@ -340,7 +351,7 @@ void HueWindow::MessageReceived(BMessage* msg)
 		case kMsgCmdDone: {
 			bool ok = false; msg->FindBool("ok", &ok);
 			if (!ok && fStatus != nullptr)
-				fStatus->SetText("Comando non riuscito.");
+				fStatus->SetText(B_TRANSLATE("Comando non riuscito."));
 			else
 				StartListing(); // reflect the new state
 			return;
@@ -378,7 +389,8 @@ public:
 			return;
 		if (fHost.empty()) {
 			(new BAlert("Philips Hue",
-				"Nessun bridge. Apri Hue dal vicinato WON, o passa host=<ip>.", "Chiudi"))->Go();
+				B_TRANSLATE("Nessun bridge. Apri Hue dal vicinato WON, o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

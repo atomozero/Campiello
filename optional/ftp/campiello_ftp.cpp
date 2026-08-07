@@ -15,6 +15,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <FilePanel.h>
 #include <LayoutBuilder.h>
@@ -37,6 +38,12 @@
 #include "FtpClient.h"
 
 using namespace campiello::ftp;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "FTP"
 
 static const char* const kSignature = "application/x-vnd.Campiello-ftp";
 
@@ -117,9 +124,9 @@ FtpWindow::FtpWindow(const std::string& host, const std::string& name)
 	f.SetSize(f.Size() * 1.2f);
 	title->SetFont(&f);
 
-	fUser = new BTextControl("u", "Utente:", "anonymous", nullptr);
-	fPass = new BTextControl("p", "Password:", "anonymous@", nullptr);
-	BButton* connect = new BButton("c", "Connetti", new BMessage(kMsgConnect));
+	fUser = new BTextControl("u", B_TRANSLATE("Utente:"), "anonymous", nullptr);
+	fPass = new BTextControl("p", B_TRANSLATE("Password:"), "anonymous@", nullptr);
+	BButton* connect = new BButton("c", B_TRANSLATE("Connetti"), new BMessage(kMsgConnect));
 
 	fPathView = new BStringView("pv", "/");
 	fList = new BListView("entries");
@@ -157,7 +164,7 @@ std::string FtpWindow::ParentOf(const std::string& path) const
 
 void FtpWindow::StartList(const std::string& path)
 {
-	fStatus->SetText("Carico...");
+	fStatus->SetText(B_TRANSLATE("Carico..."));
 	ListJob* job = new ListJob{fHost, fUser->Text(), fPass->Text(), path, BMessenger(this)};
 	thread_id t = spawn_thread(ListThread, "ftp_list", B_NORMAL_PRIORITY, job);
 	if (t < 0) { delete job; return; }
@@ -177,7 +184,7 @@ void FtpWindow::MessageReceived(BMessage* msg)
 			fEntries.clear();
 			if (!ok) {
 				const char* err = ""; msg->FindString("error", &err);
-				fStatus->SetText(err[0] ? err : "Connessione non riuscita.");
+				fStatus->SetText(err[0] ? err : B_TRANSLATE("Connessione non riuscita."));
 				return;
 			}
 			const char* path = "/"; msg->FindString("path", &path);
@@ -205,11 +212,11 @@ void FtpWindow::MessageReceived(BMessage* msg)
 			for (const Entry& e : files) {
 				fEntries.push_back(e);
 				BString row(e.name.c_str());
-				row << "   (" << (long long)e.size << " byte)";
+				row << "   (" << (long long)e.size << B_TRANSLATE(" byte)");
 				fList->AddItem(new BStringItem(row.String()));
 			}
 			BString st;
-			st << (int)(dirs.size() + files.size()) << " elementi";
+			st << (int)(dirs.size() + files.size()) << B_TRANSLATE(" elementi");
 			fStatus->SetText(st.String());
 			return;
 		}
@@ -241,7 +248,7 @@ void FtpWindow::MessageReceived(BMessage* msg)
 			if (p.InitCheck() != B_OK)
 				return;
 			p.Append(nm);
-			fStatus->SetText("Scarico...");
+			fStatus->SetText(B_TRANSLATE("Scarico..."));
 			RetrJob* job = new RetrJob{fHost, fUser->Text(), fPass->Text(),
 				fPendingDownload, p.Path(), BMessenger(this)};
 			thread_id t = spawn_thread(RetrThread, "ftp_retr", B_NORMAL_PRIORITY, job);
@@ -251,8 +258,8 @@ void FtpWindow::MessageReceived(BMessage* msg)
 		case kMsgDownDone: {
 			bool ok = false; msg->FindBool("ok", &ok);
 			const char* local = ""; msg->FindString("local", &local);
-			if (ok) { BString s("Salvato: "); s << local; fStatus->SetText(s.String()); }
-			else fStatus->SetText("Download non riuscito.");
+			if (ok) { BString s(B_TRANSLATE("Salvato: ")); s << local; fStatus->SetText(s.String()); }
+			else fStatus->SetText(B_TRANSLATE("Download non riuscito."));
 			return;
 		}
 	}
@@ -288,8 +295,8 @@ public:
 			return;
 		if (fHost.empty()) {
 			(new BAlert("FTP",
-				"Nessun server. Apri un server FTP dal vicinato WON, o passa host=<ip>.",
-				"Chiudi"))->Go();
+				B_TRANSLATE("Nessun server. Apri un server FTP dal vicinato WON, o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

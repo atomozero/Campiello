@@ -1,0 +1,88 @@
+1	en	application/x-vnd.Campiello-won	1830778517
+\nTXT grezzi (	WON		\nRaw TXT (
+Stampante	WON		Printer
+Impossibile avviare il client RDP.	WON		Cannot start the RDP client.
+Chiave interna: 	WON		Internal key: 
+Inserisci un indirizzo (host o IP).	WON		Enter an address (host or IP).
+Dettagli...	WON		Details...
+Indirizzo:	WON		Address:
+Aggiorna	WON		Refresh
+Non si aprira' piu' all'avvio (l'icona resta sulla Deskbar)	WON		It will no longer open at startup (the icon stays in the Deskbar)
+Tipo: 	WON		Type: 
+Indirizzo (A): 	WON		Address (A): 
+Altro	WON		Other
+Ricerca in corso...	WON		Searching...
+Copia tutto	WON		Copy all
+Nome:	WON		Name:
+Desktop remoto verso 	WON		Remote desktop to 
+%zu servizi in rete	WON		%zu services on the network
+Stato: verifica...	WON		Status: checking...
+(non risolto)	WON		(not resolved)
+Impossibile aprire il Terminal per la sessione SSH.	WON		Cannot open Terminal for the SSH session.
+Seleziona un dispositivo	WON		Select a device
+SSH/SFTP	WON		SSH/SFTP
+Impossibile aprire il socket di rete.	WON		Cannot open the network socket.
+Invio del magic packet non riuscito.	WON		Failed to send the magic packet.
+(nessuno)	WON		(none)
+Apri	WON		Open
+Casa	WON		Home
+Nessun dispositivo trovato	WON		No device found
+Produttore	WON		Manufacturer
+Ispeziona record mDNS...	WON		Inspect mDNS records...
+Aggiungi...	WON		Add...
+%d dispositivi - %d online	WON		%d devices - %d online
+Porta (SRV): 	WON		Port (SRV): 
+Magic packet inviato a 	WON		Magic packet sent to 
+Rete non disponibile	WON		Network unavailable
+Solo online	WON		Only online
+(nessuna)	WON		(none)
+Nessun browser per aprire:\n	WON		No browser to open:\n
+Opzioni	WON		Options
+Nessun risultato per il filtro	WON		No result for the filter
+Campiello	WON		Campiello
+Ispeziona	WON		Inspect
+Stato: online (raggiungibile in rete)	WON		Status: online (reachable on the network)
+Record mDNS - 	WON		mDNS records - 
+Terminale SSH verso 	WON		SSH terminal to 
+Apri terminale SSH	WON		Open SSH terminal
+Stato: offline	WON		Status: offline
+Informazioni sul servizio	WON		Service information
+Apri desktop remoto (RDP)	WON		Open remote desktop (RDP)
+Servizio: 	WON		Service: 
+Dettagli di rete	WON		Network details
+Servizio	WON		Service
+Stato: online (%d ms)	WON		Status: online (%d ms)
+Aggiungi dispositivo	WON		Add device
+Copia IP	WON		Copy IP
+Dettagli	WON		Details
+Indirizzo MAC non disponibile per questo dispositivo.\n\nIl MAC si apprende quando il dispositivo e' online e nella tabella ARP.	WON		MAC address not available for this device.\n\nThe MAC is learned when the device is online and in the ARP table.
+Accendi (Wake-on-LAN)	WON		Wake up (Wake-on-LAN)
+Annulla	WON		Cancel
+in rete	WON		on network
+Media	WON		Media
+Istanza: 	WON		Instance: 
+Apri all'avvio del sistema	WON		Open at system startup
+Tipo	WON		Type
+Copia indirizzo	WON		Copy address
+OK	WON		OK
+Chiudi	WON		Close
+Computer	WON		Computer
+Manuale	WON		Manual
+Porta:	WON		Port:
+Apri interfaccia web	WON		Open web interface
+Si aprira' all'avvio del sistema	WON		It will open at system startup
+Nessun client RDP installato.\n\nInstalla \"freerdp\" o \"remmina\" da HaikuDepot per aprire i desktop remoti Windows.	WON		No RDP client installed.\n\nInstall \"freerdp\" or \"remmina\" from HaikuDepot to open Windows remote desktops.
+Aggiungi	WON		Add
+Rimuovi dispositivo	WON		Remove device
+Nessun dispositivo selezionato	WON		No device selected
+Produttore: 	WON		Manufacturer: 
+Indirizzo	WON		Address
+Windows	WON		Windows
+Web UI	WON		Web UI
+Indirizzo: 	WON		Address: 
+Tipo servizio: 	WON		Service type: 
+  (nessun record TXT)\n	WON		  (no TXT record)\n
+Cerca:	WON		Search:
+Copiato: 	WON		Copied: 
+Web	WON		Web
+offline	WON		offline

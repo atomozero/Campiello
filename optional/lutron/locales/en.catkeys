@@ -1,0 +1,6 @@
+1	en	application/x-vnd.Campiello-lutron	591374345
+LEAP sicuro: 	Lutron		Secure LEAP:
+Nome: 	Lutron		Name:
+Nessun bridge. Aprilo dal vicinato WON.	Lutron		No bridge. Open it from the WON neighborhood.
+Il controllo di luci e tapparelle usa il protocollo Lutron Secure LEAP: richiede l'accoppiamento con un certificato client TLS (si preme il pulsante sul bridge per registrarsi) e poi messaggi LEAP in JSON su TLS. Questo accoppiamento non e' ancora disponibile in Campiello. Per ora usa l'app Lutron.	Lutron		Controlling lights and shades uses the Lutron Secure LEAP protocol: it needs pairing with a TLS client certificate (press the button on the bridge to enroll) and then LEAP messages in JSON over TLS. This pairing is not yet available in Campiello. For now use the Lutron app.
+Chiudi	Lutron		Close

@@ -1,0 +1,21 @@
+1	en	application/x-vnd.Campiello-nut	2151587700
+   Ingresso: 	NUT		   Input:
+Stato: 	NUT		Status:
+Carica batteria: 	NUT		Battery charge:
+Chiudi	NUT		Close
+ V	NUT		 V
+Autonomia stimata: 	NUT		Estimated runtime:
+Gruppo di continuita (UPS)	NUT		Uninterruptible power supply (UPS)
+Stato: nessun UPS o server non raggiungibile.	NUT		Status: no UPS, or the server is unreachable.
+Carico: 	NUT		Load:
+Pronto.	NUT		Ready.
+Carico: -	NUT		Load: -
+Aggiorno...	NUT		Refreshing...
+ %	NUT		 %
+Carica batteria: -	NUT		Battery charge: -
+Non raggiungibile.	NUT		Unreachable.
+Nessun dispositivo. Apri un UPS dal vicinato WON, o passa host=<ip>.	NUT		No device. Open a UPS from the WON neighborhood, or pass host=<ip>.
+Autonomia stimata: -	NUT		Estimated runtime: -
+Aggiorna	NUT		Refresh
+Tutte le variabili:	NUT		All variables:
+Stato: interrogo il server...	NUT		Status: querying the server...

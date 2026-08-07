@@ -32,6 +32,11 @@
 #include <utility>
 #include <vector>
 
+#include <Catalog.h>
+
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "ESPHome"
+
 static const char* const kSignature = "application/x-vnd.Campiello-esphome";
 
 static const uint32 kMsgOpenWeb = 'eweb';
@@ -52,7 +57,7 @@ public:
 	bool QuitRequested() override { be_app->PostMessage(B_QUIT_REQUESTED); return true; }
 	EsphomeWindow(const std::string& host, const std::string& name,
 		const std::vector<std::pair<std::string, std::string>>& txt)
-		: BWindow(BRect(100, 100, 480, 420), "Dispositivo ESPHome", B_TITLED_WINDOW,
+		: BWindow(BRect(100, 100, 480, 420), B_TRANSLATE("Dispositivo ESPHome"), B_TITLED_WINDOW,
 			B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS),
 		  fHost(host)
 	{
@@ -67,33 +72,33 @@ public:
 		details->MakeEditable(false);
 		details->SetExplicitMinSize(BSize(340, 150));
 		BString s;
-		s << "Nome: " << (name.empty() ? host.c_str() : name.c_str()) << "\n";
-		s << "Indirizzo: " << host.c_str() << "\n";
+		s << B_TRANSLATE("Nome: ") << (name.empty() ? host.c_str() : name.c_str()) << "\n";
+		s << B_TRANSLATE("Indirizzo: ") << host.c_str() << "\n";
 		auto add = [&](const char* label, const char* key) {
 			std::string v = TxtGet(txt, key);
 			if (!v.empty())
 				s << label << ": " << v.c_str() << "\n";
 		};
-		add("Progetto", "project_name");
-		add("Versione progetto", "project_version");
-		add("Versione ESPHome", "version");
-		add("Scheda", "board");
-		add("Piattaforma", "platform");
-		add("Rete", "network");
-		add("Indirizzo MAC", "mac");
+		add(B_TRANSLATE("Progetto"), "project_name");
+		add(B_TRANSLATE("Versione progetto"), "project_version");
+		add(B_TRANSLATE("Versione ESPHome"), "version");
+		add(B_TRANSLATE("Scheda"), "board");
+		add(B_TRANSLATE("Piattaforma"), "platform");
+		add(B_TRANSLATE("Rete"), "network");
+		add(B_TRANSLATE("Indirizzo MAC"), "mac");
 		details->SetText(s.String());
 
 		BTextView* note = new BTextView("n");
 		note->MakeEditable(false);
 		note->SetExplicitMinSize(BSize(340, 80));
-		note->SetText(
+		note->SetText(B_TRANSLATE(
 			"Campiello mostra le informazioni annunciate dal dispositivo e ne apre l'interfaccia web "
 			"(se il componente web_server e' attivo). Il controllo completo di entita' e sensori usa "
 			"l'API nativa ESPHome (canale protobuf sulla porta 6053, con eventuale cifratura Noise e "
-			"password/chiave API): e' un'estensione futura, non ancora implementata.");
+			"password/chiave API): e' un'estensione futura, non ancora implementata."));
 
-		BButton* web = new BButton("w", "Apri interfaccia web", new BMessage(kMsgOpenWeb));
-		BButton* close = new BButton("c", "Chiudi", new BMessage(B_QUIT_REQUESTED));
+		BButton* web = new BButton("w", B_TRANSLATE("Apri interfaccia web"), new BMessage(kMsgOpenWeb));
+		BButton* close = new BButton("c", B_TRANSLATE("Chiudi"), new BMessage(B_QUIT_REQUESTED));
 
 		BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 			.SetInsets(B_USE_WINDOW_INSETS)
@@ -156,8 +161,9 @@ public:
 		if (fShown)
 			return;
 		if (fHost.empty()) {
-			(new BAlert("Dispositivo ESPHome",
-				"Nessun dispositivo. Aprilo dal vicinato WON, o passa host=<ip>.", "Chiudi"))->Go();
+			(new BAlert(B_TRANSLATE("Dispositivo ESPHome"),
+				B_TRANSLATE("Nessun dispositivo. Aprilo dal vicinato WON, o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

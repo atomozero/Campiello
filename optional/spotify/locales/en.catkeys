@@ -1,0 +1,16 @@
+1	en	application/x-vnd.Campiello-spotify	1566223434
+Porta del dispositivo non disponibile.	Spotify		Device port not available.
+(nessuno)	Spotify		(none)
+Versione: 	Spotify		Version:
+Aggiorna	Spotify		Refresh
+Nessun dispositivo. Aprilo dal vicinato WON, o passa host=<ip> port=<n>.	Spotify		No device. Open it from the WON neighborhood, or pass host=<ip> port=<n>.
+Nome: 	Spotify		Name:
+Campiello mostra le informazioni pubbliche dell'altoparlante. Avviare e controllare la riproduzione richiede un account Spotify Premium e l'autenticazione (Web API OAuth), non ancora disponibile. Per ora usa l'app Spotify e scegli questo dispositivo con Spotify Connect.	Spotify		Campiello shows the speaker's public information. Starting and controlling playback needs a Spotify Premium account and authentication (OAuth Web API), not yet available. For now use the Spotify app and choose this device with Spotify Connect.
+Tipo: 	Spotify		Type:
+Interrogo il dispositivo...	Spotify		Querying the device...
+Indirizzo: 	Spotify		Address:
+Chiudi	Spotify		Close
+Dispositivo: 	Spotify		Device:
+Pronto.	Spotify		Ready.
+Dispositivo non raggiungibile o non Spotify Connect.	Spotify		Device unreachable or not Spotify Connect.
+Account attivo: 	Spotify		Active account:

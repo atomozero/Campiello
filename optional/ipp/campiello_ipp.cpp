@@ -15,6 +15,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <FilePanel.h>
 #include <FindDirectory.h>
@@ -37,6 +38,12 @@
 #include "IppClient.h"
 
 using namespace campiello::ipp;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "IPP"
 
 static const char* const kSignature = "application/x-vnd.Campiello-ipp";
 
@@ -64,9 +71,9 @@ static std::string DocFormatFor(const std::string& path)
 
 static std::string StateText(const std::string& raw)
 {
-	if (raw == "3") return "Pronta";
-	if (raw == "4") return "In stampa";
-	if (raw == "5") return "Ferma";
+	if (raw == "3") return B_TRANSLATE("Pronta");
+	if (raw == "4") return B_TRANSLATE("In stampa");
+	if (raw == "5") return B_TRANSLATE("Ferma");
 	return raw;
 }
 
@@ -122,21 +129,23 @@ private:
 };
 
 IppWindow::IppWindow(const std::string& host, const std::string& name)
-	: BWindow(BRect(100, 100, 480, 520), "Stampante", B_TITLED_WINDOW, B_AUTO_UPDATE_SIZE_LIMITS),
+	: BWindow(BRect(100, 100, 480, 520), B_TRANSLATE("Stampante"), B_TITLED_WINDOW,
+		B_AUTO_UPDATE_SIZE_LIMITS),
 	  fHost(host), fName(name)
 {
-	BStringView* title = new BStringView("t", fName.empty() ? "Stampante di rete" : fName.c_str());
+	BStringView* title = new BStringView("t",
+		fName.empty() ? B_TRANSLATE("Stampante di rete") : fName.c_str());
 	BFont f(be_bold_font);
 	f.SetSize(f.Size() * 1.2f);
 	title->SetFont(&f);
 
-	fSummary = new BStringView("sum", "Interrogo la stampante...");
+	fSummary = new BStringView("sum", B_TRANSLATE("Interrogo la stampante..."));
 	fDetails = new BTextView("det");
 	fDetails->MakeEditable(false);
 	BScrollView* scroll = new BScrollView("ds", fDetails, 0, false, true);
 	fStatus = new BStringView("st", fHost.c_str());
-	BButton* print = new BButton("print", "Stampa un file...", new BMessage(kMsgPick));
-	BButton* refresh = new BButton("refresh", "Aggiorna", new BMessage(kMsgQuery));
+	BButton* print = new BButton("print", B_TRANSLATE("Stampa un file..."), new BMessage(kMsgPick));
+	BButton* refresh = new BButton("refresh", B_TRANSLATE("Aggiorna"), new BMessage(kMsgQuery));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -157,7 +166,7 @@ IppWindow::IppWindow(const std::string& host, const std::string& name)
 
 void IppWindow::StartQuery()
 {
-	fStatus->SetText("Interrogo la stampante...");
+	fStatus->SetText(B_TRANSLATE("Interrogo la stampante..."));
 	QueryJob* job = new QueryJob{fHost, fName, BMessenger(this)};
 	thread_id t = spawn_thread(QueryThread, "ipp_query", B_NORMAL_PRIORITY, job);
 	if (t < 0) { delete job; return; }
@@ -186,7 +195,7 @@ void IppWindow::MessageReceived(BMessage* msg)
 				else if (key == "document-format-supported") formats = v;
 			}
 			if (!ok && all.Length() == 0) {
-				fSummary->SetText("Stampante non raggiungibile o non IPP.");
+				fSummary->SetText(B_TRANSLATE("Stampante non raggiungibile o non IPP."));
 				fStatus->SetText(fHost.c_str());
 				return;
 			}
@@ -195,7 +204,8 @@ void IppWindow::MessageReceived(BMessage* msg)
 			if (!location.empty()) sum << "  (" << location.c_str() << ")";
 			fSummary->SetText(sum.String());
 			fDetails->SetText(all.String());
-			fStatus->SetText(formats.empty() ? "Pronta" : ("Formati: " + formats).c_str());
+			fStatus->SetText(formats.empty() ? B_TRANSLATE("Pronta")
+				: (std::string(B_TRANSLATE("Formati: ")) + formats).c_str());
 			return;
 		}
 		case kMsgPick: {
@@ -214,7 +224,7 @@ void IppWindow::MessageReceived(BMessage* msg)
 			if (path.InitCheck() != B_OK)
 				return;
 			std::string p = path.Path();
-			fStatus->SetText("Invio in stampa...");
+			fStatus->SetText(B_TRANSLATE("Invio in stampa..."));
 			PrintJob* job = new PrintJob{fHost, p, DocFormatFor(p), ref.name, BMessenger(this)};
 			thread_id t = spawn_thread(PrintThread, "ipp_print", B_NORMAL_PRIORITY, job);
 			if (t < 0) delete job; else resume_thread(t);
@@ -222,7 +232,7 @@ void IppWindow::MessageReceived(BMessage* msg)
 		}
 		case kMsgPrintDone: {
 			bool ok = false; msg->FindBool("ok", &ok);
-			fStatus->SetText(ok ? "Inviato in stampa." : "Stampa non riuscita.");
+			fStatus->SetText(ok ? B_TRANSLATE("Inviato in stampa.") : B_TRANSLATE("Stampa non riuscita."));
 			return;
 		}
 	}
@@ -257,9 +267,9 @@ public:
 		if (fShown)
 			return;
 		if (fHost.empty()) {
-			(new BAlert("Stampante",
-				"Nessuna stampante. Apri una stampante dal vicinato WON, o passa host=<ip>.",
-				"Chiudi"))->Go();
+			(new BAlert(B_TRANSLATE("Stampante"),
+				B_TRANSLATE("Nessuna stampante. Apri una stampante dal vicinato WON, o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

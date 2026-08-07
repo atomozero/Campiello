@@ -4,6 +4,8 @@
 
 #include "DaikinClient.h"
 
+#include <Catalog.h>
+
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -12,6 +14,12 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+// Haiku Locale Kit: the UI-helper strings below (ModeName/FanRateName/FanDirName) are shown in the
+// control panel's status line, so they go through B_TRANSLATE. Source strings are Italian, per the
+// working agreement; catalogs under data/locale/catalogs/<signature>/ translate them.
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Daikin"
 
 namespace campiello {
 namespace daikin {
@@ -182,31 +190,31 @@ std::string ModeName(int mode)
 	switch (mode) {
 		case 0:
 		case 1:
-		case 7: return "Automatico";
-		case 2: return "Deumidificazione";
-		case 3: return "Raffrescamento";
-		case 4: return "Riscaldamento";
-		case 6: return "Ventilazione";
-		default: return "Modo " + std::to_string(mode);
+		case 7: return B_TRANSLATE("Automatico");
+		case 2: return B_TRANSLATE("Deumidificazione");
+		case 3: return B_TRANSLATE("Raffrescamento");
+		case 4: return B_TRANSLATE("Riscaldamento");
+		case 6: return B_TRANSLATE("Ventilazione");
+		default: return std::string(B_TRANSLATE("Modo ")) + std::to_string(mode);
 	}
 }
 
 std::string FanRateName(const std::string& rate)
 {
-	if (rate == "A") return "Automatica";
-	if (rate == "B") return "Silenziosa";
+	if (rate == "A") return B_TRANSLATE("Automatica");
+	if (rate == "B") return B_TRANSLATE("Silenziosa");
 	if (rate.size() == 1 && rate[0] >= '3' && rate[0] <= '7')
-		return "Livello " + std::to_string(rate[0] - '2'); // 3->1 ... 7->5
+		return std::string(B_TRANSLATE("Livello ")) + std::to_string(rate[0] - '2'); // 3->1 ... 7->5
 	return rate.empty() ? "-" : rate;
 }
 
 std::string FanDirName(int dir)
 {
 	switch (dir) {
-		case 0: return "Ferma";
-		case 1: return "Verticale";
-		case 2: return "Orizzontale";
-		case 3: return "Verticale e orizzontale";
+		case 0: return B_TRANSLATE("Ferma");
+		case 1: return B_TRANSLATE("Verticale");
+		case 2: return B_TRANSLATE("Orizzontale");
+		case 3: return B_TRANSLATE("Verticale e orizzontale");
 		default: return "-";
 	}
 }

@@ -14,6 +14,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <LayoutBuilder.h>
 #include <Node.h>
@@ -33,6 +34,12 @@
 
 using namespace campiello::homekit;
 
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "HomeKit"
+
 static const char* const kSignature = "application/x-vnd.Campiello-homekit";
 static const char* const kHueSignature = "application/x-vnd.Campiello-hue";
 static const uint32 kMsgOpenHue = 'hkhu';
@@ -50,7 +57,7 @@ class HomeKitWindow : public BWindow {
 public:
 	bool QuitRequested() override { be_app->PostMessage(B_QUIT_REQUESTED); return true; }
 	HomeKitWindow(const std::string& host, const std::string& name, const HapInfo& info)
-		: BWindow(BRect(100, 100, 460, 400), "Accessorio HomeKit", B_TITLED_WINDOW,
+		: BWindow(BRect(100, 100, 460, 400), B_TRANSLATE("Accessorio HomeKit"), B_TITLED_WINDOW,
 			B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS),
 		  fHost(host)
 	{
@@ -65,37 +72,37 @@ public:
 		details->MakeEditable(false);
 		details->SetExplicitMinSize(BSize(320, 120));
 		BString info_s;
-		info_s << "Nome: " << (info.name.empty() ? BString(display.c_str()) : BString(info.name.c_str())) << "\n";
+		info_s << B_TRANSLATE("Nome: ") << (info.name.empty() ? BString(display.c_str()) : BString(info.name.c_str())) << "\n";
 		if (info.categoryId > 0)
-			info_s << "Categoria: " << info.category.c_str() << " (id " << info.categoryId << ")\n";
+			info_s << B_TRANSLATE("Categoria: ") << info.category.c_str() << " (id " << info.categoryId << ")\n";
 		if (info.pairedKnown)
-			info_s << "Stato: " << (info.paired ? "Accoppiato" : "Non accoppiato (aggiungibile)") << "\n";
+			info_s << B_TRANSLATE("Stato: ") << (info.paired ? B_TRANSLATE("Accoppiato") : B_TRANSLATE("Non accoppiato (aggiungibile)")) << "\n";
 		if (!info.configNumber.empty())
-			info_s << "Configurazione: " << info.configNumber.c_str() << "\n";
-		info_s << "Protocollo HAP: " << info.protocolVersion.c_str() << "\n";
+			info_s << B_TRANSLATE("Configurazione: ") << info.configNumber.c_str() << "\n";
+		info_s << B_TRANSLATE("Protocollo HAP: ") << info.protocolVersion.c_str() << "\n";
 		if (!info.id.empty())
-			info_s << "ID: " << info.id.c_str() << "\n";
-		info_s << "Indirizzo: " << host.c_str() << "\n";
+			info_s << B_TRANSLATE("ID: ") << info.id.c_str() << "\n";
+		info_s << B_TRANSLATE("Indirizzo: ") << host.c_str() << "\n";
 		details->SetText(info_s.String());
 
 		BTextView* note = new BTextView("n");
 		note->MakeEditable(false);
 		note->SetExplicitMinSize(BSize(320, 70));
 		note->SetText(hueBridge
-			? "Questo e' un bridge Philips Hue. Campiello puo' controllarlo direttamente: premi "
-			  "\"Apri controllo Hue\" per accoppiarti (pulsante sul bridge) e gestire le luci."
-			: "Campiello mostra le informazioni pubbliche dell'accessorio. Il controllo (accendere, "
+			? B_TRANSLATE("Questo e' un bridge Philips Hue. Campiello puo' controllarlo direttamente: premi "
+			  "\"Apri controllo Hue\" per accoppiarti (pulsante sul bridge) e gestire le luci.")
+			: B_TRANSLATE("Campiello mostra le informazioni pubbliche dell'accessorio. Il controllo (accendere, "
 			  "regolare) richiede l'accoppiamento sicuro HomeKit (crittografia SRP + ChaCha20-Poly1305), "
-			  "non ancora disponibile. Per usarlo ora, aggiungilo con l'app Casa di Apple.");
+			  "non ancora disponibile. Per usarlo ora, aggiungilo con l'app Casa di Apple."));
 
-		BButton* close = new BButton("c", "Chiudi", new BMessage(B_QUIT_REQUESTED));
+		BButton* close = new BButton("c", B_TRANSLATE("Chiudi"), new BMessage(B_QUIT_REQUESTED));
 
 		if (hueBridge) {
 			BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 				.SetInsets(B_USE_WINDOW_INSETS)
 				.Add(title).Add(details).Add(note)
 				.AddGroup(B_HORIZONTAL)
-					.Add(new BButton("hue", "Apri controllo Hue", new BMessage(kMsgOpenHue)))
+					.Add(new BButton("hue", B_TRANSLATE("Apri controllo Hue"), new BMessage(kMsgOpenHue)))
 					.AddGlue()
 					.Add(close)
 				.End()
@@ -118,7 +125,8 @@ public:
 			status_t r = be_roster->Launch(kHueSignature, 1, const_cast<char**>(argv));
 			if (r != B_OK && r != B_ALREADY_RUNNING)
 				(new BAlert("Hue",
-					"Modulo Hue non installato. Installa il pacchetto campiello_hue.", "Chiudi"))->Go();
+					B_TRANSLATE("Modulo Hue non installato. Installa il pacchetto campiello_hue."),
+					B_TRANSLATE("Chiudi")))->Go();
 			return;
 		}
 		BWindow::MessageReceived(msg);
@@ -158,7 +166,7 @@ public:
 			return;
 		if (fHost.empty()) {
 			(new BAlert("Accessorio HomeKit",
-				"Nessun accessorio. Aprilo dal vicinato WON.", "Chiudi"))->Go();
+				B_TRANSLATE("Nessun accessorio. Aprilo dal vicinato WON."), B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

@@ -1,0 +1,13 @@
+1	it	application/x-vnd.Campiello-nfs	1685415098
+Server NFS	NFS		Server NFS
+Condivisioni esportate dal server NFS:	NFS		Condivisioni esportate dal server NFS:
+Nessun server. Apri un server NFS dal vicinato WON, o passa host=<ip>.	NFS		Nessun server. Apri un server NFS dal vicinato WON, o passa host=<ip>.
+Elenco export non disponibile. Usa l'indirizzo host:/percorso.	NFS		Elenco export non disponibile. Usa l'indirizzo host:/percorso.
+Interrogo il server...	NFS		Interrogo il server...
+Aggiorna	NFS		Aggiorna
+Chiudi	NFS		Chiudi
+Copia indirizzo	NFS		Copia indirizzo
+Per montarla: Tracker, menu Dischi > Monta, oppure da Terminale\nmount -t nfs4 -p \"indirizzo\" /boot/home/nfs   (crea prima la cartella).	NFS		Per montarla: Tracker, menu Dischi > Monta, oppure da Terminale\nmount -t nfs4 -p \"indirizzo\" /boot/home/nfs   (crea prima la cartella).
+Copiato: 	NFS		Copiato: 
+Nessuna condivisione esportata.	NFS		Nessuna condivisione esportata.
+ condivisioni. Selezionane una e copia l'indirizzo.	NFS		 condivisioni. Selezionane una e copia l'indirizzo.

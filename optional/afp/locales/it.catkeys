@@ -1,0 +1,13 @@
+1	it	application/x-vnd.Campiello-afp	2699473397
+Chiudi	AFP		Chiudi
+Server AFP	AFP		Server AFP
+Nome server: 	AFP		Nome server: 
+Tipo macchina: 	AFP		Tipo macchina: 
+Server non raggiungibile o non AFP.	AFP		Server non raggiungibile o non AFP.
+Nessun server. Apri un server AFP dal vicinato WON, o passa host=<ip>.	AFP		Nessun server. Apri un server AFP dal vicinato WON, o passa host=<ip>.
+Pronto.	AFP		Pronto.
+Versioni AFP: 	AFP		Versioni AFP: 
+Autenticazione: 	AFP		Autenticazione: 
+AFP e' un protocollo datato (macOS moderno usa SMB).\nPer condividere file, preferisci il modulo SMB di Campiello.	AFP		AFP e' un protocollo datato (macOS moderno usa SMB).\nPer condividere file, preferisci il modulo SMB di Campiello.
+Interrogo il server...	AFP		Interrogo il server...
+Aggiorna	AFP		Aggiorna

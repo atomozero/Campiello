@@ -1,0 +1,8 @@
+1	en	application/x-vnd.Campiello-eero	1238730487
+Nessun dispositivo. Aprilo dal vicinato WON.	eero		No device. Open it from the WON neighborhood.
+Router mesh eero	eero		eero mesh router
+Nome	eero		Name
+Il sistema eero non offre un'interfaccia di controllo locale: la configurazione (rete, dispositivi, aggiornamenti) passa dall'app eero e dal cloud eero, legata al tuo account. Campiello puo' quindi solo mostrare la presenza del nodo mesh sulla rete, non configurarlo. Per gestirlo, usa l'app eero.	eero		The eero system does not offer a local control interface: configuration (network, devices, updates) goes through the eero app and the eero cloud, tied to your account. Campiello can therefore only show the mesh node's presence on the network, not configure it. To manage it, use the eero app.
+MAC base	eero		Base MAC
+Indirizzo	eero		Address
+Chiudi	eero		Close

@@ -15,6 +15,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <FilePanel.h>
 #include <LayoutBuilder.h>
@@ -37,6 +38,12 @@
 #include "WebDavClient.h"
 
 using namespace campiello::webdav;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "WebDAV"
 
 static const char* const kSignature = "application/x-vnd.Campiello-webdav";
 
@@ -115,9 +122,9 @@ DavWindow::DavWindow(const std::string& host, const std::string& name)
 	f.SetSize(f.Size() * 1.2f);
 	title->SetFont(&f);
 
-	fUser = new BTextControl("u", "Utente:", "", nullptr);
-	fPass = new BTextControl("p", "Password:", "", nullptr);
-	BButton* connect = new BButton("c", "Connetti", new BMessage(kMsgConnect));
+	fUser = new BTextControl("u", B_TRANSLATE("Utente:"), "", nullptr);
+	fPass = new BTextControl("p", B_TRANSLATE("Password:"), "", nullptr);
+	BButton* connect = new BButton("c", B_TRANSLATE("Connetti"), new BMessage(kMsgConnect));
 
 	fPathView = new BStringView("pv", "/");
 	fList = new BListView("entries");
@@ -155,7 +162,7 @@ std::string DavWindow::ParentOf(const std::string& path) const
 
 void DavWindow::StartList(const std::string& path)
 {
-	fStatus->SetText("Carico...");
+	fStatus->SetText(B_TRANSLATE("Carico..."));
 	ListJob* job = new ListJob{fHost, fUser->Text(), fPass->Text(), path, BMessenger(this)};
 	thread_id t = spawn_thread(ListThread, "dav_list", B_NORMAL_PRIORITY, job);
 	if (t < 0) { delete job; return; }
@@ -174,7 +181,7 @@ void DavWindow::MessageReceived(BMessage* msg)
 				delete fList->RemoveItem(i);
 			fResources.clear();
 			if (!ok) {
-				fStatus->SetText("Server non raggiungibile o accesso negato.");
+				fStatus->SetText(B_TRANSLATE("Server non raggiungibile o accesso negato."));
 				return;
 			}
 			const char* path = "/"; msg->FindString("path", &path);
@@ -202,11 +209,11 @@ void DavWindow::MessageReceived(BMessage* msg)
 			for (const Resource& r : files) {
 				fResources.push_back(r);
 				BString row(r.name.c_str());
-				row << "   (" << (long long)r.size << " byte)";
+				row << "   (" << (long long)r.size << " " << B_TRANSLATE("byte") << ")";
 				fList->AddItem(new BStringItem(row.String()));
 			}
 			BString st;
-			st << (int)(dirs.size() + files.size()) << " elementi";
+			st << (int)(dirs.size() + files.size()) << " " << B_TRANSLATE("elementi");
 			fStatus->SetText(st.String());
 			return;
 		}
@@ -236,7 +243,7 @@ void DavWindow::MessageReceived(BMessage* msg)
 			if (p.InitCheck() != B_OK)
 				return;
 			p.Append(nm);
-			fStatus->SetText("Scarico...");
+			fStatus->SetText(B_TRANSLATE("Scarico..."));
 			DownJob* job = new DownJob{fHost, fUser->Text(), fPass->Text(),
 				fPendingHref, p.Path(), BMessenger(this)};
 			thread_id t = spawn_thread(DownThread, "dav_down", B_NORMAL_PRIORITY, job);
@@ -246,8 +253,8 @@ void DavWindow::MessageReceived(BMessage* msg)
 		case kMsgDownDone: {
 			bool ok = false; msg->FindBool("ok", &ok);
 			const char* local = ""; msg->FindString("local", &local);
-			if (ok) { BString s("Salvato: "); s << local; fStatus->SetText(s.String()); }
-			else fStatus->SetText("Download non riuscito.");
+			if (ok) { BString s(B_TRANSLATE("Salvato: ")); s << local; fStatus->SetText(s.String()); }
+			else fStatus->SetText(B_TRANSLATE("Download non riuscito."));
 			return;
 		}
 	}
@@ -283,8 +290,8 @@ public:
 			return;
 		if (fHost.empty()) {
 			(new BAlert("WebDAV",
-				"Nessun server. Apri un server WebDAV dal vicinato WON, o passa host=<ip>.",
-				"Chiudi"))->Go();
+				B_TRANSLATE("Nessun server. Apri un server WebDAV dal vicinato WON, o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

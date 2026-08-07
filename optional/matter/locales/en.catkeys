@@ -1,0 +1,40 @@
+1	en	application/x-vnd.Campiello-matter	2467026028
+Sensore di contatto	Matter		Contact sensor
+Sensore di umidita'	Matter		Humidity sensor
+Dispositivo Matter	Matter		Matter device
+In accoppiamento (avanzato)	Matter		Pairing (extended)
+Nessun dispositivo. Aprilo dal vicinato WON.	Matter		No device. Open it from the WON neighborhood.
+Presa on/off	Matter		On/off plug
+Presa dimmerabile	Matter		Dimmable plug
+Ventilatore	Matter		Fan
+Non in accoppiamento	Matter		Not pairing
+Sensore di presenza	Matter		Occupancy sensor
+Stato: 	Matter		Status:
+Nome: 	Matter		Name:
+Sconosciuto	Matter		Unknown
+Discriminator: 	Matter		Discriminator:
+Aggregatore (bridge)	Matter		Aggregator (bridge)
+TCP + UDP	Matter		TCP + UDP
+Indirizzo: 	Matter		Address:
+UDP	Matter		UDP
+Dispositivo Matter.\nIndirizzo: 	Matter		Matter device.\nAddress:
+Interruttore luce on/off	Matter		On/off light switch
+Tenda / oscurante	Matter		Shade / blind
+In accoppiamento (standard)	Matter		Pairing (standard)
+Rilevatore fumo/CO	Matter		Smoke/CO detector
+Tipo: 	Matter		Type:
+Trasporto: 	Matter		Transport:
+Serratura	Matter		Lock
+Interruttore dimmer a colori	Matter		Color dimmer switch
+Sensore di temperatura	Matter		Temperature sensor
+Campiello mostra le informazioni pubbliche del dispositivo. L'accoppiamento (commissioning) e il controllo richiedono le sessioni sicure Matter (PASE/CASE), i certificati di attestazione e l'onboarding Thread/Wi-Fi, non ancora disponibili. Per usarlo ora, accoppialo con un'app compatibile Matter e il relativo hub.	Matter		Campiello shows the device's public information. Pairing (commissioning) and control require the secure Matter sessions (PASE/CASE), attestation certificates, and Thread/Wi-Fi onboarding, not yet available. To use it now, pair it with a Matter-compatible app and its hub.
+Luce dimmerabile	Matter		Dimmable light
+Interruttore dimmer	Matter		Dimmer switch
+Chiudi	Matter		Close
+Termostato	Matter		Thermostat
+Luce on/off	Matter		On/off light
+Sensore di luce	Matter		Light sensor
+Sensore qualita' aria	Matter		Air quality sensor
+Luce a temperatura colore	Matter		Color temperature light
+Vendor / Product: 	Matter		Vendor / Product:
+Luce a colori	Matter		Color light

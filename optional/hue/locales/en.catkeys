@@ -1,0 +1,17 @@
+1	en	application/x-vnd.Campiello-hue	1846254064
+Luci Hue	Hue		Hue lights
+2) Entro 30 secondi premi \"Abbina\" qui sotto.	Hue		2) Within 30 seconds press \"Pair\" below.
+Abbina	Hue		Pair
+On	Hue		On
+Chiudi	Hue		Close
+Nessuna luce trovata (bridge abbinato?).	Hue		No lights found (is the bridge paired?).
+Aggiorno...	Hue		Refreshing...
+Carico le luci...	Hue		Loading the lights...
+Comando non riuscito.	Hue		Command failed.
+1) Premi il grande pulsante rotondo sul bridge Hue.	Hue		1) Press the big round button on the Hue bridge.
+Off	Hue		Off
+Aggiorna	Hue		Refresh
+Nessun bridge. Apri Hue dal vicinato WON, o passa host=<ip>.	Hue		No bridge. Open Hue from the WON neighborhood, or pass host=<ip>.
+Abbina il bridge Philips Hue	Hue		Pair the Philips Hue bridge
+Abbinamento in corso...	Hue		Pairing...
+Pulsante non premuto o bridge irraggiungibile. Riprova.	Hue		Button not pressed or bridge unreachable. Try again.

@@ -16,6 +16,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <LayoutBuilder.h>
 #include <Messenger.h>
@@ -35,6 +36,12 @@
 #include "NutClient.h"
 
 using namespace campiello::nut;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "NUT"
 
 static const char* const kSignature = "application/x-vnd.Campiello-nut";
 
@@ -93,7 +100,7 @@ private:
 };
 
 NutWindow::NutWindow(const std::string& host, int port, const std::string& name)
-	: BWindow(BRect(100, 100, 480, 500), "Gruppo di continuita (UPS)", B_TITLED_WINDOW,
+	: BWindow(BRect(100, 100, 480, 500), B_TRANSLATE("Gruppo di continuita (UPS)"), B_TITLED_WINDOW,
 		B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS),
 	  fHost(host), fPort(port), fName(name)
 {
@@ -102,17 +109,17 @@ NutWindow::NutWindow(const std::string& host, int port, const std::string& name)
 	f.SetSize(f.Size() * 1.2f);
 	fTitle->SetFont(&f);
 
-	fStatus = new BStringView("st", "Stato: interrogo il server...");
-	fCharge = new BStringView("ch", "Carica batteria: -");
-	fRuntime = new BStringView("rt", "Autonomia stimata: -");
-	fLoad = new BStringView("ld", "Carico: -");
+	fStatus = new BStringView("st", B_TRANSLATE("Stato: interrogo il server..."));
+	fCharge = new BStringView("ch", B_TRANSLATE("Carica batteria: -"));
+	fRuntime = new BStringView("rt", B_TRANSLATE("Autonomia stimata: -"));
+	fLoad = new BStringView("ld", B_TRANSLATE("Carico: -"));
 
 	fAll = new BTextView("all");
 	fAll->MakeEditable(false);
 	fAll->SetExplicitMinSize(BSize(340, 200));
 	BScrollView* scroll = new BScrollView("scroll", fAll, 0, false, true);
 
-	BButton* refresh = new BButton("rf", "Aggiorna", new BMessage(kMsgRefresh));
+	BButton* refresh = new BButton("rf", B_TRANSLATE("Aggiorna"), new BMessage(kMsgRefresh));
 	fFoot = new BStringView("foot", host.c_str());
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
@@ -122,7 +129,7 @@ NutWindow::NutWindow(const std::string& host, int port, const std::string& name)
 		.Add(fCharge)
 		.Add(fRuntime)
 		.Add(fLoad)
-		.Add(new BStringView("hdr", "Tutte le variabili:"))
+		.Add(new BStringView("hdr", B_TRANSLATE("Tutte le variabili:")))
 		.Add(scroll)
 		.AddGroup(B_HORIZONTAL)
 			.Add(fFoot)
@@ -137,7 +144,7 @@ NutWindow::NutWindow(const std::string& host, int port, const std::string& name)
 
 void NutWindow::StartInfo()
 {
-	fFoot->SetText("Aggiorno...");
+	fFoot->SetText(B_TRANSLATE("Aggiorno..."));
 	InfoJob* job = new InfoJob{fHost, fPort, BMessenger(this)};
 	thread_id t = spawn_thread(InfoThread, "nut_info", B_NORMAL_PRIORITY, job);
 	if (t < 0) { delete job; return; }
@@ -153,8 +160,8 @@ void NutWindow::MessageReceived(BMessage* msg)
 		case kMsgInfoReady: {
 			bool ok = false; msg->FindBool("ok", &ok);
 			if (!ok) {
-				fStatus->SetText("Stato: nessun UPS o server non raggiungibile.");
-				fFoot->SetText("Non raggiungibile.");
+				fStatus->SetText(B_TRANSLATE("Stato: nessun UPS o server non raggiungibile."));
+				fFoot->SetText(B_TRANSLATE("Non raggiungibile."));
 				return;
 			}
 			std::map<std::string, std::string> vars;
@@ -181,27 +188,27 @@ void NutWindow::MessageReceived(BMessage* msg)
 			if (title.Length() > 0)
 				fTitle->SetText(title.String());
 
-			BString st("Stato: ");
+			BString st(B_TRANSLATE("Stato: "));
 			std::string status = get("ups.status");
 			st << (status.empty() ? "-" : StatusText(status).c_str());
 			fStatus->SetText(st.String());
 
-			BString ch("Carica batteria: ");
+			BString ch(B_TRANSLATE("Carica batteria: "));
 			std::string charge = get("battery.charge");
-			ch << (charge.empty() ? "-" : (charge + " %").c_str());
+			ch << (charge.empty() ? "-" : (charge + B_TRANSLATE(" %")).c_str());
 			fCharge->SetText(ch.String());
 
-			BString rt("Autonomia stimata: ");
+			BString rt(B_TRANSLATE("Autonomia stimata: "));
 			std::string runtime = get("battery.runtime");
 			rt << (runtime.empty() ? "-" : RuntimeText(runtime).c_str());
 			fRuntime->SetText(rt.String());
 
-			BString ld("Carico: ");
+			BString ld(B_TRANSLATE("Carico: "));
 			std::string load = get("ups.load");
-			ld << (load.empty() ? "-" : (load + " %").c_str());
+			ld << (load.empty() ? "-" : (load + B_TRANSLATE(" %")).c_str());
 			std::string inv = get("input.voltage");
 			if (!inv.empty())
-				ld << "   Ingresso: " << inv.c_str() << " V";
+				ld << B_TRANSLATE("   Ingresso: ") << inv.c_str() << B_TRANSLATE(" V");
 			fLoad->SetText(ld.String());
 
 			BString all;
@@ -209,7 +216,7 @@ void NutWindow::MessageReceived(BMessage* msg)
 				all << kv.first.c_str() << " = " << kv.second.c_str() << "\n";
 			fAll->SetText(all.String());
 
-			fFoot->SetText("Pronto.");
+			fFoot->SetText(B_TRANSLATE("Pronto."));
 			return;
 		}
 	}
@@ -247,9 +254,9 @@ public:
 		if (fShown)
 			return;
 		if (fHost.empty()) {
-			(new BAlert("Gruppo di continuita (UPS)",
-				"Nessun dispositivo. Apri un UPS dal vicinato WON, o passa host=<ip>.",
-				"Chiudi"))->Go();
+			(new BAlert(B_TRANSLATE("Gruppo di continuita (UPS)"),
+				B_TRANSLATE("Nessun dispositivo. Apri un UPS dal vicinato WON, o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

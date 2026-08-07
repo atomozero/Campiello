@@ -1,0 +1,7 @@
+1	en	application/x-vnd.Campiello-alexa	2942240657
+Nessun dispositivo. Aprilo dal vicinato WON.	Alexa		No device. Open it from the WON neighborhood.
+Indirizzo:	Alexa		Address:
+Chiudi	Alexa		Close
+Amazon Alexa non offre un'interfaccia di controllo locale: i comandi passano dal cloud Amazon (Alexa Voice Service e Smart Home Skill API), legato al tuo account. Campiello puo' quindi solo mostrare la presenza del dispositivo, non comandarlo. Per usarlo, adopera l'app Alexa o la voce.	Alexa		Amazon Alexa does not offer a local control interface: commands go through Amazon's cloud (the Alexa Voice Service and the Smart Home Skill API), bound to your account. Campiello can therefore only show the device's presence, not control it. To use it, use the Alexa app or your voice.
+Dispositivo Alexa	Alexa		Alexa Device
+Nome:	Alexa		Name:

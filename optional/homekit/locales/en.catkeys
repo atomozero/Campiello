@@ -1,0 +1,51 @@
+1	en	application/x-vnd.Campiello-homekit	2201029363
+Campiello mostra le informazioni pubbliche dell'accessorio. Il controllo (accendere, regolare) richiede l'accoppiamento sicuro HomeKit (crittografia SRP + ChaCha20-Poly1305), non ancora disponibile. Per usarlo ora, aggiungilo con l'app Casa di Apple.	HomeKit		Campiello shows the accessory's public info. Control (turning it on, adjusting it) requires secure HomeKit pairing (SRP + ChaCha20-Poly1305 encryption), not yet available. To use it now, add it with Apple's Home app.
+Altro	HomeKit		Other
+Riscaldatore	HomeKit		Heater
+Deumidificatore	HomeKit		Dehumidifier
+Telecamera IP	HomeKit		IP camera
+Indirizzo: 	HomeKit		Address:
+Accessorio HomeKit	HomeKit		HomeKit accessory
+Questo e' un bridge Philips Hue. Campiello puo' controllarlo direttamente: premi \"Apri controllo Hue\" per accoppiarti (pulsante sul bridge) e gestire le luci.	HomeKit		This is a Philips Hue bridge. Campiello can control it directly: press \"Open Hue control\" to pair (button on the bridge) and manage the lights.
+Serratura	HomeKit		Lock
+Televisore	HomeKit		Television
+Chiudi	HomeKit		Close
+Termostato	HomeKit		Thermostat
+Altoparlante	HomeKit		Speaker
+Interruttore	HomeKit		Switch
+Doccia	HomeKit		Shower
+Condizionatore	HomeKit		Air conditioner
+Chiavetta TV	HomeKit		TV stick
+Finestra	HomeKit		Window
+Set-top box TV	HomeKit		TV set-top box
+Telecomando	HomeKit		Remote control
+ID: 	HomeKit		ID:
+Lampadina	HomeKit		Light bulb
+Interruttore programmabile	HomeKit		Programmable switch
+Sconosciuta	HomeKit		Unknown
+Rubinetto	HomeKit		Faucet
+Irrigatore	HomeKit		Sprinkler
+Apricancello	HomeKit		Garage door opener
+Porta	HomeKit		Door
+Apri controllo Hue	HomeKit		Open Hue control
+Videocitofono	HomeKit		Video doorbell
+Umidificatore	HomeKit		Humidifier
+Modulo Hue non installato. Installa il pacchetto campiello_hue.	HomeKit		Hue module not installed. Install the campiello_hue package.
+Presa	HomeKit		Outlet
+Range extender	HomeKit		Range extender
+Ventilatore	HomeKit		Fan
+Purificatore d'aria	HomeKit		Air purifier
+Bridge	HomeKit		Bridge
+Non accoppiato (aggiungibile)	HomeKit		Not paired (can be added)
+Tenda / oscurante	HomeKit		Curtain / window covering
+Sensore	HomeKit		Sensor
+Configurazione: 	HomeKit		Configuration:
+Categoria: 	HomeKit		Category:
+Sintoamplificatore	HomeKit		AV receiver
+Sistema di sicurezza	HomeKit		Security system
+Accoppiato	HomeKit		Paired
+Router WiFi	HomeKit		WiFi router
+Protocollo HAP: 	HomeKit		HAP protocol:
+Nessun accessorio. Aprilo dal vicinato WON.	HomeKit		No accessory. Open it from the WON neighborhood.
+Nome: 	HomeKit		Name:
+Stato: 	HomeKit		Status:

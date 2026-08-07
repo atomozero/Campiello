@@ -96,6 +96,7 @@ Cast remoting channel. See `addons/cast.md`.
 | [`NETINTEL.md`](NETINTEL.md) | Passive LAN intelligence: ARP/OUI, NetBIOS, SSDP/UPnP, Wake-on-LAN. |
 | [`RADAR.md`](RADAR.md) | The mDNS/DNS-SD debug window used to diagnose multicast delivery. |
 | [`ICONS.md`](ICONS.md) | Per-service HVIF vector icons and the optional icon package. |
+| [`LOCALIZATION.md`](LOCALIZATION.md) | Haiku Locale Kit wiring: Italian source strings, it/en catalogs, refresh workflow. |
 | [`DEVICE_ADDONS.md`](DEVICE_ADDONS.md) | The device add-on framework: handler manifests, matching, launch protocol. |
 | [`ADDONS_SUITE.md`](ADDONS_SUITE.md) | Master plan and progress log for the full device add-on suite. |
 | [`addons/`](addons/) | Per-add-on developer notes (one file per device add-on). |

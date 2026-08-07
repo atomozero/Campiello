@@ -12,7 +12,7 @@
 # Haiku-only (needs the `package` tool). Excludes campiello_smb (a userlandfs volume with an LGPL
 # dependency and its own install notes); the core already carries the device icons.
 
-VERSION := 0.4.1-2
+VERSION := 0.4.2-1
 ARCH := x86_64
 PKG := campiello_complete-$(VERSION)-$(ARCH).hpkg
 STAGE := stage

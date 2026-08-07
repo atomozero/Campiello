@@ -15,6 +15,7 @@
 #include <Application.h>
 #include <Alert.h>
 #include <Button.h>
+#include <Catalog.h>
 #include <Entry.h>
 #include <FilePanel.h>
 #include <LayoutBuilder.h>
@@ -35,6 +36,12 @@
 #include "EsclClient.h"
 
 using namespace campiello::escl;
+
+// Haiku Locale Kit: user-facing strings go through B_TRANSLATE so they can be localized. The source
+// strings are Italian (the default when no catalog matches the user's language, per the working
+// agreement); catalogs under data/locale/catalogs/<signature>/ translate them (en.catalog ships).
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "eSCL"
 
 static const char* const kSignature = "application/x-vnd.Campiello-escl";
 
@@ -89,7 +96,7 @@ private:
 	void StartQuery();
 	ScanOptions CurrentOptions() const;
 	int SelectedInt(BMenuField* f, int fallback) const;
-	std::string SelectedLabel(BMenuField* f) const;
+	int32 SelectedIndex(BMenuField* f) const; // index into the field's item list, or 0
 
 	std::string  fHost;
 	std::string  fName;
@@ -113,26 +120,30 @@ static BMenuField* MakeMenu(const char* name, const char* label, const char* con
 }
 
 EsclWindow::EsclWindow(const std::string& host, const std::string& name)
-	: BWindow(BRect(100, 100, 440, 380), "Scanner", B_TITLED_WINDOW, B_AUTO_UPDATE_SIZE_LIMITS),
+	: BWindow(BRect(100, 100, 440, 380), B_TRANSLATE("Scanner"), B_TITLED_WINDOW,
+		B_AUTO_UPDATE_SIZE_LIMITS),
 	  fHost(host), fName(name)
 {
-	BStringView* title = new BStringView("t", fName.empty() ? "Scanner di rete" : fName.c_str());
+	BStringView* title = new BStringView("t",
+		fName.empty() ? B_TRANSLATE("Scanner di rete") : fName.c_str());
 	BFont f(be_bold_font);
 	f.SetSize(f.Size() * 1.2f);
 	title->SetFont(&f);
 
-	fSummary = new BStringView("sum", "Interrogo lo scanner...");
+	fSummary = new BStringView("sum", B_TRANSLATE("Interrogo lo scanner..."));
 
-	static const char* const colors[] = {"Colore", "Scala di grigi"};
-	static const char* const resos[]  = {"300 dpi", "150 dpi", "600 dpi"};
-	static const char* const fmts[]   = {"JPEG", "PDF"};
-	fColor  = MakeMenu("color", "Colore:", colors, 2);
-	fRes    = MakeMenu("res", "Risoluzione:", resos, 3);
-	fFormat = MakeMenu("fmt", "Formato:", fmts, 2);
+	// Fixed order: color menu is {Colore, Scala di grigi}, format menu is {JPEG, PDF}; the index
+	// (not the translated label) drives CurrentOptions() and the save-filename suggestion below.
+	const char* colors[] = {B_TRANSLATE("Colore"), B_TRANSLATE("Scala di grigi")};
+	const char* resos[]  = {"300 dpi", "150 dpi", "600 dpi"};
+	const char* fmts[]   = {"JPEG", "PDF"};
+	fColor  = MakeMenu("color", B_TRANSLATE("Colore:"), colors, 2);
+	fRes    = MakeMenu("res", B_TRANSLATE("Risoluzione:"), resos, 3);
+	fFormat = MakeMenu("fmt", B_TRANSLATE("Formato:"), fmts, 2);
 
 	fStatus = new BStringView("st", fHost.c_str());
-	BButton* scan = new BButton("scan", "Scansiona...", new BMessage(kMsgPick));
-	BButton* refresh = new BButton("refresh", "Aggiorna", new BMessage(kMsgQuery));
+	BButton* scan = new BButton("scan", B_TRANSLATE("Scansiona..."), new BMessage(kMsgPick));
+	BButton* refresh = new BButton("refresh", B_TRANSLATE("Aggiorna"), new BMessage(kMsgQuery));
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -161,19 +172,22 @@ int EsclWindow::SelectedInt(BMenuField* field, int fallback) const
 	return std::atoi(it->Label());
 }
 
-std::string EsclWindow::SelectedLabel(BMenuField* field) const
+// The item's position in the menu, not its (possibly translated) label: the label is only for
+// display, so decisions based on which item is selected must not depend on its text.
+int32 EsclWindow::SelectedIndex(BMenuField* field) const
 {
-	if (field == nullptr || field->Menu() == nullptr) return "";
+	if (field == nullptr || field->Menu() == nullptr) return 0;
 	BMenuItem* it = field->Menu()->FindMarked();
-	return it != nullptr ? it->Label() : "";
+	if (it == nullptr) return 0;
+	return field->Menu()->IndexOf(it);
 }
 
 ScanOptions EsclWindow::CurrentOptions() const
 {
 	ScanOptions o;
-	o.colorMode = (SelectedLabel(fColor).rfind("Scala", 0) == 0) ? "Grayscale8" : "RGB24";
+	o.colorMode = (SelectedIndex(fColor) == 1) ? "Grayscale8" : "RGB24"; // 0 Colore, 1 Scala di grigi
 	o.resolution = SelectedInt(fRes, 300);
-	o.format = (SelectedLabel(fFormat) == "PDF") ? "application/pdf" : "image/jpeg";
+	o.format = (SelectedIndex(fFormat) == 1) ? "application/pdf" : "image/jpeg"; // 0 JPEG, 1 PDF
 	// A4 in pixels at the chosen resolution (8.27 x 11.69 inches).
 	o.widthPx  = (int)(8.27 * o.resolution);
 	o.heightPx = (int)(11.69 * o.resolution);
@@ -182,7 +196,7 @@ ScanOptions EsclWindow::CurrentOptions() const
 
 void EsclWindow::StartQuery()
 {
-	fStatus->SetText("Interrogo lo scanner...");
+	fStatus->SetText(B_TRANSLATE("Interrogo lo scanner..."));
 	QueryJob* job = new QueryJob{fHost, BMessenger(this)};
 	thread_id t = spawn_thread(QueryThread, "escl_query", B_NORMAL_PRIORITY, job);
 	if (t < 0) { delete job; return; }
@@ -198,7 +212,7 @@ void EsclWindow::MessageReceived(BMessage* msg)
 		case kMsgCapsReady: {
 			bool ok = false; msg->FindBool("ok", &ok);
 			if (!ok) {
-				fSummary->SetText("Scanner non raggiungibile o non eSCL.");
+				fSummary->SetText(B_TRANSLATE("Scanner non raggiungibile o non eSCL."));
 				fStatus->SetText(fHost.c_str());
 				return;
 			}
@@ -209,15 +223,15 @@ void EsclWindow::MessageReceived(BMessage* msg)
 				if (sum.Length() > 0) sum << "\n";
 				sum << k << ": " << v;
 			}
-			fSummary->SetText(sum.Length() > 0 ? sum.String() : "Scanner pronto.");
-			fStatus->SetText("Pronto.");
+			fSummary->SetText(sum.Length() > 0 ? sum.String() : B_TRANSLATE("Scanner pronto."));
+			fStatus->SetText(B_TRANSLATE("Pronto."));
 			return;
 		}
 		case kMsgPick: {
 			if (fPanel == nullptr)
 				fPanel = new BFilePanel(B_SAVE_PANEL, new BMessenger(this), nullptr,
 					B_FILE_NODE, false, new BMessage(kMsgSave));
-			std::string suggested = (SelectedLabel(fFormat) == "PDF")
+			std::string suggested = (SelectedIndex(fFormat) == 1) // 0 JPEG, 1 PDF
 				? "scansione.pdf" : "scansione.jpg";
 			fPanel->SetSaveText(suggested.c_str());
 			fPanel->Show();
@@ -232,7 +246,7 @@ void EsclWindow::MessageReceived(BMessage* msg)
 			if (path.InitCheck() != B_OK)
 				return;
 			path.Append(name);
-			fStatus->SetText("Scansione in corso...");
+			fStatus->SetText(B_TRANSLATE("Scansione in corso..."));
 			ScanJob* job = new ScanJob{fHost, path.Path(), CurrentOptions(), BMessenger(this)};
 			thread_id t = spawn_thread(ScanThread, "escl_scan", B_NORMAL_PRIORITY, job);
 			if (t < 0) delete job; else resume_thread(t);
@@ -242,11 +256,11 @@ void EsclWindow::MessageReceived(BMessage* msg)
 			bool ok = false; msg->FindBool("ok", &ok);
 			const char* dest = ""; msg->FindString("dest", &dest);
 			if (ok) {
-				BString s("Salvato: ");
+				BString s(B_TRANSLATE("Salvato: "));
 				s << dest;
 				fStatus->SetText(s.String());
 			} else {
-				fStatus->SetText("Scansione non riuscita.");
+				fStatus->SetText(B_TRANSLATE("Scansione non riuscita."));
 			}
 			return;
 		}
@@ -282,9 +296,9 @@ public:
 		if (fShown)
 			return;
 		if (fHost.empty()) {
-			(new BAlert("Scanner",
-				"Nessuno scanner. Apri uno scanner dal vicinato WON, o passa host=<ip>.",
-				"Chiudi"))->Go();
+			(new BAlert(B_TRANSLATE("Scanner"),
+				B_TRANSLATE("Nessuno scanner. Apri uno scanner dal vicinato WON, o passa host=<ip>."),
+				B_TRANSLATE("Chiudi")))->Go();
 			Quit();
 			return;
 		}

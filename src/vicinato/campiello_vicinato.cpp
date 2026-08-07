@@ -43,6 +43,8 @@
 #include <View.h>
 #include <Window.h>
 
+#include <Catalog.h>
+
 #include <fcntl.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -73,6 +75,9 @@
 using namespace campiello::vicinato;
 using campiello::bricola::mdns::MdnsRadar;
 using campiello::bricola::mdns::RadarSnapshot;
+
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "WON"
 
 static const char* const kSignature = "application/x-vnd.Campiello-won";
 static const char* const kSmbHelperSig = "application/x-vnd.Campiello-smb-mount";
@@ -289,15 +294,15 @@ namespace {
 const char* KindLabel(ServiceKind k)
 {
 	switch (k) {
-		case ServiceKind::Campiello: return "Campiello";
-		case ServiceKind::Computer:  return "Computer";
-		case ServiceKind::Smb:       return "Windows";
-		case ServiceKind::Sftp:      return "SSH/SFTP";
-		case ServiceKind::Home:      return "Casa";
-		case ServiceKind::Web:       return "Web";
-		case ServiceKind::Printer:   return "Stampante";
-		case ServiceKind::Media:     return "Media";
-		default:                     return "Altro";
+		case ServiceKind::Campiello: return B_TRANSLATE("Campiello");
+		case ServiceKind::Computer:  return B_TRANSLATE("Computer");
+		case ServiceKind::Smb:       return B_TRANSLATE("Windows");
+		case ServiceKind::Sftp:      return B_TRANSLATE("SSH/SFTP");
+		case ServiceKind::Home:      return B_TRANSLATE("Casa");
+		case ServiceKind::Web:       return B_TRANSLATE("Web");
+		case ServiceKind::Printer:   return B_TRANSLATE("Stampante");
+		case ServiceKind::Media:     return B_TRANSLATE("Media");
+		default:                     return B_TRANSLATE("Altro");
 	}
 }
 
@@ -422,7 +427,7 @@ class HeaderView : public BView {
 public:
 	HeaderView()
 		: BView("header", B_WILL_DRAW | B_SUPPORTS_LAYOUT | B_FULL_UPDATE_ON_RESIZE),
-		  fSubtitle("Ricerca in corso...")
+		  fSubtitle(B_TRANSLATE("Ricerca in corso..."))
 	{
 		SetViewColor(kHeaderBg);
 		SetLowColor(kHeaderBg);
@@ -641,11 +646,11 @@ public:
 						tier = TierForPing(it->second.latencyMs);
 					} else {
 						// Reachable on the LAN (ARP) but no service port answered: no latency to show.
-						std::snprintf(label, sizeof(label), "in rete");
+						std::snprintf(label, sizeof(label), "%s", B_TRANSLATE("in rete"));
 						tier = kGood;
 					}
 				} else {
-					std::snprintf(label, sizeof(label), "offline");
+					std::snprintf(label, sizeof(label), "%s", B_TRANSLATE("offline"));
 					tier = kBad;
 				}
 				pillLeft = DrawPill(owner, rightEdge, cy, label, tier);
@@ -726,8 +731,8 @@ public:
 		tv->SetText(text.c_str());
 		tv->SetExplicitMinSize(BSize(400, 300));
 		BScrollView* sc = new BScrollView("sc", tv, 0, false, true);
-		BButton* copy = new BButton("copy", "Copia tutto", new BMessage(kMsgCopyAll));
-		BButton* close = new BButton("close", "Chiudi", new BMessage(B_QUIT_REQUESTED));
+		BButton* copy = new BButton("copy", B_TRANSLATE("Copia tutto"), new BMessage(kMsgCopyAll));
+		BButton* close = new BButton("close", B_TRANSLATE("Chiudi"), new BMessage(B_QUIT_REQUESTED));
 		BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_SMALL_SPACING)
 			.SetInsets(B_USE_WINDOW_INSETS)
 			.Add(sc)
@@ -762,15 +767,15 @@ private:
 class AddDeviceWindow : public BWindow {
 public:
 	explicit AddDeviceWindow(BMessenger target)
-		: BWindow(BRect(0, 0, 320, 160), "Aggiungi dispositivo", B_TITLED_WINDOW,
+		: BWindow(BRect(0, 0, 320, 160), B_TRANSLATE("Aggiungi dispositivo"), B_TITLED_WINDOW,
 			B_NOT_ZOOMABLE | B_NOT_RESIZABLE | B_AUTO_UPDATE_SIZE_LIMITS),
 		  fTarget(target)
 	{
-		fName = new BTextControl("Nome:", "", nullptr);
-		fHost = new BTextControl("Indirizzo:", "", nullptr);
-		fPort = new BTextControl("Porta:", "", nullptr);
-		BButton* ok = new BButton("ok", "Aggiungi", new BMessage('okk_'));
-		BButton* cancel = new BButton("cancel", "Annulla", new BMessage(B_QUIT_REQUESTED));
+		fName = new BTextControl(B_TRANSLATE("Nome:"), "", nullptr);
+		fHost = new BTextControl(B_TRANSLATE("Indirizzo:"), "", nullptr);
+		fPort = new BTextControl(B_TRANSLATE("Porta:"), "", nullptr);
+		BButton* ok = new BButton("ok", B_TRANSLATE("Aggiungi"), new BMessage('okk_'));
+		BButton* cancel = new BButton("cancel", B_TRANSLATE("Annulla"), new BMessage(B_QUIT_REQUESTED));
 		ok->MakeDefault(true);
 		BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_SMALL_SPACING)
 			.SetInsets(B_USE_WINDOW_INSETS)
@@ -787,7 +792,8 @@ public:
 		if (m->what == 'okk_') {
 			std::string host = fHost->Text();
 			if (host.empty()) {
-				(new BAlert("Aggiungi", "Inserisci un indirizzo (host o IP).", "OK"))->Go();
+				(new BAlert(B_TRANSLATE("Aggiungi"),
+					B_TRANSLATE("Inserisci un indirizzo (host o IP)."), B_TRANSLATE("OK")))->Go();
 				return;
 			}
 			BMessage out(kMsgAddDeviceOk);
@@ -1190,10 +1196,10 @@ VicinatoWindow::VicinatoWindow()
 {
 	fHeader = new HeaderView();
 
-	fFilter = new BTextControl("filter", "Cerca:", "", nullptr);
+	fFilter = new BTextControl("filter", B_TRANSLATE("Cerca:"), "", nullptr);
 	fFilter->SetModificationMessage(new BMessage(kMsgFilter));
 
-	fStatus = new BStringView("status", "Ricerca in corso...");
+	fStatus = new BStringView("status", B_TRANSLATE("Ricerca in corso..."));
 
 	fList = new DeviceOutlineView("list", new BMessage(kMsgInvoke));
 	fList->SetSelectionMessage(new BMessage(kMsgSelect));
@@ -1201,24 +1207,24 @@ VicinatoWindow::VicinatoWindow()
 	scroll->SetExplicitMinSize(BSize(320, 320));
 
 	fDetail = new DetailTable();
-	fDetail->SetEmpty("Seleziona un dispositivo");
+	fDetail->SetEmpty(B_TRANSLATE("Seleziona un dispositivo"));
 	BScrollView* detailScroll = new BScrollView("dscroll", fDetail, 0, false, true);
 	detailScroll->SetExplicitMinSize(BSize(250, 240));
 
 	// Toolbar quick actions: they act on the selected device.
-	fOpenBtn = new BButton("open", "Apri", new BMessage(kMsgOpen));
-	fCopyBtn = new BButton("copy", "Copia IP", new BMessage(kMsgCopy));
-	fWebBtn  = new BButton("web", "Web UI", new BMessage(kMsgWeb));
-	fInfoBtn = new BButton("info", "Dettagli", new BMessage(kMsgInfo));
-	fInspectBtn = new BButton("insp", "Ispeziona", new BMessage(kMsgInspect));
+	fOpenBtn = new BButton("open", B_TRANSLATE("Apri"), new BMessage(kMsgOpen));
+	fCopyBtn = new BButton("copy", B_TRANSLATE("Copia IP"), new BMessage(kMsgCopy));
+	fWebBtn  = new BButton("web", B_TRANSLATE("Web UI"), new BMessage(kMsgWeb));
+	fInfoBtn = new BButton("info", B_TRANSLATE("Dettagli"), new BMessage(kMsgInfo));
+	fInspectBtn = new BButton("insp", B_TRANSLATE("Ispeziona"), new BMessage(kMsgInspect));
 	fOpenBtn->SetEnabled(false);
 	fCopyBtn->SetEnabled(false);
 	fWebBtn->SetEnabled(false);
 	fInfoBtn->SetEnabled(false);
 	fInspectBtn->SetEnabled(false);
-	BButton* add = new BButton("add", "Aggiungi...", new BMessage(kMsgAddDevice));
-	BButton* refresh = new BButton("refresh", "Aggiorna", new BMessage(kMsgRefreshNow));
-	fOnlyOnline = new BCheckBox("oo", "Solo online", new BMessage(kMsgOnlyOnline));
+	BButton* add = new BButton("add", B_TRANSLATE("Aggiungi..."), new BMessage(kMsgAddDevice));
+	BButton* refresh = new BButton("refresh", B_TRANSLATE("Aggiorna"), new BMessage(kMsgRefreshNow));
+	fOnlyOnline = new BCheckBox("oo", B_TRANSLATE("Solo online"), new BMessage(kMsgOnlyOnline));
 
 	BView* details = new BView("details", 0);
 	BLayoutBuilder::Group<>(details, B_VERTICAL, B_USE_SMALL_SPACING)
@@ -1248,8 +1254,9 @@ VicinatoWindow::VicinatoWindow()
 	// A small menu bar with the one preference: whether this window opens by itself at login. The
 	// Deskbar presence (the daemon + peer replicant) is unaffected; only the window auto-open is.
 	BMenuBar* menuBar = new BMenuBar("menubar");
-	BMenu* optionsMenu = new BMenu("Opzioni");
-	fAutostartItem = new BMenuItem("Apri all'avvio del sistema", new BMessage(kMsgAutostart));
+	BMenu* optionsMenu = new BMenu(B_TRANSLATE("Opzioni"));
+	fAutostartItem = new BMenuItem(B_TRANSLATE("Apri all'avvio del sistema"),
+		new BMessage(kMsgAutostart));
 	fAutostartItem->SetMarked(IsAutostartEnabled());
 	optionsMenu->AddItem(fAutostartItem);
 	menuBar->AddItem(optionsMenu);
@@ -1262,8 +1269,8 @@ VicinatoWindow::VicinatoWindow()
 	CenterOnScreen();
 
 	if (!fRadar.Start(nullptr)) {
-		fStatus->SetText("Impossibile aprire il socket di rete.");
-		fHeader->SetSubtitle("Rete non disponibile");
+		fStatus->SetText(B_TRANSLATE("Impossibile aprire il socket di rete."));
+		fHeader->SetSubtitle(B_TRANSLATE("Rete non disponibile"));
 	} else {
 		fSmbFinder.Start();
 		RegisterShareType();
@@ -1330,8 +1337,8 @@ void VicinatoWindow::MessageReceived(BMessage* message)
 			SetAutostart(enable);
 			if (fAutostartItem != nullptr)
 				fAutostartItem->SetMarked(IsAutostartEnabled());
-			fStatus->SetText(enable ? "Si aprira' all'avvio del sistema"
-				: "Non si aprira' piu' all'avvio (l'icona resta sulla Deskbar)");
+			fStatus->SetText(enable ? B_TRANSLATE("Si aprira' all'avvio del sistema")
+				: B_TRANSLATE("Non si aprira' piu' all'avvio (l'icona resta sulla Deskbar)"));
 			return;
 		}
 		case kMsgSsh: {
@@ -1378,7 +1385,8 @@ void VicinatoWindow::MessageReceived(BMessage* message)
 		case kMsgInfo: {
 			const NetworkService* svc = Selected();
 			if (svc != nullptr)
-				(new BAlert("Dettagli", (svc->label + "\n\n" + DetailsText(*svc)).c_str(), "OK"))->Go();
+				(new BAlert(B_TRANSLATE("Dettagli"),
+					(svc->label + "\n\n" + DetailsText(*svc)).c_str(), B_TRANSLATE("OK")))->Go();
 			return;
 		}
 		case kMsgInspect:
@@ -1504,7 +1512,7 @@ void VicinatoWindow::ApplyStatus(BMessage* msg)
 	fList->Invalidate();
 	UpdateDetails();
 	char sub[96];
-	std::snprintf(sub, sizeof(sub), "%d dispositivi - %d online", total, online);
+	std::snprintf(sub, sizeof(sub), B_TRANSLATE("%d dispositivi - %d online"), total, online);
 	fHeader->SetSubtitle(sub);
 	fHeader->SetOnline(online > 0);
 }
@@ -1576,32 +1584,32 @@ void VicinatoWindow::RebuildList()
 	UpdateDetails();
 
 	char st[128];
-	std::snprintf(st, sizeof(st), "%zu servizi in rete", fServices.size());
+	std::snprintf(st, sizeof(st), B_TRANSLATE("%zu servizi in rete"), fServices.size());
 	fStatus->SetText(st);
 	if (shown == 0)
-		fDetail->SetEmpty(filter.empty() ? "Nessun dispositivo trovato"
-			: "Nessun risultato per il filtro");
+		fDetail->SetEmpty(filter.empty() ? B_TRANSLATE("Nessun dispositivo trovato")
+			: B_TRANSLATE("Nessun risultato per il filtro"));
 }
 
 std::string VicinatoWindow::DetailsText(const NetworkService& svc) const
 {
 	std::string info;
 	std::string kind = KindLabel(svc.kind);
-	info += "Tipo: " + kind;
+	info += std::string(B_TRANSLATE("Tipo: ")) + kind;
 	if (!svc.category.empty() && svc.category != "Altro" && Lower(svc.category) != Lower(kind))
 		info += " - " + svc.category;
 	info += "\n";
 	if (!svc.host.empty()) {
-		info += "Indirizzo: " + svc.host;
+		info += std::string(B_TRANSLATE("Indirizzo: ")) + svc.host;
 		if (svc.port != 0)
 			info += ":" + std::to_string(svc.port);
 		info += "\n";
 	}
 	if (!svc.vendor.empty())
-		info += "Produttore: " + svc.vendor + "\n";
+		info += std::string(B_TRANSLATE("Produttore: ")) + svc.vendor + "\n";
 	if (!svc.mac.empty())
 		info += "MAC: " + svc.mac + "\n";
-	info += "Servizio: " + svc.serviceType + "\n";
+	info += std::string(B_TRANSLATE("Servizio: ")) + svc.serviceType + "\n";
 	if (!svc.txt.empty())
 		info += "\n";
 	int shown = 0;
@@ -1625,26 +1633,26 @@ void VicinatoWindow::PopulateDetails(const NetworkService& svc, const std::strin
 	std::string typ = KindLabel(svc.kind);
 	if (!svc.category.empty() && svc.category != "Altro" && Lower(svc.category) != Lower(typ))
 		typ += " - " + svc.category;
-	fDetail->AddField("Tipo", typ);
+	fDetail->AddField(B_TRANSLATE("Tipo"), typ);
 
 	if (!svc.host.empty()) {
 		std::string addr = svc.host;
 		if (svc.port != 0)
 			addr += ":" + std::to_string(svc.port);
-		fDetail->AddField("Indirizzo", addr);
+		fDetail->AddField(B_TRANSLATE("Indirizzo"), addr);
 	}
 	if (!svc.vendor.empty())
-		fDetail->AddField("Produttore", svc.vendor);
+		fDetail->AddField(B_TRANSLATE("Produttore"), svc.vendor);
 
 	// Minor technical details, collapsible (expanded by default).
-	int net = fDetail->AddGroup("Dettagli di rete", false);
+	int net = fDetail->AddGroup(B_TRANSLATE("Dettagli di rete"), false);
 	if (!svc.mac.empty())
 		fDetail->AddGroupField(net, "MAC", svc.mac);
-	fDetail->AddGroupField(net, "Servizio", svc.serviceType);
+	fDetail->AddGroupField(net, B_TRANSLATE("Servizio"), svc.serviceType);
 
 	// The decoded mDNS TXT, collapsible (collapsed by default when there are many entries).
 	if (!svc.txt.empty()) {
-		int txtGroup = fDetail->AddGroup("Informazioni sul servizio", svc.txt.size() > 5);
+		int txtGroup = fDetail->AddGroup(B_TRANSLATE("Informazioni sul servizio"), svc.txt.size() > 5);
 		int shown = 0;
 		for (const auto& kv : svc.txt) {
 			if (shown++ >= 20)
@@ -1661,7 +1669,7 @@ void VicinatoWindow::UpdateDetails()
 {
 	const NetworkService* svc = Selected();
 	if (svc == nullptr) {
-		fDetail->SetEmpty("Nessun dispositivo selezionato");
+		fDetail->SetEmpty(B_TRANSLATE("Nessun dispositivo selezionato"));
 		fOpenBtn->SetEnabled(false);
 		fCopyBtn->SetEnabled(false);
 		fWebBtn->SetEnabled(false);
@@ -1674,16 +1682,16 @@ void VicinatoWindow::UpdateDetails()
 	rgb_color statusColor;
 	auto it = fStatusMap.find(svc->id);
 	if (it == fStatusMap.end() || it->second.state == kUnknownState) {
-		statusText = "Stato: verifica..."; statusColor = kUnkText;
+		statusText = B_TRANSLATE("Stato: verifica..."); statusColor = kUnkText;
 	} else if (it->second.state == kOnline) {
 		char s[64];
 		if (it->second.latencyMs > 0)
-			std::snprintf(s, sizeof(s), "Stato: online (%d ms)", it->second.latencyMs);
+			std::snprintf(s, sizeof(s), B_TRANSLATE("Stato: online (%d ms)"), it->second.latencyMs);
 		else
-			std::snprintf(s, sizeof(s), "Stato: online (raggiungibile in rete)");
+			std::snprintf(s, sizeof(s), "%s", B_TRANSLATE("Stato: online (raggiungibile in rete)"));
 		statusText = s; statusColor = kGoodText;
 	} else {
-		statusText = "Stato: offline"; statusColor = kBadText;
+		statusText = B_TRANSLATE("Stato: offline"); statusColor = kBadText;
 	}
 	PopulateDetails(*svc, statusText, statusColor);
 
@@ -1736,7 +1744,8 @@ void VicinatoWindow::OpenWebUi(const NetworkService& svc)
 	const char* args[] = {url.c_str()};
 	if (be_roster->Launch("application/x-vnd.Be-URL.http", 1, args) != B_OK
 		&& be_roster->Launch("application/x-vnd.Be-URL.https", 1, args) != B_OK)
-		(new BAlert("WON", ("Nessun browser per aprire:\n" + url).c_str(), "OK"))->Go();
+		(new BAlert("WON", (std::string(B_TRANSLATE("Nessun browser per aprire:\n")) + url).c_str(),
+			B_TRANSLATE("OK")))->Go();
 }
 
 void VicinatoWindow::CopyAddress(const NetworkService& svc)
@@ -1752,7 +1761,7 @@ void VicinatoWindow::CopyAddress(const NetworkService& svc)
 			be_clipboard->Commit();
 		}
 		be_clipboard->Unlock();
-		fStatus->SetText(("Copiato: " + addr).c_str());
+		fStatus->SetText((std::string(B_TRANSLATE("Copiato: ")) + addr).c_str());
 	}
 }
 
@@ -1762,25 +1771,25 @@ void VicinatoWindow::ShowContextMenu(BPoint screenWhere)
 	if (svc == nullptr)
 		return;
 	BPopUpMenu* menu = new BPopUpMenu("ctx", false, false);
-	menu->AddItem(new BMenuItem("Apri", new BMessage(kMsgOpen)));
-	menu->AddItem(new BMenuItem("Copia indirizzo", new BMessage(kMsgCopy)));
+	menu->AddItem(new BMenuItem(B_TRANSLATE("Apri"), new BMessage(kMsgOpen)));
+	menu->AddItem(new BMenuItem(B_TRANSLATE("Copia indirizzo"), new BMessage(kMsgCopy)));
 	if (svc->kind == ServiceKind::Web || svc->kind == ServiceKind::Printer
 		|| svc->kind == ServiceKind::Home)
-		menu->AddItem(new BMenuItem("Apri interfaccia web", new BMessage(kMsgWeb)));
+		menu->AddItem(new BMenuItem(B_TRANSLATE("Apri interfaccia web"), new BMessage(kMsgWeb)));
 	if (SshApplies(*svc) && !svc->host.empty())
-		menu->AddItem(new BMenuItem("Apri terminale SSH", new BMessage(kMsgSsh)));
+		menu->AddItem(new BMenuItem(B_TRANSLATE("Apri terminale SSH"), new BMessage(kMsgSsh)));
 	if (RdpApplies(*svc) && !svc->host.empty())
-		menu->AddItem(new BMenuItem("Apri desktop remoto (RDP)", new BMessage(kMsgRdp)));
+		menu->AddItem(new BMenuItem(B_TRANSLATE("Apri desktop remoto (RDP)"), new BMessage(kMsgRdp)));
 	if (!MacFor(*svc).empty()) {
 		menu->AddSeparatorItem();
-		menu->AddItem(new BMenuItem("Accendi (Wake-on-LAN)", new BMessage(kMsgWake)));
+		menu->AddItem(new BMenuItem(B_TRANSLATE("Accendi (Wake-on-LAN)"), new BMessage(kMsgWake)));
 	}
 	menu->AddSeparatorItem();
-	menu->AddItem(new BMenuItem("Dettagli...", new BMessage(kMsgInfo)));
-	menu->AddItem(new BMenuItem("Ispeziona record mDNS...", new BMessage(kMsgInspect)));
+	menu->AddItem(new BMenuItem(B_TRANSLATE("Dettagli..."), new BMessage(kMsgInfo)));
+	menu->AddItem(new BMenuItem(B_TRANSLATE("Ispeziona record mDNS..."), new BMessage(kMsgInspect)));
 	if (svc->id.compare(0, 7, "manual:") == 0) {
 		menu->AddSeparatorItem();
-		menu->AddItem(new BMenuItem("Rimuovi dispositivo", new BMessage(kMsgRemoveDevice)));
+		menu->AddItem(new BMenuItem(B_TRANSLATE("Rimuovi dispositivo"), new BMessage(kMsgRemoveDevice)));
 	}
 	menu->SetTargetForItems(this);
 	menu->Go(screenWhere, true, true, true);
@@ -1904,9 +1913,8 @@ void VicinatoWindow::WakeSelected()
 		return;
 	std::string mac = MacFor(*svc);
 	if (mac.empty()) {
-		(new BAlert("WON", "Indirizzo MAC non disponibile per questo dispositivo.\n\n"
-			"Il MAC si apprende quando il dispositivo e' online e nella tabella ARP.",
-			"OK"))->Go();
+		(new BAlert("WON", B_TRANSLATE("Indirizzo MAC non disponibile per questo dispositivo.\n\nIl MAC si apprende quando il dispositivo e' online e nella tabella ARP."),
+			B_TRANSLATE("OK")))->Go();
 		return;
 	}
 	bool ok = campiello::vicinato::SendWakeOnLan(mac); // limited broadcast
@@ -1914,9 +1922,9 @@ void VicinatoWindow::WakeSelected()
 	if (!bcast.empty())
 		ok = campiello::vicinato::SendWakeOnLan(mac, bcast) || ok;
 	if (ok)
-		fStatus->SetText(("Magic packet inviato a " + mac).c_str());
+		fStatus->SetText((std::string(B_TRANSLATE("Magic packet inviato a ")) + mac).c_str());
 	else
-		fStatus->SetText("Invio del magic packet non riuscito.");
+		fStatus->SetText(B_TRANSLATE("Invio del magic packet non riuscito."));
 }
 
 // SSH makes sense for computers and login hosts, not for lights, printers or media receivers.
@@ -1956,9 +1964,10 @@ void VicinatoWindow::OpenSshTerminal(const NetworkService& svc)
 	status_t rc = be_roster->Launch("application/x-vnd.Haiku-Terminal", 4,
 		const_cast<char**>(argv));
 	if (rc != B_OK && rc != B_ALREADY_RUNNING)
-		(new BAlert("WON", "Impossibile aprire il Terminal per la sessione SSH.", "OK"))->Go();
+		(new BAlert("WON", B_TRANSLATE("Impossibile aprire il Terminal per la sessione SSH."),
+			B_TRANSLATE("OK")))->Go();
 	else
-		fStatus->SetText(("Terminale SSH verso " + svc.host).c_str());
+		fStatus->SetText((std::string(B_TRANSLATE("Terminale SSH verso ")) + svc.host).c_str());
 }
 
 // RDP is a Windows thing: offer it for Windows shares, plain computers, and anything advertising an
@@ -1997,8 +2006,8 @@ void VicinatoWindow::OpenRdp(const NetworkService& svc)
 	std::string clientPath;
 	bool remminaStyle = false;
 	if (!FindRdpClient(clientPath, remminaStyle)) {
-		(new BAlert("WON", "Nessun client RDP installato.\n\nInstalla \"freerdp\" o \"remmina\" da "
-			"HaikuDepot per aprire i desktop remoti Windows.", "OK"))->Go();
+		(new BAlert("WON", B_TRANSLATE("Nessun client RDP installato.\n\nInstalla \"freerdp\" o \"remmina\" da HaikuDepot per aprire i desktop remoti Windows."),
+			B_TRANSLATE("OK")))->Go();
 		return;
 	}
 	std::string title = "RDP " + svc.host;
@@ -2017,9 +2026,10 @@ void VicinatoWindow::OpenRdp(const NetworkService& svc)
 	status_t rc = be_roster->Launch("application/x-vnd.Haiku-Terminal", (int)argv.size(),
 		const_cast<char**>(argv.data()));
 	if (rc != B_OK && rc != B_ALREADY_RUNNING)
-		(new BAlert("WON", "Impossibile avviare il client RDP.", "OK"))->Go();
+		(new BAlert("WON", B_TRANSLATE("Impossibile avviare il client RDP."),
+			B_TRANSLATE("OK")))->Go();
 	else
-		fStatus->SetText(("Desktop remoto verso " + svc.host).c_str());
+		fStatus->SetText((std::string(B_TRANSLATE("Desktop remoto verso ")) + svc.host).c_str());
 }
 
 static std::string MacsPath()
@@ -2119,15 +2129,17 @@ void VicinatoWindow::SetAutostart(bool on)
 std::string VicinatoWindow::InspectorText(const NetworkService& svc) const
 {
 	std::string t;
-	t += "Istanza: " + svc.label + "\n";
-	t += "Tipo servizio: " + (svc.serviceType.empty() ? std::string("(nessuno)") : svc.serviceType)
-		+ "\n";
-	t += "Indirizzo (A): " + (svc.host.empty() ? std::string("(non risolto)") : svc.host) + "\n";
-	t += "Porta (SRV): " + (svc.port ? std::to_string(svc.port) : std::string("(nessuna)")) + "\n";
-	t += "Chiave interna: " + svc.id + "\n";
-	t += "\nTXT grezzi (" + std::to_string(svc.txt.size()) + "):\n";
+	t += std::string(B_TRANSLATE("Istanza: ")) + svc.label + "\n";
+	t += std::string(B_TRANSLATE("Tipo servizio: "))
+		+ (svc.serviceType.empty() ? std::string(B_TRANSLATE("(nessuno)")) : svc.serviceType) + "\n";
+	t += std::string(B_TRANSLATE("Indirizzo (A): "))
+		+ (svc.host.empty() ? std::string(B_TRANSLATE("(non risolto)")) : svc.host) + "\n";
+	t += std::string(B_TRANSLATE("Porta (SRV): "))
+		+ (svc.port ? std::to_string(svc.port) : std::string(B_TRANSLATE("(nessuna)"))) + "\n";
+	t += std::string(B_TRANSLATE("Chiave interna: ")) + svc.id + "\n";
+	t += std::string(B_TRANSLATE("\nTXT grezzi (")) + std::to_string(svc.txt.size()) + "):\n";
 	if (svc.txt.empty())
-		t += "  (nessun record TXT)\n";
+		t += B_TRANSLATE("  (nessun record TXT)\n");
 	for (const auto& kv : svc.txt)
 		t += "  " + kv.first + (kv.second.empty() ? "" : "=" + kv.second) + "\n";
 	return t;
@@ -2138,7 +2150,7 @@ void VicinatoWindow::InspectSelected()
 	const NetworkService* svc = Selected();
 	if (svc == nullptr)
 		return;
-	std::string title = "Record mDNS - " + svc->label;
+	std::string title = std::string(B_TRANSLATE("Record mDNS - ")) + svc->label;
 	(new InspectorWindow(title.c_str(), InspectorText(*svc)))->Show();
 }
 
@@ -2160,7 +2172,7 @@ static NetworkService MakeManual(const std::string& host, int port, const std::s
 	s.host = host;
 	s.port = (uint16_t)port;
 	s.serviceType = "manuale";
-	s.category = "Manuale";
+	s.category = B_TRANSLATE("Manuale");
 	s.kind = (port == 80 || port == 443 || port == 8080 || port == 8443)
 		? ServiceKind::Web : ServiceKind::Other;
 	s.auth = AuthKind::None;
