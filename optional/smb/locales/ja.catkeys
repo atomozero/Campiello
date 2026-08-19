@@ -1,0 +1,53 @@
+1	ja	application/x-vnd.Campiello-smb-mount	570223640
+Percorso: 	SMB		パス: 
+Inserisci il server.	SMB		サーバーを入力してください。
+Impossibile avviare la connessione.	SMB		接続を開始できません。
+Dominio:	SMB		ドメイン:
+Condivisione montata	SMB		共有をマウントしました
+Montaggio fallito. Riprova; se il problema persiste, riavvia.	SMB		マウントに失敗しました。もう一度お試しください。問題が解決しない場合は再起動してください。
+Condivisione non trovata: 	SMB		共有が見つかりません: 
+Smontaggio fallito: 	SMB		アンマウントに失敗しました: 
+Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso (e i file/terminali dentro), poi riprova.	SMB		ボリュームは使用中です。ボリュームを開いている Tracker のウィンドウ（および内部のファイル/ターミナル）を閉じてから、もう一度お試しください。
+errore	SMB		エラー
+Mostra o nascondi la password	SMB		パスワードを表示または非表示
+Accesso negato: 	SMB		アクセスが拒否されました: 
+Server:	SMB		サーバー:
+Scegli una condivisione dall'elenco.	SMB		リストから共有を選択してください。
+Opzioni avanzate	SMB		詳細オプション
+Smontaggio in corso...	SMB		アンマウント中...
+Connetti a una cartella condivisa Windows	SMB		Windows の共有フォルダーに接続
+Monta i miei share all'avvio	SMB		起動時に自分の共有をマウント
+Nessuna condivisione visibile su questo server.	SMB		このサーバーに表示できる共有はありません。
+errore sconosciuto	SMB		不明なエラー
+Password:	SMB		パスワード:
+Sola lettura (non scrivere sulla share)	SMB		読み取り専用（共有に書き込まない）
+Apri	SMB		開く
+Ricorda password su questo computer	SMB		このコンピューターにパスワードを保存
+Sottocartella:	SMB		サブフォルダー:
+Condivisione:	SMB		共有:
+Accesso	SMB		ログイン
+Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;	SMB		ログインするユーザーとパスワード。共有が空 = サーバー全体を参照;
+Nessun volume montato in \"	SMB		マウントされているボリュームがありません: \"
+\" e' gia' montato.	SMB		\" は既にマウントされています。
+Utente:	SMB		ユーザー:
+ - usa la password dell'account Microsoft, non il PIN	SMB		 - Microsoft アカウントのパスワードを使用してください（PIN ではありません）
+Condivisione (vuoto = tutto il server)	SMB		共有（空 = サーバー全体）
+Smonta	SMB		アンマウント
+Nome disco:	SMB		ディスク名:
+Connetti	SMB		接続
+Ricerca condivisioni...	SMB		共有を検索中...
+Smontato \"	SMB		アンマウントしました: \"
+Dettagli	SMB		詳細
+altrimenti premi \"Elenca condivisioni\" e scegline una.	SMB		それ以外の場合は \"共有を一覧表示\" を押して 1 つ選択してください。
+Annulla	SMB		キャンセル
+Chiudi	SMB		閉じる
+Impossibile avviare la ricerca.	SMB		検索を開始できません。
+Condivisione scelta: 	SMB		選択した共有: 
+Monta come disco sulla Scrivania	SMB		デスクトップにディスクとしてマウント
+Connessione fallita: 	SMB		接続に失敗しました: 
+Impossibile elencare le condivisioni: 	SMB		共有を一覧表示できません: 
+ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il sistema (KDL) e costringere a un riavvio forzato. Procedi solo se puoi permetterti un riavvio.\n\nSmontare \"	SMB		注意: Haiku でネットワークボリュームをアンマウントすると、システムが停止 (KDL) し、強制的な再起動が必要になる場合があります。再起動しても問題ない場合のみ続行してください。\n\nアンマウント: \"
+Inserisci utente e password.	SMB		ユーザーとパスワードを入力してください。
+Elenca condivisioni	SMB		共有を一覧表示
+Il volume \"	SMB		ボリューム \"
+Connessione e montaggio in corso...	SMB		接続してマウント中...

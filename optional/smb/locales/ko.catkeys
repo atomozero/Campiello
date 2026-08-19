@@ -1,0 +1,53 @@
+1	ko	application/x-vnd.Campiello-smb-mount	570223640
+Percorso: 	SMB		경로: 
+Inserisci il server.	SMB		서버를 입력하세요.
+Impossibile avviare la connessione.	SMB		연결을 시작할 수 없습니다.
+Dominio:	SMB		도메인:
+Condivisione montata	SMB		공유가 마운트됨
+Montaggio fallito. Riprova; se il problema persiste, riavvia.	SMB		마운트에 실패했습니다. 다시 시도하세요. 문제가 계속되면 다시 시작하세요.
+Condivisione non trovata: 	SMB		공유를 찾을 수 없음: 
+Smontaggio fallito: 	SMB		마운트 해제 실패: 
+Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso (e i file/terminali dentro), poi riprova.	SMB		볼륨이 사용 중입니다. 이 볼륨에서 열려 있는 Tracker 창(및 그 안의 파일/터미널)을 닫은 다음 다시 시도하세요.
+errore	SMB		오류
+Mostra o nascondi la password	SMB		비밀번호 표시 또는 숨기기
+Accesso negato: 	SMB		접근 거부됨: 
+Server:	SMB		서버:
+Scegli una condivisione dall'elenco.	SMB		목록에서 공유를 선택하세요.
+Opzioni avanzate	SMB		고급 옵션
+Smontaggio in corso...	SMB		마운트 해제 중...
+Connetti a una cartella condivisa Windows	SMB		Windows 공유 폴더에 연결
+Monta i miei share all'avvio	SMB		시작 시 내 공유 마운트
+Nessuna condivisione visibile su questo server.	SMB		이 서버에 표시할 공유가 없습니다.
+errore sconosciuto	SMB		알 수 없는 오류
+Password:	SMB		비밀번호:
+Sola lettura (non scrivere sulla share)	SMB		읽기 전용(공유에 쓰지 않음)
+Apri	SMB		열기
+Ricorda password su questo computer	SMB		이 컴퓨터에 비밀번호 저장
+Sottocartella:	SMB		하위 폴더:
+Condivisione:	SMB		공유:
+Accesso	SMB		로그인
+Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;	SMB		로그인할 사용자와 비밀번호. 공유를 비우면 = 서버 전체 탐색;
+Nessun volume montato in \"	SMB		마운트된 볼륨이 없습니다: \"
+\" e' gia' montato.	SMB		\"은(는) 이미 마운트되어 있습니다.
+Utente:	SMB		사용자:
+ - usa la password dell'account Microsoft, non il PIN	SMB		 - Microsoft 계정 비밀번호를 사용하세요(PIN 아님)
+Condivisione (vuoto = tutto il server)	SMB		공유(비우면 = 서버 전체)
+Smonta	SMB		마운트 해제
+Nome disco:	SMB		디스크 이름:
+Connetti	SMB		연결
+Ricerca condivisioni...	SMB		공유 검색 중...
+Smontato \"	SMB		마운트 해제됨: \"
+Dettagli	SMB		세부 정보
+altrimenti premi \"Elenca condivisioni\" e scegline una.	SMB		그렇지 않으면 \"공유 목록\"을 누르고 하나를 선택하세요.
+Annulla	SMB		취소
+Chiudi	SMB		닫기
+Impossibile avviare la ricerca.	SMB		검색을 시작할 수 없습니다.
+Condivisione scelta: 	SMB		선택한 공유: 
+Monta come disco sulla Scrivania	SMB		바탕화면에 디스크로 마운트
+Connessione fallita: 	SMB		연결 실패: 
+Impossibile elencare le condivisioni: 	SMB		공유를 나열할 수 없습니다: 
+ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il sistema (KDL) e costringere a un riavvio forzato. Procedi solo se puoi permetterti un riavvio.\n\nSmontare \"	SMB		경고: Haiku에서 네트워크 볼륨을 마운트 해제하면 시스템이 멈추고(KDL) 강제로 다시 시작해야 할 수 있습니다. 다시 시작해도 괜찮은 경우에만 계속하세요.\n\n마운트 해제: \"
+Inserisci utente e password.	SMB		사용자와 비밀번호를 입력하세요.
+Elenca condivisioni	SMB		공유 목록
+Il volume \"	SMB		볼륨 \"
+Connessione e montaggio in corso...	SMB		연결 및 마운트 중...

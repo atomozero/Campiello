@@ -17,6 +17,14 @@ Italian). Each application ships:
   regenerated mechanically from the source.
 - `en.catkeys`: the English translation, hand-authored.
 
+Most surfaces ship Italian + English. The **SMB mount helper**
+(`campiello_smb_mount`) additionally ships French, German, Spanish, Japanese,
+Chinese (`zh_Hans`), Korean, Ukrainian and Portuguese catalogs, since Windows
+interop reaches the broadest audience. Adding a language elsewhere is the same
+recipe: drop a `<lang>.catkeys` next to the others (same source column and
+fingerprint, translate the last column) and add `<lang>` to the package
+Makefile's `LANGS`.
+
 The `.catkeys` files are the tracked source of truth (under
 `optional/<name>/locales/` for the device add-ons, `src/vicinato/locales/` for the
 WON app). The compiled `.catalog` files are build artifacts and are gitignored;

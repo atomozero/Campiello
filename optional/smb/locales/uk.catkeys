@@ -1,0 +1,53 @@
+1	uk	application/x-vnd.Campiello-smb-mount	570223640
+Percorso: 	SMB		Шлях: 
+Inserisci il server.	SMB		Введіть сервер.
+Impossibile avviare la connessione.	SMB		Не вдалося розпочати з'єднання.
+Dominio:	SMB		Домен:
+Condivisione montata	SMB		Спільний ресурс змонтовано
+Montaggio fallito. Riprova; se il problema persiste, riavvia.	SMB		Не вдалося змонтувати. Спробуйте ще раз; якщо проблема не зникає, перезавантажте.
+Condivisione non trovata: 	SMB		Спільний ресурс не знайдено: 
+Smontaggio fallito: 	SMB		Не вдалося демонтувати: 
+Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso (e i file/terminali dentro), poi riprova.	SMB		Том використовується: закрийте вікна Tracker, відкриті на ньому (і файли/термінали всередині), а потім повторіть спробу.
+errore	SMB		помилка
+Mostra o nascondi la password	SMB		Показати або приховати пароль
+Accesso negato: 	SMB		Доступ заборонено: 
+Server:	SMB		Сервер:
+Scegli una condivisione dall'elenco.	SMB		Виберіть спільний ресурс зі списку.
+Opzioni avanzate	SMB		Розширені параметри
+Smontaggio in corso...	SMB		Демонтування...
+Connetti a una cartella condivisa Windows	SMB		Підключитися до спільної теки Windows
+Monta i miei share all'avvio	SMB		Монтувати мої ресурси під час запуску
+Nessuna condivisione visibile su questo server.	SMB		На цьому сервері немає видимих спільних ресурсів.
+errore sconosciuto	SMB		невідома помилка
+Password:	SMB		Пароль:
+Sola lettura (non scrivere sulla share)	SMB		Лише читання (не записувати на ресурс)
+Apri	SMB		Відкрити
+Ricorda password su questo computer	SMB		Запам'ятати пароль на цьому комп'ютері
+Sottocartella:	SMB		Підтека:
+Condivisione:	SMB		Спільний ресурс:
+Accesso	SMB		Вхід
+Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;	SMB		Користувач і пароль для входу. Порожній ресурс = переглянути весь сервер;
+Nessun volume montato in \"	SMB		Немає змонтованого тому в \"
+\" e' gia' montato.	SMB		\" вже змонтовано.
+Utente:	SMB		Користувач:
+ - usa la password dell'account Microsoft, non il PIN	SMB		 - використовуйте пароль облікового запису Microsoft, а не PIN
+Condivisione (vuoto = tutto il server)	SMB		Спільний ресурс (порожньо = весь сервер)
+Smonta	SMB		Демонтувати
+Nome disco:	SMB		Назва диска:
+Connetti	SMB		Підключитися
+Ricerca condivisioni...	SMB		Пошук спільних ресурсів...
+Smontato \"	SMB		Демонтовано \"
+Dettagli	SMB		Подробиці
+altrimenti premi \"Elenca condivisioni\" e scegline una.	SMB		інакше натисніть \"Список ресурсів\" і виберіть один.
+Annulla	SMB		Скасувати
+Chiudi	SMB		Закрити
+Impossibile avviare la ricerca.	SMB		Не вдалося розпочати пошук.
+Condivisione scelta: 	SMB		Вибраний ресурс: 
+Monta come disco sulla Scrivania	SMB		Змонтувати як диск на стільниці
+Connessione fallita: 	SMB		Не вдалося з'єднатися: 
+Impossibile elencare le condivisioni: 	SMB		Не вдалося отримати список ресурсів: 
+ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il sistema (KDL) e costringere a un riavvio forzato. Procedi solo se puoi permetterti un riavvio.\n\nSmontare \"	SMB		УВАГА: демонтування мережевого тому в Haiku може заблокувати систему (KDL) і призвести до примусового перезавантаження. Продовжуйте, лише якщо можете дозволити собі перезавантаження.\n\nДемонтувати \"
+Inserisci utente e password.	SMB		Введіть користувача та пароль.
+Elenca condivisioni	SMB		Список ресурсів
+Il volume \"	SMB		Том \"
+Connessione e montaggio in corso...	SMB		Підключення та монтування...

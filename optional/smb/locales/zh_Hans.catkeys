@@ -1,0 +1,53 @@
+1	zh_Hans	application/x-vnd.Campiello-smb-mount	570223640
+Percorso: 	SMB		路径: 
+Inserisci il server.	SMB		请输入服务器。
+Impossibile avviare la connessione.	SMB		无法启动连接。
+Dominio:	SMB		域:
+Condivisione montata	SMB		共享已挂载
+Montaggio fallito. Riprova; se il problema persiste, riavvia.	SMB		挂载失败。请重试；如果问题仍然存在，请重新启动。
+Condivisione non trovata: 	SMB		未找到共享: 
+Smontaggio fallito: 	SMB		卸载失败: 
+Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso (e i file/terminali dentro), poi riprova.	SMB		卷正在使用中：请关闭在其上打开的 Tracker 窗口（以及其中的文件/终端），然后重试。
+errore	SMB		错误
+Mostra o nascondi la password	SMB		显示或隐藏密码
+Accesso negato: 	SMB		访问被拒绝: 
+Server:	SMB		服务器:
+Scegli una condivisione dall'elenco.	SMB		从列表中选择一个共享。
+Opzioni avanzate	SMB		高级选项
+Smontaggio in corso...	SMB		正在卸载...
+Connetti a una cartella condivisa Windows	SMB		连接到 Windows 共享文件夹
+Monta i miei share all'avvio	SMB		启动时挂载我的共享
+Nessuna condivisione visibile su questo server.	SMB		此服务器上没有可见的共享。
+errore sconosciuto	SMB		未知错误
+Password:	SMB		密码:
+Sola lettura (non scrivere sulla share)	SMB		只读（不写入共享）
+Apri	SMB		打开
+Ricorda password su questo computer	SMB		在这台电脑上记住密码
+Sottocartella:	SMB		子文件夹:
+Condivisione:	SMB		共享:
+Accesso	SMB		登录
+Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;	SMB		用于登录的用户名和密码。共享为空 = 浏览整个服务器；
+Nessun volume montato in \"	SMB		没有卷挂载在 \"
+\" e' gia' montato.	SMB		\" 已挂载。
+Utente:	SMB		用户:
+ - usa la password dell'account Microsoft, non il PIN	SMB		 - 使用 Microsoft 账户的密码，而不是 PIN
+Condivisione (vuoto = tutto il server)	SMB		共享（空 = 整个服务器）
+Smonta	SMB		卸载
+Nome disco:	SMB		磁盘名称:
+Connetti	SMB		连接
+Ricerca condivisioni...	SMB		正在搜索共享...
+Smontato \"	SMB		已卸载 \"
+Dettagli	SMB		详细信息
+altrimenti premi \"Elenca condivisioni\" e scegline una.	SMB		否则，请按 \"列出共享\" 并选择一个。
+Annulla	SMB		取消
+Chiudi	SMB		关闭
+Impossibile avviare la ricerca.	SMB		无法启动搜索。
+Condivisione scelta: 	SMB		已选择的共享: 
+Monta come disco sulla Scrivania	SMB		作为磁盘挂载到桌面
+Connessione fallita: 	SMB		连接失败: 
+Impossibile elencare le condivisioni: 	SMB		无法列出共享: 
+ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il sistema (KDL) e costringere a un riavvio forzato. Procedi solo se puoi permetterti un riavvio.\n\nSmontare \"	SMB		警告：在 Haiku 上卸载网络卷可能导致系统冻结 (KDL) 并强制重新启动。仅在你可以接受重新启动时才继续。\n\n卸载 \"
+Inserisci utente e password.	SMB		请输入用户名和密码。
+Elenca condivisioni	SMB		列出共享
+Il volume \"	SMB		卷 \"
+Connessione e montaggio in corso...	SMB		正在连接并挂载...

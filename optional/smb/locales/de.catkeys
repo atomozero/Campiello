@@ -1,0 +1,53 @@
+1	de	application/x-vnd.Campiello-smb-mount	570223640
+Percorso: 	SMB		Pfad: 
+Inserisci il server.	SMB		Geben Sie den Server ein.
+Impossibile avviare la connessione.	SMB		Verbindung kann nicht gestartet werden.
+Dominio:	SMB		Domäne:
+Condivisione montata	SMB		Freigabe eingehängt
+Montaggio fallito. Riprova; se il problema persiste, riavvia.	SMB		Einhängen fehlgeschlagen. Versuchen Sie es erneut; wenn das Problem weiterhin besteht, starten Sie neu.
+Condivisione non trovata: 	SMB		Freigabe nicht gefunden: 
+Smontaggio fallito: 	SMB		Aushängen fehlgeschlagen: 
+Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso (e i file/terminali dentro), poi riprova.	SMB		Das Volume wird verwendet: Schließen Sie die darauf geöffneten Tracker-Fenster (und die darin enthaltenen Dateien/Terminals) und versuchen Sie es erneut.
+errore	SMB		Fehler
+Mostra o nascondi la password	SMB		Passwort anzeigen oder ausblenden
+Accesso negato: 	SMB		Zugriff verweigert: 
+Server:	SMB		Server:
+Scegli una condivisione dall'elenco.	SMB		Wählen Sie eine Freigabe aus der Liste.
+Opzioni avanzate	SMB		Erweiterte Optionen
+Smontaggio in corso...	SMB		Wird ausgehängt...
+Connetti a una cartella condivisa Windows	SMB		Mit einem freigegebenen Windows-Ordner verbinden
+Monta i miei share all'avvio	SMB		Meine Freigaben beim Start einhängen
+Nessuna condivisione visibile su questo server.	SMB		Keine Freigaben auf diesem Server sichtbar.
+errore sconosciuto	SMB		unbekannter Fehler
+Password:	SMB		Passwort:
+Sola lettura (non scrivere sulla share)	SMB		Schreibgeschützt (nicht auf die Freigabe schreiben)
+Apri	SMB		Öffnen
+Ricorda password su questo computer	SMB		Passwort auf diesem Computer merken
+Sottocartella:	SMB		Unterordner:
+Condivisione:	SMB		Freigabe:
+Accesso	SMB		Anmeldung
+Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;	SMB		Benutzer und Passwort für die Anmeldung. Leere Freigabe = gesamten Server durchsuchen;
+Nessun volume montato in \"	SMB		Kein Volume eingehängt in \"
+\" e' gia' montato.	SMB		\" ist bereits eingehängt.
+Utente:	SMB		Benutzer:
+ - usa la password dell'account Microsoft, non il PIN	SMB		 - verwenden Sie das Passwort des Microsoft-Kontos, nicht die PIN
+Condivisione (vuoto = tutto il server)	SMB		Freigabe (leer = gesamter Server)
+Smonta	SMB		Aushängen
+Nome disco:	SMB		Datenträgername:
+Connetti	SMB		Verbinden
+Ricerca condivisioni...	SMB		Freigaben werden gesucht...
+Smontato \"	SMB		Ausgehängt \"
+Dettagli	SMB		Details
+altrimenti premi \"Elenca condivisioni\" e scegline una.	SMB		andernfalls drücken Sie \"Freigaben auflisten\" und wählen Sie eine aus.
+Annulla	SMB		Abbrechen
+Chiudi	SMB		Schließen
+Impossibile avviare la ricerca.	SMB		Suche kann nicht gestartet werden.
+Condivisione scelta: 	SMB		Gewählte Freigabe: 
+Monta come disco sulla Scrivania	SMB		Als Datenträger auf dem Schreibtisch einhängen
+Connessione fallita: 	SMB		Verbindung fehlgeschlagen: 
+Impossibile elencare le condivisioni: 	SMB		Freigaben können nicht aufgelistet werden: 
+ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il sistema (KDL) e costringere a un riavvio forzato. Procedi solo se puoi permetterti un riavvio.\n\nSmontare \"	SMB		ACHTUNG: Das Aushängen eines Netzwerk-Volumes unter Haiku kann das System einfrieren (KDL) und einen erzwungenen Neustart nötig machen. Fahren Sie nur fort, wenn Sie sich einen Neustart leisten können.\n\nAushängen \"
+Inserisci utente e password.	SMB		Geben Sie Benutzer und Passwort ein.
+Elenca condivisioni	SMB		Freigaben auflisten
+Il volume \"	SMB		Das Volume \"
+Connessione e montaggio in corso...	SMB		Verbinden und Einhängen...

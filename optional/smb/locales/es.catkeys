@@ -1,0 +1,53 @@
+1	es	application/x-vnd.Campiello-smb-mount	570223640
+Percorso: 	SMB		Ruta: 
+Inserisci il server.	SMB		Introduce el servidor.
+Impossibile avviare la connessione.	SMB		No se puede iniciar la conexión.
+Dominio:	SMB		Dominio:
+Condivisione montata	SMB		Recurso montado
+Montaggio fallito. Riprova; se il problema persiste, riavvia.	SMB		Fallo al montar. Inténtalo de nuevo; si el problema persiste, reinicia.
+Condivisione non trovata: 	SMB		Recurso no encontrado: 
+Smontaggio fallito: 	SMB		Fallo al desmontar: 
+Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso (e i file/terminali dentro), poi riprova.	SMB		El volumen está en uso: cierra las ventanas de Tracker abiertas sobre él (y los archivos/terminales dentro) y vuelve a intentarlo.
+errore	SMB		error
+Mostra o nascondi la password	SMB		Mostrar u ocultar la contraseña
+Accesso negato: 	SMB		Acceso denegado: 
+Server:	SMB		Servidor:
+Scegli una condivisione dall'elenco.	SMB		Elige un recurso de la lista.
+Opzioni avanzate	SMB		Opciones avanzadas
+Smontaggio in corso...	SMB		Desmontando...
+Connetti a una cartella condivisa Windows	SMB		Conectar a una carpeta compartida de Windows
+Monta i miei share all'avvio	SMB		Montar mis recursos al inicio
+Nessuna condivisione visibile su questo server.	SMB		No hay recursos visibles en este servidor.
+errore sconosciuto	SMB		error desconocido
+Password:	SMB		Contraseña:
+Sola lettura (non scrivere sulla share)	SMB		Solo lectura (no escribir en el recurso)
+Apri	SMB		Abrir
+Ricorda password su questo computer	SMB		Recordar la contraseña en este equipo
+Sottocartella:	SMB		Subcarpeta:
+Condivisione:	SMB		Recurso:
+Accesso	SMB		Acceso
+Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;	SMB		Usuario y contraseña para acceder. Recurso vacío = explorar todo el servidor;
+Nessun volume montato in \"	SMB		Ningún volumen montado en \"
+\" e' gia' montato.	SMB		\" ya está montado.
+Utente:	SMB		Usuario:
+ - usa la password dell'account Microsoft, non il PIN	SMB		 - usa la contraseña de la cuenta de Microsoft, no el PIN
+Condivisione (vuoto = tutto il server)	SMB		Recurso (vacío = todo el servidor)
+Smonta	SMB		Desmontar
+Nome disco:	SMB		Nombre del disco:
+Connetti	SMB		Conectar
+Ricerca condivisioni...	SMB		Buscando recursos...
+Smontato \"	SMB		Desmontado \"
+Dettagli	SMB		Detalles
+altrimenti premi \"Elenca condivisioni\" e scegline una.	SMB		de lo contrario, pulsa \"Listar recursos\" y elige uno.
+Annulla	SMB		Cancelar
+Chiudi	SMB		Cerrar
+Impossibile avviare la ricerca.	SMB		No se puede iniciar la búsqueda.
+Condivisione scelta: 	SMB		Recurso elegido: 
+Monta come disco sulla Scrivania	SMB		Montar como disco en el Escritorio
+Connessione fallita: 	SMB		Fallo en la conexión: 
+Impossibile elencare le condivisioni: 	SMB		No se pueden listar los recursos: 
+ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il sistema (KDL) e costringere a un riavvio forzato. Procedi solo se puoi permetterti un riavvio.\n\nSmontare \"	SMB		ATENCIÓN: desmontar un volumen de red en Haiku puede bloquear el sistema (KDL) y forzar un reinicio. Continúa solo si puedes permitirte un reinicio.\n\nDesmontar \"
+Inserisci utente e password.	SMB		Introduce el usuario y la contraseña.
+Elenca condivisioni	SMB		Listar recursos
+Il volume \"	SMB		El volumen \"
+Connessione e montaggio in corso...	SMB		Conectando y montando...

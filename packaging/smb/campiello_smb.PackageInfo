@@ -1,5 +1,5 @@
 name			campiello_smb
-version 0.2.0-14
+version 0.2.0-16
 architecture	x86_64
 summary			"Windows shared-folder support for Campiello"
 description		"Optional SMB add-on for Campiello: mount a Windows (or Samba) shared

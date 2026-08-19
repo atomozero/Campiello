@@ -1,5 +1,5 @@
 name			campiello_complete
-version			0.4.3-1
+version			0.4.4-1
 architecture	x86_64
 summary			"Campiello with every device add-on, all in one package"
 description		"The complete Campiello in a single package: the core application (the WON network
@@ -26,7 +26,7 @@ licenses {
 }
 
 provides {
-	campiello_complete = 0.4.3
+	campiello_complete = 0.4.4
 }
 
 requires {

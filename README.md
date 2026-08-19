@@ -186,7 +186,7 @@ The simplest path is the all-in-one bundle, which now includes **every** device 
 
 ```
 pkgman install ./packaging/smb/libsmb2/libsmb2-4.0.0-6-x86_64.hpkg          # fixed libsmb2 (see below)
-pkgman install ./packaging/complete/campiello_complete-0.4.3-1-x86_64.hpkg  # core + all add-ons + SMB
+pkgman install ./packaging/complete/campiello_complete-0.4.4-1-x86_64.hpkg  # core + all add-ons + SMB
 ```
 
 Or install the core and pick add-ons individually:
@@ -194,7 +194,7 @@ Or install the core and pick add-ons individually:
 ```
 make packages
 pkgman install ./packaging/campiello-0.3.33-1-x86_64.hpkg
-pkgman install ./packaging/smb/campiello_smb-0.2.0-15-x86_64.hpkg     # optional, Windows shares
+pkgman install ./packaging/smb/campiello_smb-0.2.0-16-x86_64.hpkg     # optional, Windows shares
 pkgman install ./packaging/cast/campiello_cast-0.6.0-2-x86_64.hpkg    # optional, Google Cast + mirroring
 ```
 

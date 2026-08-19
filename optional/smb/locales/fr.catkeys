@@ -1,0 +1,53 @@
+1	fr	application/x-vnd.Campiello-smb-mount	570223640
+Percorso: 	SMB		Chemin : 
+Inserisci il server.	SMB		Saisissez le serveur.
+Impossibile avviare la connessione.	SMB		Impossible de démarrer la connexion.
+Dominio:	SMB		Domaine :
+Condivisione montata	SMB		Partage monté
+Montaggio fallito. Riprova; se il problema persiste, riavvia.	SMB		Échec du montage. Réessayez ; si le problème persiste, redémarrez.
+Condivisione non trovata: 	SMB		Partage introuvable : 
+Smontaggio fallito: 	SMB		Échec du démontage : 
+Il volume e' in uso: chiudi le finestre di Tracker aperte su di esso (e i file/terminali dentro), poi riprova.	SMB		Le volume est en cours d'utilisation : fermez les fenêtres de Tracker ouvertes dessus (ainsi que les fichiers/terminaux à l'intérieur), puis réessayez.
+errore	SMB		erreur
+Mostra o nascondi la password	SMB		Afficher ou masquer le mot de passe
+Accesso negato: 	SMB		Accès refusé : 
+Server:	SMB		Serveur :
+Scegli una condivisione dall'elenco.	SMB		Choisissez un partage dans la liste.
+Opzioni avanzate	SMB		Options avancées
+Smontaggio in corso...	SMB		Démontage en cours...
+Connetti a una cartella condivisa Windows	SMB		Se connecter à un dossier partagé Windows
+Monta i miei share all'avvio	SMB		Monter mes partages au démarrage
+Nessuna condivisione visibile su questo server.	SMB		Aucun partage visible sur ce serveur.
+errore sconosciuto	SMB		erreur inconnue
+Password:	SMB		Mot de passe :
+Sola lettura (non scrivere sulla share)	SMB		Lecture seule (ne pas écrire sur le partage)
+Apri	SMB		Ouvrir
+Ricorda password su questo computer	SMB		Mémoriser le mot de passe sur cet ordinateur
+Sottocartella:	SMB		Sous-dossier :
+Condivisione:	SMB		Partage :
+Accesso	SMB		Connexion
+Utente e password per accedere. Condivisione vuota = sfoglia tutto il server;	SMB		Utilisateur et mot de passe pour se connecter. Partage vide = parcourir tout le serveur ;
+Nessun volume montato in \"	SMB		Aucun volume monté dans \"
+\" e' gia' montato.	SMB		\" est déjà monté.
+Utente:	SMB		Utilisateur :
+ - usa la password dell'account Microsoft, non il PIN	SMB		 - utilisez le mot de passe du compte Microsoft, pas le code PIN
+Condivisione (vuoto = tutto il server)	SMB		Partage (vide = tout le serveur)
+Smonta	SMB		Démonter
+Nome disco:	SMB		Nom du disque :
+Connetti	SMB		Se connecter
+Ricerca condivisioni...	SMB		Recherche des partages...
+Smontato \"	SMB		Démonté \"
+Dettagli	SMB		Détails
+altrimenti premi \"Elenca condivisioni\" e scegline una.	SMB		sinon, appuyez sur \"Lister les partages\" et choisissez-en un.
+Annulla	SMB		Annuler
+Chiudi	SMB		Fermer
+Impossibile avviare la ricerca.	SMB		Impossible de démarrer la recherche.
+Condivisione scelta: 	SMB		Partage choisi : 
+Monta come disco sulla Scrivania	SMB		Monter comme disque sur le Bureau
+Connessione fallita: 	SMB		Échec de la connexion : 
+Impossibile elencare le condivisioni: 	SMB		Impossible de lister les partages : 
+ATTENZIONE: smontare un volume di rete su Haiku puo' bloccare il sistema (KDL) e costringere a un riavvio forzato. Procedi solo se puoi permetterti un riavvio.\n\nSmontare \"	SMB		ATTENTION : démonter un volume réseau sous Haiku peut bloquer le système (KDL) et forcer un redémarrage brutal. Ne continuez que si vous pouvez vous permettre un redémarrage.\n\nDémonter \"
+Inserisci utente e password.	SMB		Saisissez l'utilisateur et le mot de passe.
+Elenca condivisioni	SMB		Lister les partages
+Il volume \"	SMB		Le volume \"
+Connessione e montaggio in corso...	SMB		Connexion et montage en cours...

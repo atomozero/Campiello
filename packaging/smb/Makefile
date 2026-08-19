@@ -10,7 +10,7 @@
 #
 # Haiku-only (needs the `package` tool, the userlandfs FUSE headers, and libsmb2).
 
-VERSION := 0.2.0-15
+VERSION := 0.2.0-16
 ARCH := x86_64
 PKG := campiello_smb-$(VERSION)-$(ARCH).hpkg
 
@@ -31,7 +31,7 @@ FUSE_DIR := ../../src/fondamenta/fuse
 # signature with the "application/" prefix dropped, which is where BLocaleRoster looks.
 CATALOG_SIG := application/x-vnd.Campiello-smb-mount
 CATALOG_DIR := x-vnd.Campiello-smb-mount
-LANGS := en
+LANGS := en fr de es ja zh_Hans ko uk pt
 CATALOGS := $(LANGS:%=%.catalog)
 
 # The userlandfs add-on: hosts the SMB backends in the reused core FUSE front end.
