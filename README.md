@@ -181,6 +181,16 @@ l'arricchimento LAN (produttore/MAC via ARP/OUI, nome NetBIOS, modello SSDP/UPnP
 
 ## Install (package)
 
+The simplest path is the all-in-one bundle, which now includes **every** device add-on
+**and** the Windows/SMB mount helper in one package:
+
+```
+pkgman install ./packaging/smb/libsmb2/libsmb2-4.0.0-6-x86_64.hpkg          # fixed libsmb2 (see below)
+pkgman install ./packaging/complete/campiello_complete-0.4.3-1-x86_64.hpkg  # core + all add-ons + SMB
+```
+
+Or install the core and pick add-ons individually:
+
 ```
 make packages
 pkgman install ./packaging/campiello-0.3.33-1-x86_64.hpkg
@@ -192,10 +202,12 @@ The core package installs the WON app, the resident `campiello_daemon` (auto-sta
 login via a user launch job), the `campiello_net` `/Campiello` volume add-on, the SFTP
 interop helpers, and the Deskbar replicant.
 
-The optional SMB package needs a fixed `libsmb2` (the stock HaikuPorts build has a Haiku
-errno bug in its connect path; the fix is in `docs/SMB.md`). Mounting a userlandfs
-volume should be exercised in a throwaway VM first (an unmount hazard, see
-`docs/VERIFIED.md`).
+Windows/SMB support (in the bundle, or the separate `campiello_smb` package) needs a
+fixed `libsmb2`: the stock HaikuPorts build has a Haiku errno bug in its connect path, so
+mounts fail with "Operation now in progress" (the fix and recipe are in `docs/SMB.md`).
+Install the `libsmb2-4.0.0-6` package shipped with the release (or built from
+`packaging/smb/libsmb2/`) first. Mounting a userlandfs volume should be exercised in a
+throwaway VM first (an unmount hazard, see `docs/VERIFIED.md`).
 
 ## Build
 

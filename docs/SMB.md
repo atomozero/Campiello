@@ -168,7 +168,16 @@ Accept-and-ignore or NTFS ADS mapping is a later step. Write support is new: tes
 non-critical data first (the KDL unmount hazard also applies).
 
 ### Notes
+- **Now bundled.** As of `campiello_complete` 0.4.3 the Windows/SMB mount helper ships inside the
+  all-in-one bundle (the bundle `requires lib:libsmb2 >= 4`), so a single install gives Windows
+  mounting too. Before that, bundle-only users had no SMB add-on at all: opening a Windows host in
+  WON just showed an info card ("nessuna azione"), because `be_roster->Launch` of the mount helper
+  signature failed with the helper absent. The standalone `campiello_smb` package still exists for
+  core-only installs.
 - The `campiello_smb` package requires libsmb2 REVISION 6+ (native errno, sign-agnostic socket.c).
+  The fixed build is shipped with the release as `libsmb2-4.0.0-6-x86_64.hpkg` (vendored recipe at
+  `packaging/smb/libsmb2/`); the stock HaikuPorts libsmb2 satisfies `lib:libsmb2 >= 4` but fails the
+  mount (Bug 1), so install the shipped one first.
 - SMB signing: libsmb2 negotiates it; the real share connected with
   `SMB2_NEGOTIATE_SIGNING_ENABLED` and no extra configuration.
 - KDL hazard: mounting is fine, but unmounting a userlandfs volume has kernel-panicked before, so

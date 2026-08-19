@@ -9,17 +9,21 @@
 #   make package    # builds campiello_complete-<version>-x86_64.hpkg
 #   pkgman install ./campiello_complete-0.4.0-1-x86_64.hpkg
 #
-# Haiku-only (needs the `package` tool). Excludes campiello_smb (a userlandfs volume with an LGPL
-# dependency and its own install notes); the core already carries the device icons.
+# Haiku-only (needs the `package` tool). Includes campiello_smb (the Windows/SMB userlandfs mount
+# helper): the bundle therefore requires lib:libsmb2 at runtime (LGPL-2.1, loaded dynamically by the
+# add-on - the bundle's own code stays MIT). Ship the fixed libsmb2 (>= revision 6, native errno)
+# alongside this package; the stock HaikuPorts libsmb2 fails the mount (see docs/SMB.md, Bug 1). The
+# core already carries the device icons.
 
-VERSION := 0.4.2-1
+VERSION := 0.4.3-1
 ARCH := x86_64
 PKG := campiello_complete-$(VERSION)-$(ARCH).hpkg
 STAGE := stage
 
-# Every device add-on that ships an apps/ handler + a data/campiello/handlers/ manifest.
+# Every device add-on that ships an apps/ handler + a data/campiello/handlers/ manifest, plus smb
+# (the Windows/SMB mount helper, no manifest - the WON app routes Windows hosts to it directly).
 ADDONS := afp airplay alexa cast daap daikin eero escl esphome firetv ftp homekit hue ipp \
-          lutron matter nfs nut spotify vnc webdav
+          lutron matter nfs nut smb spotify vnc webdav
 
 .PHONY: package clean
 package: $(PKG)
