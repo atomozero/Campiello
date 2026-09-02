@@ -53,7 +53,7 @@ upgrade of `campiello_cast`.
 | 11 | **campiello_ftp** | `_ftp._tcp` | File | high - FTP is simple | functional (needs live server) |
 | 12 | **campiello_homekit** | `_hap._tcp` | Home | hard (control needs crypto); info from TXT done | functional (info; control follow-up) |
 | 13 | **campiello_matter** | `_matter._tcp` `_matterc._udp` | Home | hard (control needs SDK/crypto); info from TXT done | functional (info; control follow-up) |
-| 14 | **campiello_spotify** | `_spotify-connect._tcp` | Media | hard (control needs account); getInfo done | functional (info; control follow-up) |
+| 14 | **campiello_spotify** | `_spotify-connect._tcp` | Media | getInfo + Web API control (OAuth/PKCE) | functional (info + playback control) |
 | 15 | **campiello_alexa** | `_amzn-alexa._tcp` | Media | low - no open local control API (info only) | functional (info only) |
 | 16 | **campiello_lutron** | `_sleap._tcp` | Home | medium (control needs LEAP TLS pairing); info done | functional (info only) |
 
@@ -95,6 +95,11 @@ Newest first. Each entry: component, what was researched/built, commit.
   shortcut, so add-ons reach the device without re-querying mDNS. `campiello_spotify` reads host/port/
   CPath and shows the speaker info on a worker thread with a note to use the Spotify app. Bumps
   campiello 0.3.10-1. References: Spotify ZeroConf API, librespot.
+  - **Later (control):** the follow-up landed. `SpotifyWebApi` adds OAuth Authorization Code + PKCE
+    (loopback redirect, libcrypto) and the `/v1/me/player` calls over libcurl, so the add-on now
+    transfers playback to the discovered speaker and drives play/pause/next/previous/volume. Needs a
+    Premium account + a free developer app; the local `addUser` path stays unfeasible (librespot-only).
+    `campiello_spotify` 0.1.0-5, `requires lib:libcurl + lib:libcrypto`. See docs/addons/spotify.md.
 
 - **Iteration 12 - campiello_matter.** Honest scope like HomeKit: commissioning/control need PASE/CASE
   + attestation certificates + Thread/Wi-Fi onboarding (the Matter SDK/crypto, follow-up, NOT faked).

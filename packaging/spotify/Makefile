@@ -1,22 +1,25 @@
 # Build the OPTIONAL Campiello Spotify Connect package (.hpkg).
 #
-# Ships the Spotify Connect info add-on + its handler manifest. Pure HTTP (no third-party dependency),
-# so this add-on is itself MIT-clean; kept optional only because it is device-specific.
+# Ships the Spotify Connect add-on + its handler manifest: it shows the receiver's public info
+# (getInfo, no account) AND, once a Spotify account is linked, actively controls playback through the
+# Spotify Web API (transfer / play / pause / next / previous / volume). The add-on's own code is MIT;
+# it links libcurl (HTTPS) and libcrypto (OAuth PKCE) at runtime, so it stays under optional/.
 #
 #   make package    # builds campiello_spotify-<version>-<arch>.hpkg
 #   pkgman install ./campiello_spotify-0.1.0-1-x86_64.hpkg
 #
-# Haiku-only (needs the `package` tool).
+# Haiku-only (needs the `package` tool, plus libcurl + openssl devel headers).
 
-VERSION := 0.1.0-4
+VERSION := 0.1.0-5
 ARCH := x86_64
 PKG := campiello_spotify-$(VERSION)-$(ARCH).hpkg
 
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -Wall -Wextra -O2
+OPENSSL_INC := /boot/system/develop/headers/openssl
 
 SPT := ../../optional/spotify
-SRC := $(SPT)/campiello_spotify.cpp $(SPT)/SpotifyProbe.cpp
+SRC := $(SPT)/campiello_spotify.cpp $(SPT)/SpotifyProbe.cpp $(SPT)/SpotifyWebApi.cpp
 STAGE := stage
 
 # Localization (Haiku Locale Kit). Source strings are Italian and show when no catalog matches the
@@ -42,8 +45,8 @@ $(PKG): campiello_spotify.PackageInfo campiello_spotify $(CATALOGS)
 
 # The info app, with its app_signature resource so be_roster can launch it by signature; liblocalestub
 # so B_TRANSLATE resolves the app's catalog at runtime.
-campiello_spotify: $(SRC) $(SPT)/SpotifyProbe.h $(SPT)/Spotify.rdef
-	$(CXX) $(CXXFLAGS) -o $@ $(SRC) -lbe -lnetwork -llocalestub
+campiello_spotify: $(SRC) $(SPT)/SpotifyProbe.h $(SPT)/SpotifyWebApi.h $(SPT)/Spotify.rdef
+	$(CXX) $(CXXFLAGS) -I$(OPENSSL_INC) -o $@ $(SRC) -lbe -lnetwork -lcurl -lcrypto -llocalestub
 	rc -o campiello_spotify.rsrc $(SPT)/Spotify.rdef
 	xres -o $@ campiello_spotify.rsrc
 	mimeset -f $@

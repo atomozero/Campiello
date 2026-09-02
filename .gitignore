@@ -107,6 +107,9 @@ obj/
 /optional/smb/test_smbbackend
 /optional/smb/campiello_smb
 /optional/smb/campiello_smb_mount
+
+# Optional Spotify add-on build artifacts
+/optional/spotify/test_spotifyapi
 /packaging/smb/stage/
 /packaging/smb/campiello_smb
 /packaging/smb/campiello_smb_mount

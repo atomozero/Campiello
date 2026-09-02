@@ -1,16 +1,40 @@
-1	en	application/x-vnd.Campiello-spotify	1566223434
+1	en	application/x-vnd.Campiello-spotify	2624341497
 Porta del dispositivo non disponibile.	Spotify		Device port not available.
 (nessuno)	Spotify		(none)
-Versione: 	Spotify		Version:
-Aggiorna	Spotify		Refresh
-Nessun dispositivo. Aprilo dal vicinato WON, o passa host=<ip> port=<n>.	Spotify		No device. Open it from the WON neighborhood, or pass host=<ip> port=<n>.
-Nome: 	Spotify		Name:
-Campiello mostra le informazioni pubbliche dell'altoparlante. Avviare e controllare la riproduzione richiede un account Spotify Premium e l'autenticazione (Web API OAuth), non ancora disponibile. Per ora usa l'app Spotify e scegli questo dispositivo con Spotify Connect.	Spotify		Campiello shows the speaker's public information. Starting and controlling playback needs a Spotify Premium account and authentication (OAuth Web API), not yet available. For now use the Spotify app and choose this device with Spotify Connect.
-Tipo: 	Spotify		Type:
+Account scollegato.	Spotify		Account disconnected.
+Versione: 	Spotify		Version: 
+Inserisci il Client ID.	Spotify		Enter the Client ID.
+Nome: 	Spotify		Name: 
+Tipo: 	Spotify		Type: 
+Trasferisco la riproduzione...	Spotify		Transferring playback...
 Interrogo il dispositivo...	Spotify		Querying the device...
-Indirizzo: 	Spotify		Address:
+Volume	Spotify		Volume
+Fatto.	Spotify		Done.
+Dispositivo non trovato nell'account.	Spotify		Device not found in the account.
+Indirizzo: 	Spotify		Address: 
 Chiudi	Spotify		Close
-Dispositivo: 	Spotify		Device:
+Account collegato.	Spotify		Account linked.
+Play	Spotify		Play
+Pausa	Spotify		Pause
+Trasferisci qui	Spotify		Transfer here
 Pronto.	Spotify		Ready.
+Invio comando...	Spotify		Sending command...
+Crea un'app gratuita su developer.spotify.com e imposta il Redirect URI:	Spotify		Create a free app at developer.spotify.com and set the Redirect URI:
+Imposto il volume...	Spotify		Setting the volume...
+In pausa: 	Spotify		Paused: 
+Dispositivo pronto per il controllo.	Spotify		Device ready for control.
+Collega account	Spotify		Link account
+Nessun dispositivo. Aprilo dal vicinato WON, o passa host=<ip> port=<n>.	Spotify		No device. Open it from the WON neighborhood, or pass host=<ip> port=<n>.
+Client ID:	Spotify		Client ID:
+Speaker non visibile nell'account: aprilo una volta con l'app Spotify.	Spotify		Speaker not visible in the account: open it once with the Spotify app.
+Operazione non riuscita.	Spotify		Operation failed.
+Scollega	Spotify		Unlink
+In riproduzione: 	Spotify		Now playing: 
+Dispositivo: 	Spotify		Device: 
+Play/Pausa	Spotify		Play/Pause
+Riproduzione trasferita.	Spotify		Playback transferred.
+Collegamento non riuscito.	Spotify		Linking failed.
+Niente in riproduzione.	Spotify		Nothing playing.
+Autorizza Campiello nel browser, poi torna qui...	Spotify		Authorize Campiello in the browser, then come back here...
 Dispositivo non raggiungibile o non Spotify Connect.	Spotify		Device unreachable or not Spotify Connect.
-Account attivo: 	Spotify		Active account:
+Account attivo: 	Spotify		Active account: 

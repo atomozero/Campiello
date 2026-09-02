@@ -1,13 +1,15 @@
 name			campiello_spotify
-version			0.1.0-3
+version			0.1.0-5
 architecture	x86_64
-summary			"Spotify Connect device info for Campiello"
+summary			"Spotify Connect device info and control for Campiello"
 description		"Optional device add-on for Campiello: for a Spotify Connect receiver on the network it
 shows the speaker's public info (name, brand/model, device type, version, active user) via the
-unauthenticated zeroconf getInfo endpoint. It does not control playback: that needs a Spotify Premium
-account and OAuth, a documented follow-up. Launched from the WON network neighborhood on a
-double-click of a discovered Spotify Connect device. Pure HTTP, no third-party dependency; part of the
-MIT-clean add-on suite."
+unauthenticated zeroconf getInfo endpoint, and - once you link a Spotify account - actively controls
+playback through the Spotify Web API: transfer playback to the speaker and play/pause/next/previous
+and set volume. Active control needs a Spotify Premium account and a free Spotify developer app
+(OAuth Authorization Code with PKCE, loopback redirect); the info view needs no account. Launched from
+the WON network neighborhood on a double-click of a discovered Spotify Connect device. The add-on's own
+code is MIT; it links libcurl (HTTPS) and libcrypto (PKCE) at runtime."
 packager		"atomozero <atomozero@proton.me>"
 vendor			"atomozero"
 
@@ -25,4 +27,6 @@ provides {
 
 requires {
 	haiku >= r1~beta5
+	lib:libcurl >= 4
+	lib:libcrypto >= 3
 }
