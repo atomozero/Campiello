@@ -15,7 +15,7 @@
 # alongside this package; the stock HaikuPorts libsmb2 fails the mount (see docs/SMB.md, Bug 1). The
 # core already carries the device icons.
 
-VERSION := 0.4.4-1
+VERSION := 0.4.5-1
 ARCH := x86_64
 PKG := campiello_complete-$(VERSION)-$(ARCH).hpkg
 STAGE := stage
