@@ -20,13 +20,16 @@
 #include <Button.h>
 #include <CheckBox.h>
 #include <DataIO.h>
+#include <Dragger.h>
 #include <Entry.h>
 #include <File.h>
 #include <FindDirectory.h>
 #include <LayoutBuilder.h>
+#include <MenuItem.h>
 #include <MessageRunner.h>
 #include <Messenger.h>
 #include <Node.h>
+#include <PopUpMenu.h>
 #include <Path.h>
 #include <Roster.h>
 #include <StringView.h>
@@ -69,6 +72,12 @@ static const uint32 kMsgReconnect  = 'rcon';
 static const uint32 kMsgSnapshot   = 'csnp';
 static const uint32 kMsgToggleAuto = 'caut';
 static const uint32 kMsgSaveFrame  = 'csav';
+static const uint32 kMsgDesktopWidget = 'cwid';
+static const uint32 kMsgRepStream  = 'rpst';   // replicant: switch to live stream
+static const uint32 kMsgRepSnap    = 'rpsn';   // replicant: switch to snapshot poll
+static const uint32 kMsgRepTick    = 'rptk';   // replicant: snapshot timer tick
+
+static const char* const kReplicantClass = "campiello::EsphomeCameraReplicant";
 
 // Look up a TXT value by key.
 static std::string TxtGet(const std::vector<std::pair<std::string, std::string>>& txt,
@@ -137,6 +146,10 @@ private:
 	BBitmap* fBitmap = nullptr;
 };
 
+// Opens the draggable desktop-widget holder (defined after the replicant class below).
+static void OpenCameraWidget(const std::string& host, int streamPort, int snapPort,
+	const std::string& title);
+
 // A window that shows the ESP32-CAM feed. Two modes: the live MJPEG stream (port 8080), and a
 // low-rate snapshot poll (port 8081) that fetches one JPEG at a time - useful because the ESP32-CAM
 // serves a single MJPEG client, so a snapshot is the way to peek while something else (e.g. Home
@@ -160,6 +173,7 @@ public:
 		BButton* recon = new BButton("r", B_TRANSLATE("Diretta"), new BMessage(kMsgReconnect));
 		BButton* snap = new BButton("n", B_TRANSLATE("Fotogramma"), new BMessage(kMsgSnapshot));
 		BButton* save = new BButton("v", B_TRANSLATE("Salva..."), new BMessage(kMsgSaveFrame));
+		BButton* widget = new BButton("d", B_TRANSLATE("Desktop"), new BMessage(kMsgDesktopWidget));
 		BButton* web = new BButton("w", B_TRANSLATE("Web"), new BMessage(kMsgOpenWeb));
 
 		BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
@@ -173,6 +187,7 @@ public:
 				.Add(snap)
 				.Add(fAuto)
 				.Add(save)
+				.Add(widget)
 				.Add(web)
 			.End()
 			.AddGroup(B_HORIZONTAL)
@@ -262,6 +277,10 @@ public:
 				}
 				return;
 			}
+			case kMsgDesktopWidget:
+				ReadFields();
+				OpenCameraWidget(fHost, fPort, fSnapPort, fHost);
+				return;
 			case kMsgOpenWeb: {
 				BString url("http://");
 				url << fHost.c_str() << "/";
@@ -381,6 +400,224 @@ private:
 	std::vector<unsigned char> fLastJpeg;
 	BMessageRunner* fRunner = nullptr;
 };
+
+// --------------------------------------------------------------------------- desktop replicant
+// A self-contained camera view that can be dragged onto the Desktop as a replicant. It reconnects on
+// its own (reloaded from this app's image via the "add_on" signature) and can switch between the live
+// MJPEG stream and a low-rate snapshot poll from a right-click menu. Snapshot is the default: it is
+// light, coexists with other viewers (e.g. Home Assistant), and survives Wi-Fi hiccups.
+class EsphomeCameraReplicant : public BView {
+public:
+	EsphomeCameraReplicant(BRect frame, const std::string& host, int streamPort, int snapPort,
+		bool snap, bigtime_t interval)
+		: BView(frame, "esphome_cam", B_FOLLOW_ALL, B_WILL_DRAW | B_FULL_UPDATE_ON_RESIZE),
+		  fHost(host), fStreamPort(streamPort), fSnapPort(snapPort), fSnap(snap), fInterval(interval)
+	{
+		SetViewColor(18, 18, 18);
+		BRect r = Bounds();
+		BDragger* d = new BDragger(BRect(r.right - 8, r.bottom - 8, r.right, r.bottom), this,
+			B_FOLLOW_RIGHT | B_FOLLOW_BOTTOM);
+		AddChild(d);
+	}
+
+	EsphomeCameraReplicant(BMessage* archive)
+		: BView(archive)
+	{
+		const char* h = ""; archive->FindString("campiello:host", &h); fHost = h ? h : "";
+		archive->FindInt32("campiello:sport", &fStreamPort);
+		archive->FindInt32("campiello:nport", &fSnapPort);
+		bool snap = true; archive->FindBool("campiello:snap", &snap); fSnap = snap;
+		int64 iv = 2000000; archive->FindInt64("campiello:interval", &iv); fInterval = iv;
+	}
+
+	~EsphomeCameraReplicant() override { StopAll(); delete fBitmap; }
+
+	static EsphomeCameraReplicant* Instantiate(BMessage* archive)
+	{
+		if (!validate_instantiation(archive, kReplicantClass))
+			return nullptr;
+		return new EsphomeCameraReplicant(archive);
+	}
+
+	status_t Archive(BMessage* into, bool deep) const override
+	{
+		status_t err = BView::Archive(into, deep);
+		if (err != B_OK)
+			return err;
+		into->AddString("add_on", kSignature);
+		into->AddString("class", kReplicantClass);
+		into->AddString("campiello:host", fHost.c_str());
+		into->AddInt32("campiello:sport", fStreamPort);
+		into->AddInt32("campiello:nport", fSnapPort);
+		into->AddBool("campiello:snap", fSnap);
+		into->AddInt64("campiello:interval", fInterval);
+		return B_OK;
+	}
+
+	void AttachedToWindow() override { BView::AttachedToWindow(); StartMode(); }
+	void DetachedFromWindow() override { StopAll(); BView::DetachedFromWindow(); }
+
+	void Draw(BRect) override
+	{
+		BRect b = Bounds();
+		if (fBitmap != nullptr) {
+			BRect s = fBitmap->Bounds();
+			float sw = s.Width() + 1, sh = s.Height() + 1, bw = b.Width() + 1, bh = b.Height() + 1;
+			float k = std::min(bw / sw, bh / sh);
+			float dw = sw * k, dh = sh * k;
+			DrawBitmap(fBitmap, s, BRect((bw - dw) / 2, (bh - dh) / 2, (bw - dw) / 2 + dw - 1,
+				(bh - dh) / 2 + dh - 1));
+		} else {
+			SetHighColor(200, 200, 200);
+			BString t(fHost.c_str()); t << (fSnap ? "  (foto)" : "  (live)");
+			DrawString(t.String(), BPoint(8, b.bottom / 2));
+		}
+	}
+
+	void MouseDown(BPoint where) override
+	{
+		BPopUpMenu* menu = new BPopUpMenu("m", false, false);
+		BMenuItem* live = new BMenuItem(B_TRANSLATE("Diretta (video)"), new BMessage(kMsgRepStream));
+		BMenuItem* snap = new BMenuItem(B_TRANSLATE("Foto ogni 2s"), new BMessage(kMsgRepSnap));
+		live->SetMarked(!fSnap);
+		snap->SetMarked(fSnap);
+		menu->AddItem(live);
+		menu->AddItem(snap);
+		menu->SetTargetForItems(this);
+		ConvertToScreen(&where);
+		menu->Go(where, true, true, true);
+	}
+
+	void MessageReceived(BMessage* m) override
+	{
+		switch (m->what) {
+			case kMsgRepStream: if (fSnap) { fSnap = false; StopAll(); StartMode(); } return;
+			case kMsgRepSnap:   if (!fSnap) { fSnap = true; StopAll(); StartMode(); } return;
+			case kMsgRepTick:   TakeSnapshot(); return;
+			case kMsgFrame: {
+				BBitmap* b = nullptr;
+				if (m->FindPointer("bmp", (void**)&b) == B_OK && b != nullptr) {
+					delete fBitmap; fBitmap = b; Invalidate();
+				}
+				return;
+			}
+			case kMsgCamError:
+				return;   // keep the last frame; a snapshot tick will retry
+		}
+		BView::MessageReceived(m);
+	}
+
+private:
+	void StartMode()
+	{
+		if (fSnap) {
+			TakeSnapshot();
+			delete fRunner;
+			fRunner = new BMessageRunner(BMessenger(this), new BMessage(kMsgRepTick), fInterval);
+		} else {
+			fStream = new MjpegStream(fHost, fStreamPort, "/");
+			fRunning = true;
+			fThread = spawn_thread(StreamReader, "rep_stream", B_NORMAL_PRIORITY, this);
+			if (fThread < 0) { fRunning = false; delete fStream; fStream = nullptr; }
+			else resume_thread(fThread);
+		}
+	}
+
+	void StopAll()
+	{
+		delete fRunner; fRunner = nullptr;
+		fRunning = false;
+		if (fStream != nullptr) fStream->Close();
+		if (fThread >= 0) { status_t st; wait_for_thread(fThread, &st); fThread = -1; }
+		delete fStream; fStream = nullptr;
+	}
+
+	void TakeSnapshot()
+	{
+		SnapJob* job = new SnapJob{fHost, fSnapPort, BMessenger(this)};
+		thread_id t = spawn_thread(SnapReader, "rep_snap", B_NORMAL_PRIORITY, job);
+		if (t < 0) delete job; else resume_thread(t);
+	}
+
+	struct SnapJob { std::string host; int port; BMessenger reply; };
+
+	static int32 SnapReader(void* arg)
+	{
+		SnapJob* job = static_cast<SnapJob*>(arg);
+		std::vector<unsigned char> jpeg;
+		std::string err;
+		if (MjpegStream::Snapshot(job->host, job->port, "/", jpeg, &err)) {
+			BBitmap* b = DecodeJpeg(jpeg.data(), jpeg.size());
+			if (b != nullptr) {
+				BMessage m(kMsgFrame); m.AddPointer("bmp", b);
+				if (job->reply.SendMessage(&m) != B_OK) delete b;
+			}
+		}
+		delete job;
+		return 0;
+	}
+
+	static int32 StreamReader(void* arg)
+	{
+		EsphomeCameraReplicant* w = static_cast<EsphomeCameraReplicant*>(arg);
+		BMessenger me(w);
+		std::string err;
+		if (!w->fStream->Open(&err)) return 0;
+		std::vector<unsigned char> frame;
+		while (w->fRunning) {
+			if (!w->fStream->NextFrame(frame, &err)) break;
+			BBitmap* b = DecodeJpeg(frame.data(), frame.size());
+			if (b == nullptr) continue;
+			BMessage m(kMsgFrame); m.AddPointer("bmp", b);
+			if (me.SendMessage(&m) != B_OK) delete b;
+		}
+		return 0;
+	}
+
+	std::string     fHost;
+	int32           fStreamPort = 8080;
+	int32           fSnapPort = 8081;
+	bool            fSnap = true;
+	bigtime_t       fInterval = 2000000;
+	BBitmap*        fBitmap = nullptr;
+	MjpegStream*    fStream = nullptr;
+	thread_id       fThread = -1;
+	volatile bool   fRunning = false;
+	BMessageRunner* fRunner = nullptr;
+};
+
+// The Desktop shelf reloads a replicant from this app's image via the "add_on" signature and finds
+// EsphomeCameraReplicant::Instantiate by class name; no extra export hook is needed.
+
+// A small window that hosts a draggable camera replicant: the user drags the corner handle onto the
+// Desktop to pin it there.
+class ReplicantHolder : public BWindow {
+public:
+	ReplicantHolder(const std::string& host, int streamPort, int snapPort, const std::string& title)
+		: BWindow(BRect(140, 140, 140 + 340, 140 + 300),
+			(title + " - widget").c_str(), B_TITLED_WINDOW,
+			B_NOT_ZOOMABLE | B_ASYNCHRONOUS_CONTROLS | B_AUTO_UPDATE_SIZE_LIMITS)
+	{
+		EsphomeCameraReplicant* rep = new EsphomeCameraReplicant(
+			BRect(0, 0, 319, 239), host, streamPort, snapPort, true, 2000000);
+		rep->SetExplicitMinSize(BSize(320, 240));
+		BStringView* hint = new BStringView("h",
+			B_TRANSLATE("Trascina l'angolo in basso a destra sul Desktop. Click = cambia modo."));
+		BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_SMALL_SPACING)
+			.SetInsets(B_USE_SMALL_INSETS)
+			.Add(rep)
+			.Add(hint)
+		.End();
+		CenterOnScreen();
+	}
+	bool QuitRequested() override { return true; }
+};
+
+static void OpenCameraWidget(const std::string& host, int streamPort, int snapPort,
+	const std::string& title)
+{
+	(new ReplicantHolder(host, streamPort, snapPort, title))->Show();
+}
 
 // --------------------------------------------------------------------------- window
 class EsphomeWindow : public BWindow {

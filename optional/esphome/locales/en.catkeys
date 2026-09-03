@@ -1,5 +1,6 @@
-1	en	application/x-vnd.Campiello-esphome	2711070604
+1	en	application/x-vnd.Campiello-esphome	1133166161
 Foto auto	ESPHome		Auto photo
+Desktop	ESPHome		Desktop
 Rete	ESPHome		Network
 Host:	ESPHome		Host:
 Diretta	ESPHome		Live
@@ -8,20 +9,23 @@ Nome: 	ESPHome		Name:
 Salva...	ESPHome		Save...
 Fotogramma	ESPHome		Snapshot
 Guarda video	ESPHome		Watch video
+Trascina l'angolo in basso a destra sul Desktop. Click = cambia modo.	ESPHome		Drag the bottom-right corner onto the Desktop. Click = switch mode.
 Errore: 	ESPHome		Error: 
 Salvataggio non riuscito.	ESPHome		Save failed.
 Apri interfaccia web	ESPHome		Open web interface
 Versione ESPHome	ESPHome		ESPHome version
+Foto ogni 2s	ESPHome		Photo every 2s
 Indirizzo: 	ESPHome		Address: 
 Chiudi	ESPHome		Close
 Indirizzo MAC	ESPHome		MAC address
 Piattaforma	ESPHome		Platform
+Diretta (video)	ESPHome		Live (video)
 Campiello mostra le informazioni annunciate dal dispositivo e ne apre l'interfaccia web (se il componente web_server e' attivo). Il controllo completo di entita' e sensori usa l'API nativa ESPHome (canale protobuf sulla porta 6053, con eventuale cifratura Noise e password/chiave API): e' un'estensione futura, non ancora implementata.	ESPHome		Campiello shows the info the device advertises and opens its web interface (if the web_server component is enabled). Full control of entities and sensors uses the ESPHome native API (a protobuf channel on port 6053, with optional Noise encryption and a password/API key): a future extension, not yet implemented.
 Versione progetto	ESPHome		Project version
 Stream:	ESPHome		Stream:
 fotogramma	ESPHome		snapshot
-Progetto	ESPHome		Project
 Scheda	ESPHome		Board
+Progetto	ESPHome		Project
 Foto automatiche...	ESPHome		Auto snapshots...
 Connessione...	ESPHome		Connecting...
 Foto:	ESPHome		Photo:

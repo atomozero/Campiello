@@ -49,6 +49,16 @@ transport keyed by a base64 API key. Implementing it honestly means a protobuf c
 model - a real follow-up, deliberately not faked here. The web UI covers the common "flip a switch,
 read a sensor" need in the meantime.
 
+## Desktop widget (replicant)
+
+The camera can live on the Desktop as a **replicant**. In the camera window press **Desktop**: a small
+holder window opens with a draggable view - drag its bottom-right corner onto the Desktop and it pins
+there, reconnecting on its own (reloaded from this app's image via the `add_on` signature, class
+`EsphomeCameraReplicant`). A click on the widget switches between **live video** and **snapshot every
+2s**. Snapshot is the default: light, coexists with other viewers (e.g. Home Assistant), and survives
+Wi-Fi hiccups - a continuous stream instead holds the camera's single connection. The replicant carries
+the host and both ports in its archive, so it survives a reboot.
+
 ## Testing status
 
 - `test_mjpeg` passes: the multipart parser extracts frames from a synthetic buffer (Content-Length

@@ -1,5 +1,5 @@
 name			campiello_esphome
-version			0.1.0-6
+version			0.1.0-7
 architecture	x86_64
 summary			"ESPHome device info and camera streaming for Campiello"
 description		"Optional device add-on for Campiello: for an ESPHome node on the network
