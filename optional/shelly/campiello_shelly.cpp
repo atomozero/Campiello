@@ -2,8 +2,9 @@
 //
 // The Campiello Shelly add-on: a control panel for a Shelly smart relay/plug discovered on the
 // network, over its LOCAL HTTP API (no cloud), for both device generations (gen1 REST and gen2 RPC,
-// auto-detected). It lists the device's channels with an on/off button and a live power readout, and
-// opens the device web UI. Network I/O runs on worker threads so the UI never blocks.
+// auto-detected). It lists the device's channels with an on/off button and a live power readout,
+// draws a live watt graph, and opens the device web UI. Network I/O runs on worker threads so the UI
+// never blocks; a message runner re-polls the device every few seconds to keep the graph moving.
 //
 // Launched from the WON neighborhood on a double-click of a Shelly (the shelly.handler manifest),
 // which passes CAMPIELLO:host/name/port and the mDNS TXT as CAMPIELLO:txt.<key>; also runnable from
@@ -17,19 +18,25 @@
 #include <Button.h>
 #include <Catalog.h>
 #include <Entry.h>
+#include <GroupLayout.h>
+#include <GroupView.h>
 #include <LayoutBuilder.h>
+#include <MessageRunner.h>
 #include <Messenger.h>
 #include <Node.h>
 #include <Roster.h>
+#include <SpaceLayoutItem.h>
 #include <StringView.h>
 #include <String.h>
 #include <Window.h>
 
 #include <fs_attr.h>
 
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <string>
 #include <vector>
 
@@ -47,6 +54,101 @@ static const uint32 kMsgReady     = 'srdy';
 static const uint32 kMsgToggle    = 'stog';
 static const uint32 kMsgCmdDone   = 'scmd';
 static const uint32 kMsgOpenWeb   = 'sweb';
+
+static const bigtime_t kPollInterval = 3000000; // 3 s
+
+// --------------------------------------------------------------------------- live watt graph
+// A rolling line chart of total active power. Keeps the last kMax samples and auto-scales the Y axis
+// to a "nice" ceiling. Dependency-light: a plain BView that redraws on each pushed sample.
+class PowerGraph : public BView {
+public:
+	PowerGraph()
+		: BView("graph", B_WILL_DRAW | B_FRAME_EVENTS)
+	{
+		SetViewColor(ui_color(B_DOCUMENT_BACKGROUND_COLOR));
+		SetExplicitMinSize(BSize(220, 130));
+	}
+
+	// Append a sample (watts). A NaN means "no reading this tick" and breaks the line (a gap).
+	void Push(float watts)
+	{
+		fData.push_back(watts);
+		if (fData.size() > kMax)
+			fData.pop_front();
+		Invalidate();
+	}
+
+	bool HasData() const { return !fData.empty(); }
+
+	void Draw(BRect) override
+	{
+		BRect b = Bounds();
+		const float pad = 4.0f;
+		BRect plot(b.left + pad, b.top + pad, b.right - pad, b.bottom - pad);
+
+		// Frame.
+		SetHighColor(tint_color(ui_color(B_CONTROL_BORDER_COLOR), B_LIGHTEN_1_TINT));
+		StrokeRect(b);
+
+		float scale = 1.0f;
+		for (float v : fData)
+			if (!std::isnan(v) && v > scale) scale = v;
+		scale = NiceCeil(scale);
+
+		// Horizontal grid lines + Y labels (0, mid, full scale).
+		SetHighColor(tint_color(ui_color(B_DOCUMENT_BACKGROUND_COLOR), B_DARKEN_1_TINT));
+		SetLowColor(ViewColor());
+		for (int i = 0; i <= 2; ++i) {
+			float frac = i / 2.0f;
+			float y = plot.bottom - frac * plot.Height();
+			StrokeLine(BPoint(plot.left, y), BPoint(plot.right, y));
+		}
+
+		// The line.
+		if (fData.size() >= 2) {
+			SetHighColor(60, 130, 220); // a calm blue
+			size_t n = fData.size();
+			BPoint prev;
+			bool havePrev = false;
+			for (size_t i = 0; i < n; ++i) {
+				float v = fData[i];
+				if (std::isnan(v)) { havePrev = false; continue; }
+				float x = plot.left + (n == 1 ? 0.0f : (float)i / (n - 1) * plot.Width());
+				float y = plot.bottom - (v / scale) * plot.Height();
+				BPoint p(x, y);
+				if (havePrev)
+					StrokeLine(prev, p);
+				prev = p;
+				havePrev = true;
+			}
+		}
+
+		// Labels: current value (top-left) and full scale (top-right).
+		SetHighColor(ui_color(B_DOCUMENT_TEXT_COLOR));
+		char cur[32] = "-- W";
+		for (auto it = fData.rbegin(); it != fData.rend(); ++it) {
+			if (!std::isnan(*it)) { std::snprintf(cur, sizeof(cur), "%.1f W", *it); break; }
+		}
+		DrawString(cur, BPoint(plot.left + 2, plot.top + 12));
+		char full[32];
+		std::snprintf(full, sizeof(full), "%.0f W", scale);
+		float w = StringWidth(full);
+		DrawString(full, BPoint(plot.right - 2 - w, plot.top + 12));
+	}
+
+private:
+	static float NiceCeil(float v)
+	{
+		if (v <= 0) return 1.0f;
+		float p = std::pow(10.0f, std::floor(std::log10(v)));
+		float f = v / p;
+		float nf = (f <= 1) ? 1 : (f <= 2) ? 2 : (f <= 5) ? 5 : 10;
+		return nf * p;
+	}
+
+	std::deque<float> fData;
+	static const size_t kMax = 120; // ~6 minutes at a 3 s poll
+};
 
 // --------------------------------------------------------------------------- workers
 struct RefreshJob { std::string host; int port; int gen; BMessenger reply; };
@@ -100,41 +202,41 @@ class ShellyWindow : public BWindow {
 public:
 	bool QuitRequested() override { be_app->PostMessage(B_QUIT_REQUESTED); return true; }
 	ShellyWindow(const std::string& host, const std::string& name, int port, int gen);
+	~ShellyWindow() override { delete fRunner; }
 	void MessageReceived(BMessage* msg) override;
 
 private:
-	void Build(BMessage* ready); // ready == nullptr -> "loading"
+	void BuildChrome();          // one-time persistent layout
+	void UpdateFromReady(BMessage* ready);
 	void StartRefresh();
 
-	std::string  fHost;
-	std::string  fName;
-	int          fPort;
-	int          fGen;
-	BStringView* fStatus = nullptr;
+	std::string    fHost;
+	std::string    fName;
+	int            fPort;
+	int            fGen;
+	bool           fInFlight = false;
+
+	BStringView*   fStatus  = nullptr;
+	PowerGraph*    fGraph   = nullptr;
+	BGroupView*    fChannels = nullptr;
+	BStringView*   fAuthNote = nullptr;
+	BMessageRunner* fRunner = nullptr;
 };
 
 ShellyWindow::ShellyWindow(const std::string& host, const std::string& name, int port, int gen)
-	: BWindow(BRect(100, 100, 460, 400), "Shelly",
+	: BWindow(BRect(100, 100, 480, 460), "Shelly",
 		B_TITLED_WINDOW, B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS),
 	  fHost(host), fName(name), fPort(port <= 0 ? 80 : port), fGen(gen)
 {
-	Build(nullptr);
+	BuildChrome();
 	StartRefresh();
+	// Keep the graph moving without the user pressing Aggiorna.
+	fRunner = new BMessageRunner(BMessenger(this), new BMessage(kMsgRefresh), kPollInterval);
 	CenterOnScreen();
 }
 
-void ShellyWindow::StartRefresh()
+void ShellyWindow::BuildChrome()
 {
-	RefreshJob* job = new RefreshJob{fHost, fPort, fGen, BMessenger(this)};
-	thread_id t = spawn_thread(RefreshThread, "shelly_refresh", B_NORMAL_PRIORITY, job);
-	if (t < 0) { delete job; return; }
-	resume_thread(t);
-}
-
-void ShellyWindow::Build(BMessage* ready)
-{
-	while (BView* c = ChildAt(0)) { RemoveChild(c); delete c; }
-
 	BStringView* title = new BStringView("t",
 		fName.empty() ? B_TRANSLATE("Shelly") : fName.c_str());
 	BFont f(be_bold_font);
@@ -144,27 +246,14 @@ void ShellyWindow::Build(BMessage* ready)
 	BButton* refresh = new BButton("refresh", B_TRANSLATE("Aggiorna"), new BMessage(kMsgRefresh));
 	BButton* web = new BButton("web", B_TRANSLATE("Apri web"), new BMessage(kMsgOpenWeb));
 
-	const char* statusText = B_TRANSLATE("Carico lo stato...");
-	std::string detail;
-	bool ok = false;
-	if (ready != nullptr) {
-		ready->FindBool("ok", &ok);
-		if (!ok) {
-			statusText = B_TRANSLATE("Dispositivo irraggiungibile.");
-		} else {
-			int32 gen = 1; ready->FindInt32("gen", &gen);
-			const char* model = ""; ready->FindString("model", &model);
-			const char* fw = ""; ready->FindString("fw", &fw);
-			char buf[256];
-			std::snprintf(buf, sizeof(buf), "gen%d  %s  %s  %s",
-				(int)gen, model, fw, fHost.c_str());
-			detail = buf;
-			statusText = detail.c_str();
-		}
-	}
-	fStatus = new BStringView("st", statusText);
+	fStatus = new BStringView("st", B_TRANSLATE("Carico lo stato..."));
+	BStringView* graphLabel = new BStringView("gl", B_TRANSLATE("Potenza (W)"));
+	fGraph = new PowerGraph();
+	fChannels = new BGroupView(B_VERTICAL);
+	fAuthNote = new BStringView("auth", "");
+	fAuthNote->Hide();
 
-	BLayoutBuilder::Group<> root = BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
+	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
 		.AddGroup(B_HORIZONTAL)
 			.Add(title)
@@ -172,73 +261,113 @@ void ShellyWindow::Build(BMessage* ready)
 			.Add(web)
 			.Add(refresh)
 		.End()
-		.Add(fStatus);
+		.Add(fStatus)
+		.Add(graphLabel)
+		.Add(fGraph)
+		.Add(fChannels)
+		.Add(fAuthNote)
+		.AddGlue()
+	.End();
+}
 
-	if (ready != nullptr && ok) {
-		bool auth = false; ready->FindBool("auth", &auth);
-		int32 id;
-		int count = 0;
-		for (int32 i = 0; ready->FindInt32("ch.id", i, &id) == B_OK; ++i) {
-			const char* nm = ""; ready->FindString("ch.name", i, &nm);
-			bool ctl = false; ready->FindBool("ch.ctl", i, &ctl);
-			bool on = false; ready->FindBool("ch.on", i, &on);
-			bool hp = false; ready->FindBool("ch.hp", i, &hp);
-			double pw = 0; ready->FindDouble("ch.pw", i, &pw);
-			double v = 0; ready->FindDouble("ch.v", i, &v);
-			double wh = 0; ready->FindDouble("ch.wh", i, &wh);
+void ShellyWindow::StartRefresh()
+{
+	if (fInFlight)
+		return; // avoid piling up workers if the device is slow/unreachable
+	RefreshJob* job = new RefreshJob{fHost, fPort, fGen, BMessenger(this)};
+	thread_id t = spawn_thread(RefreshThread, "shelly_refresh", B_NORMAL_PRIORITY, job);
+	if (t < 0) { delete job; return; }
+	fInFlight = true;
+	resume_thread(t);
+}
 
-			BStringView* label = new BStringView("", nm);
+void ShellyWindow::UpdateFromReady(BMessage* ready)
+{
+	fInFlight = false;
 
-			std::string readout;
-			if (hp) {
-				char b[128];
-				std::snprintf(b, sizeof(b), "%.1f W", pw);
-				readout = b;
-				if (v > 0) { std::snprintf(b, sizeof(b), "  %.0f V", v); readout += b; }
-				if (wh > 0) {
-					std::snprintf(b, sizeof(b), "  %.2f kWh", wh / 1000.0);
-					readout += b;
-				}
-			}
-			BStringView* meter = new BStringView("", readout.c_str());
-
-			auto row = root.AddGroup(B_HORIZONTAL);
-			row.Add(label);
-			row.AddGlue();
-			row.Add(meter);
-			if (ctl) {
-				BMessage* tg = new BMessage(kMsgToggle);
-				tg->AddInt32("id", id);
-				tg->AddBool("on", !on); // pressing flips it
-				BButton* btn = new BButton("", on ? B_TRANSLATE("Acceso") : B_TRANSLATE("Spento"), tg);
-				row.Add(btn);
-			}
-			row.End();
-			++count;
-		}
-		if (count == 0)
-			fStatus->SetText(B_TRANSLATE("Nessun canale rilevato."));
-		if (auth)
-			root.Add(new BStringView("auth",
-				B_TRANSLATE("Autenticazione attiva sul dispositivo: il controllo potrebbe fallire.")));
+	bool ok = false;
+	ready->FindBool("ok", &ok);
+	if (!ok) {
+		fStatus->SetText(B_TRANSLATE("Dispositivo irraggiungibile."));
+		fGraph->Push(NAN); // break the line for this gap
+		return;
 	}
-	root.AddGlue().End();
+
+	int32 gen = 1; ready->FindInt32("gen", &gen);
+	if (gen >= 1) fGen = gen; // cache for control calls, saves a probe
+	const char* model = ""; ready->FindString("model", &model);
+	const char* fw = ""; ready->FindString("fw", &fw);
+	char buf[256];
+	std::snprintf(buf, sizeof(buf), "gen%d  %s  %s  %s", (int)gen, model, fw, fHost.c_str());
+	fStatus->SetText(buf);
+
+	// Repopulate the channel rows.
+	while (BView* c = fChannels->ChildAt(0)) { fChannels->RemoveChild(c); delete c; }
+
+	double totalPower = 0.0;
+	bool anyPower = false;
+	int32 id;
+	int count = 0;
+	for (int32 i = 0; ready->FindInt32("ch.id", i, &id) == B_OK; ++i) {
+		const char* nm = ""; ready->FindString("ch.name", i, &nm);
+		bool ctl = false; ready->FindBool("ch.ctl", i, &ctl);
+		bool on = false; ready->FindBool("ch.on", i, &on);
+		bool hp = false; ready->FindBool("ch.hp", i, &hp);
+		double pw = 0; ready->FindDouble("ch.pw", i, &pw);
+		double v = 0; ready->FindDouble("ch.v", i, &v);
+		double wh = 0; ready->FindDouble("ch.wh", i, &wh);
+
+		if (hp) { totalPower += pw; anyPower = true; }
+
+		std::string readout;
+		if (hp) {
+			char bb[128];
+			std::snprintf(bb, sizeof(bb), "%.1f W", pw);
+			readout = bb;
+			if (v > 0) { std::snprintf(bb, sizeof(bb), "  %.0f V", v); readout += bb; }
+			if (wh > 0) { std::snprintf(bb, sizeof(bb), "  %.2f kWh", wh / 1000.0); readout += bb; }
+		}
+
+		BGroupView* row = new BGroupView(B_HORIZONTAL);
+		row->GroupLayout()->AddView(new BStringView("", nm));
+		row->GroupLayout()->AddItem(BSpaceLayoutItem::CreateGlue());
+		row->GroupLayout()->AddView(new BStringView("", readout.c_str()));
+		if (ctl) {
+			BMessage* tg = new BMessage(kMsgToggle);
+			tg->AddInt32("id", id);
+			tg->AddBool("on", !on); // pressing flips it
+			row->GroupLayout()->AddView(
+				new BButton("", on ? B_TRANSLATE("Acceso") : B_TRANSLATE("Spento"), tg));
+		}
+		fChannels->GroupLayout()->AddView(row);
+		++count;
+	}
+
+	if (count == 0)
+		fStatus->SetText(B_TRANSLATE("Nessun canale rilevato."));
+
+	bool auth = false; ready->FindBool("auth", &auth);
+	if (auth) {
+		fAuthNote->SetText(
+			B_TRANSLATE("Autenticazione attiva sul dispositivo: il controllo potrebbe fallire."));
+		if (fAuthNote->IsHidden()) fAuthNote->Show();
+	} else if (!fAuthNote->IsHidden()) {
+		fAuthNote->Hide();
+	}
+
+	// Feed the graph: total active power across metered channels (0 W is a valid reading).
+	fGraph->Push(anyPower ? (float)totalPower : NAN);
 }
 
 void ShellyWindow::MessageReceived(BMessage* msg)
 {
 	switch (msg->what) {
 		case kMsgRefresh:
-			if (fStatus != nullptr) fStatus->SetText(B_TRANSLATE("Aggiorno..."));
 			StartRefresh();
 			return;
-		case kMsgReady: {
-			int32 gen = 0;
-			if (msg->FindInt32("gen", &gen) == B_OK && gen >= 1)
-				fGen = gen; // cache for the control calls, saves a probe
-			Build(msg);
+		case kMsgReady:
+			UpdateFromReady(msg);
 			return;
-		}
 		case kMsgToggle: {
 			int32 id = 0; msg->FindInt32("id", &id);
 			bool on = false; msg->FindBool("on", &on);
@@ -253,7 +382,7 @@ void ShellyWindow::MessageReceived(BMessage* msg)
 			if (!ok && fStatus != nullptr)
 				fStatus->SetText(B_TRANSLATE("Comando non riuscito."));
 			else
-				StartRefresh(); // reflect the new state
+				StartRefresh(); // reflect the new state right away
 			return;
 		}
 		case kMsgOpenWeb: {

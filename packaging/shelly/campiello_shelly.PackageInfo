@@ -1,5 +1,5 @@
 name			campiello_shelly
-version			0.1.0-1
+version			0.1.0-2
 architecture	x86_64
 summary			"Shelly relay/plug control panel for Campiello"
 description		"Optional device add-on for Campiello: a control panel for a Shelly smart relay or
