@@ -123,17 +123,13 @@ public:
 			}
 		}
 
-		// Labels: current value (top-left) and full scale (top-right).
+		// Y-axis labels on the left: full scale at the top, 0 at the bottom (the current value is
+		// shown in the section title above the graph, so it is not repeated here).
 		SetHighColor(ui_color(B_DOCUMENT_TEXT_COLOR));
-		char cur[32] = "-- W";
-		for (auto it = fData.rbegin(); it != fData.rend(); ++it) {
-			if (!std::isnan(*it)) { std::snprintf(cur, sizeof(cur), "%.1f W", *it); break; }
-		}
-		DrawString(cur, BPoint(plot.left + 2, plot.top + 12));
 		char full[32];
-		std::snprintf(full, sizeof(full), "%.0f W", scale);
-		float w = StringWidth(full);
-		DrawString(full, BPoint(plot.right - 2 - w, plot.top + 12));
+		std::snprintf(full, sizeof(full), "%g W", scale);
+		DrawString(full, BPoint(plot.left + 2, plot.top + 12));
+		DrawString("0 W", BPoint(plot.left + 2, plot.bottom - 3));
 	}
 
 private:
@@ -217,6 +213,7 @@ private:
 	bool           fInFlight = false;
 
 	BStringView*   fStatus  = nullptr;
+	BStringView*   fGraphLabel = nullptr;
 	PowerGraph*    fGraph   = nullptr;
 	BGroupView*    fChannels = nullptr;
 	BStringView*   fAuthNote = nullptr;
@@ -247,7 +244,7 @@ void ShellyWindow::BuildChrome()
 	BButton* web = new BButton("web", B_TRANSLATE("Apri web"), new BMessage(kMsgOpenWeb));
 
 	fStatus = new BStringView("st", B_TRANSLATE("Carico lo stato..."));
-	BStringView* graphLabel = new BStringView("gl", B_TRANSLATE("Potenza (W)"));
+	fGraphLabel = new BStringView("gl", B_TRANSLATE("Potenza (W)"));
 	fGraph = new PowerGraph();
 	fChannels = new BGroupView(B_VERTICAL);
 	fAuthNote = new BStringView("auth", "");
@@ -262,7 +259,7 @@ void ShellyWindow::BuildChrome()
 			.Add(refresh)
 		.End()
 		.Add(fStatus)
-		.Add(graphLabel)
+		.Add(fGraphLabel)
 		.Add(fGraph)
 		.Add(fChannels)
 		.Add(fAuthNote)
@@ -354,6 +351,14 @@ void ShellyWindow::UpdateFromReady(BMessage* ready)
 	} else if (!fAuthNote->IsHidden()) {
 		fAuthNote->Hide();
 	}
+
+	// The section title carries the current total power, so it is not repeated inside the graph.
+	char lab[64];
+	if (anyPower)
+		std::snprintf(lab, sizeof(lab), "%s: %.1f W", B_TRANSLATE("Potenza"), totalPower);
+	else
+		std::snprintf(lab, sizeof(lab), "%s (W)", B_TRANSLATE("Potenza"));
+	fGraphLabel->SetText(lab);
 
 	// Feed the graph: total active power across metered channels (0 W is a valid reading).
 	fGraph->Push(anyPower ? (float)totalPower : NAN);

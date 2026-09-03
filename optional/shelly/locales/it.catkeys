@@ -1,4 +1,4 @@
-1	it	application/x-vnd.Campiello-shelly	3628784100
+1	it	application/x-vnd.Campiello-shelly	1305970849
 Autenticazione attiva sul dispositivo: il controllo potrebbe fallire.	Shelly		Autenticazione attiva sul dispositivo: il controllo potrebbe fallire.
 Potenza (W)	Shelly		Potenza (W)
 Invio comando...	Shelly		Invio comando...
@@ -13,3 +13,4 @@ Dispositivo irraggiungibile.	Shelly		Dispositivo irraggiungibile.
 Comando non riuscito.	Shelly		Comando non riuscito.
 Apri web	Shelly		Apri web
 Acceso	Shelly		Acceso
+Potenza	Shelly		Potenza

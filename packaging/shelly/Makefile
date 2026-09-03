@@ -7,11 +7,11 @@
 # device-specific.
 #
 #   make package    # builds campiello_shelly-<version>-<arch>.hpkg
-#   pkgman install ./campiello_shelly-0.1.0-2-x86_64.hpkg
+#   pkgman install ./campiello_shelly-0.1.0-3-x86_64.hpkg
 #
 # Haiku-only (needs the `package` tool).
 
-VERSION := 0.1.0-2
+VERSION := 0.1.0-3
 ARCH := x86_64
 PKG := campiello_shelly-$(VERSION)-$(ARCH).hpkg
 
