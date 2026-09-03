@@ -1,5 +1,5 @@
 name			campiello_complete
-version			0.4.5-1
+version			0.4.6-1
 architecture	x86_64
 summary			"Campiello with every device add-on, all in one package"
 description		"The complete Campiello in a single package: the core application (the WON network
@@ -8,7 +8,8 @@ volume, the SFTP interop helpers and the Deskbar replicant) together with the en
 suite, so every discovered device becomes a real action on a double-click. Bundled add-ons: Philips
 Hue, Chromecast / Google Cast (with screen mirroring and system audio), IPP and eSCL printers and
 scanners, DAAP, VNC, FTP, WebDAV, NFS, AFP, HomeKit, Matter, Spotify Connect, Amazon Alexa, Lutron,
-AirPlay, Amazon Fire TV / Android TV, Daikin, NUT/UPS, ESPHome, eero and the Windows/SMB mount helper.
+AirPlay, Amazon Fire TV / Android TV, Daikin, NUT/UPS, ESPHome, Shelly relays/plugs, eero and the
+Windows/SMB mount helper.
 Install this instead of the separate core and add-on packages - it ships the same files, so it
 conflicts with them. Windows/SMB support is a userlandfs volume that loads libsmb2 (LGPL-2.1)
 dynamically, so this bundle requires lib:libsmb2 - install the fixed libsmb2 (revision 6 or newer,
@@ -61,6 +62,7 @@ conflicts {
 	campiello_matter
 	campiello_nfs
 	campiello_nut
+	campiello_shelly
 	campiello_spotify
 	campiello_vnc
 	campiello_webdav

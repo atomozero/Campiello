@@ -35,7 +35,8 @@ Web (bookmark), Amazon Fire TV (`campiello_firetv`, `_amzn-wplay._tcp`).
 
 Later, network-driven additions (from a real LAN scan, see "Network-driven additions" below):
 Daikin AC (`campiello_daikin`, `_dkapi._tcp`), UPS/NUT (`campiello_nut`, `_nut._tcp`), ESPHome
-(`campiello_esphome`, `_esphomelib._tcp`), eero (`campiello_eero`, `_eero._tcp`), plus a CASTv2
+(`campiello_esphome`, `_esphomelib._tcp`), Shelly (`campiello_shelly`, `_shelly._tcp`), eero
+(`campiello_eero`, `_eero._tcp`), plus a CASTv2
 upgrade of `campiello_cast`.
 
 | # | Add-on | mDNS type(s) | Kind | Feasibility | Status |
@@ -242,6 +243,7 @@ follow-up, where it is not).
 | **campiello_daikin** | `_dkapi._tcp` | Casa | high - open local HTTP "aircon" API | functional, control; **validated live** on 2 units |
 | **campiello_nut** | `_nut._tcp` | Sistema | high - simple text protocol, read-only | functional, monitor (parsers tested; server was localhost-bound) |
 | **campiello_esphome** | `_esphomelib._tcp` | Casa | info + web + ESP32-CAM MJPEG live view | functional (info + web UI + camera streaming; native protobuf API = follow-up) |
+| **campiello_shelly** | `_shelly._tcp` (+ gen1 via `_http._tcp` TXT) | Casa | high - open local HTTP API (gen1 REST + gen2 RPC) | functional, control; **gen2 validated live** (Plus Plug S) |
 | **campiello_eero** | `_eero._tcp` | Rete | low - no open local API | info only |
 
 And a real upgrade of an existing component:
@@ -255,7 +257,10 @@ And a real upgrade of an existing component:
 Two core enhancements accompany these (WON neighborhood): `RadarLabels` and `NetworkDirectory` now
 recognize, label and classify `_dkapi`/`_esphomelib`/`_nut`/`_eero`, so the devices appear named and
 grouped (Daikin and ESPHome under Casa with the web-UI action; NUT and eero as their own entries)
-before any add-on is even installed.
+before any add-on is even installed. The handler framework also gained a **`match.txt`** rule: a
+handler can claim a device out of a generic service type by a TXT key/value-prefix (used so a Shelly
+gen1 relay, which only advertises `_http._tcp`, is still routed by its `app=shelly...` TXT without the
+add-on grabbing every web device).
 
 ### Progress log (network-driven)
 
@@ -272,5 +277,16 @@ before any add-on is even installed.
 - **campiello_esphome (_esphomelib._tcp).** Shows the device info from the mDNS TXT (ESPHome/firmware
   version, project, board, platform, MAC) and opens its web UI. The native protobuf API on 6053
   (plaintext or Noise-encrypted) is documented as a real follow-up, not faked. No network dependency.
+- **campiello_shelly (_shelly._tcp / gen1 _http._tcp).** Shelly relays and plugs expose an open, local
+  HTTP API (no cloud). `ShellyClient` auto-detects the generation from `GET /shelly` and speaks both
+  dialects: gen1 REST (`/status`, `/relay/<id>?turn=on|off|toggle`) and gen2+ RPC-over-HTTP
+  (`/rpc/Shelly.GetStatus`, `/rpc/Switch.Set?id=&on=`). The panel lists every channel with an on/off
+  button and a live power readout (W / V / kWh); a Shelly EM's clamps show as read-only meters.
+  Dependency-free (plain sockets + a tiny JSON scanner), so it stays MIT-clean. Parsers unit-tested
+  (`test_shelly`); the gen2 path was validated live against a real Shelly Plus Plug S (model
+  SNPL-00112EU, auth off). gen1 relays that only advertise `_http._tcp` are still routed to the add-on
+  by a new **`match.txt`** handler rule (they set `app=shelly.../id=shelly...` in their TXT), so the
+  generic `_http._tcp` is not hijacked. Devices with auth enabled are identified; digest auth for
+  control is a documented follow-up. References: the public Shelly gen1 REST and gen2 RPC API docs.
 - **campiello_eero (_eero._tcp).** Info-only, like alexa: eero has no open local control API
   (configuration is app + cloud, account-bound). Shows presence + base_mac + a clear note.

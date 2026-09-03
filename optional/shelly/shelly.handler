@@ -1,0 +1,13 @@
+# Campiello device handler manifest for the Shelly add-on (docs/DEVICE_ADDONS.md).
+# Installed into the handlers directory; the WON app matches it to a discovered Shelly and launches
+# the control panel with the device (CAMPIELLO:host/name/port + the mDNS TXT as CAMPIELLO:txt.<key>).
+#
+# gen2+ devices advertise _shelly._tcp; gen1 relays/meters that only expose _http._tcp are still
+# claimed by the TXT rule below (they set app=shelly... / id=shelly... in their TXT), which is why
+# the generic _http._tcp is NOT listed as a match.type (it would grab every web device).
+signature   = application/x-vnd.Campiello-shelly
+name        = Shelly
+match.type  = _shelly._tcp
+match.txt   = app=shelly
+match.txt   = id=shelly
+action.open = Controlla

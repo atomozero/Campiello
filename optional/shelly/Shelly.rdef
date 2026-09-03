@@ -1,0 +1,19 @@
+/*
+ * Resources for the Campiello Shelly add-on (campiello_shelly).
+ * The app_signature is registered by mimeset at build time so be_roster can launch it by signature
+ * (the WON app opens it on a double-click of a Shelly). Must match kSignature in campiello_shelly.cpp.
+ */
+
+resource app_signature "application/x-vnd.Campiello-shelly";
+
+resource app_flags B_MULTIPLE_LAUNCH;
+
+resource app_version {
+	major  = 0,
+	middle = 1,
+	minor  = 0,
+	variety = B_APPV_DEVELOPMENT,
+	internal = 0,
+	short_info = "Campiello (Shelly)",
+	long_info = "Campiello device add-on: a control panel for a Shelly relay/plug (gen1 + gen2)"
+};

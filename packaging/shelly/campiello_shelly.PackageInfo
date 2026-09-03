@@ -1,0 +1,30 @@
+name			campiello_shelly
+version			0.1.0-1
+architecture	x86_64
+summary			"Shelly relay/plug control panel for Campiello"
+description		"Optional device add-on for Campiello: a control panel for a Shelly smart relay or
+plug over its LOCAL HTTP API (no cloud), for both device generations (gen1 REST and gen2 RPC,
+auto-detected). It lists the device channels with an on/off button and a live power readout (watts,
+voltage, energy) and opens the device web interface. No third-party dependency (plain sockets and a
+small JSON scanner), so it is part of the MIT-clean add-on suite. Launched from the WON network
+neighborhood on a double-click of a discovered Shelly (gen2 advertises _shelly._tcp; gen1 relays are
+matched by their _http._tcp TXT). Devices with authentication enabled are identified but control may
+require credentials (digest auth is a follow-up)."
+packager		"atomozero <atomozero@proton.me>"
+vendor			"atomozero"
+
+copyrights {
+	"2026 atomozero"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	campiello_shelly = 0.1.0
+}
+
+requires {
+	haiku >= r1~beta5
+}

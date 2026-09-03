@@ -113,6 +113,7 @@ obj/
 
 # Optional ESPHome add-on build artifacts
 /optional/esphome/test_mjpeg
+/optional/shelly/test_shelly
 /packaging/smb/stage/
 /packaging/smb/campiello_smb
 /packaging/smb/campiello_smb_mount
@@ -169,6 +170,9 @@ obj/
 /packaging/airplay/campiello_airplay
 /packaging/airplay/stage/
 /packaging/airplay/*.hpkg
+/packaging/shelly/campiello_shelly
+/packaging/shelly/stage/
+/packaging/shelly/*.hpkg
 /packaging/icons/stage/
 /packaging/icons/*.hpkg
 

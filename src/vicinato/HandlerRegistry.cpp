@@ -89,6 +89,18 @@ bool ParseHandlerManifest(const std::string& text, DeviceHandler& out)
 			ServiceKind k;
 			if (KindFromName(value, k))
 				out.matchKinds.push_back(k);
+		} else if (key == "match.txt") {
+			// "match.txt = <key>[=<value-prefix>]": a "=" splits key from an optional value prefix.
+			HandlerTxtMatch tm;
+			size_t veq = value.find('=');
+			if (veq == std::string::npos) {
+				tm.key = Trim(value);
+			} else {
+				tm.key = Trim(value.substr(0, veq));
+				tm.valuePrefix = Trim(value.substr(veq + 1));
+			}
+			if (!tm.key.empty())
+				out.matchTxt.push_back(tm);
 		} else if (StartsWith(key, "action.")) {
 			HandlerAction a;
 			a.id = key.substr(std::string("action.").size());
@@ -157,6 +169,18 @@ std::vector<const DeviceHandler*> HandlerRegistry::Match(const NetworkService& s
 					matched = true;
 					break;
 				}
+			}
+		}
+		if (!matched) {
+			for (const HandlerTxtMatch& tm : h.matchTxt) {
+				for (const auto& kv : service.txt) {
+					if (kv.first == tm.key && StartsWith(kv.second, tm.valuePrefix.c_str())) {
+						matched = true;
+						break;
+					}
+				}
+				if (matched)
+					break;
 			}
 		}
 		if (matched)

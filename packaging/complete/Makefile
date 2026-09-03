@@ -15,7 +15,7 @@
 # alongside this package; the stock HaikuPorts libsmb2 fails the mount (see docs/SMB.md, Bug 1). The
 # core already carries the device icons.
 
-VERSION := 0.4.5-1
+VERSION := 0.4.6-1
 ARCH := x86_64
 PKG := campiello_complete-$(VERSION)-$(ARCH).hpkg
 STAGE := stage
@@ -23,7 +23,7 @@ STAGE := stage
 # Every device add-on that ships an apps/ handler + a data/campiello/handlers/ manifest, plus smb
 # (the Windows/SMB mount helper, no manifest - the WON app routes Windows hosts to it directly).
 ADDONS := afp airplay alexa cast daap daikin eero escl esphome firetv ftp homekit hue ipp \
-          lutron matter nfs nut smb spotify vnc webdav
+          lutron matter nfs nut shelly smb spotify vnc webdav
 
 .PHONY: package clean
 package: $(PKG)

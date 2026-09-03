@@ -27,13 +27,23 @@ struct HandlerAction {
 	std::string label;
 };
 
+// A TXT-record match rule: the service must carry a TXT entry with `key` whose value starts with
+// `valuePrefix` (an empty prefix means "the key is present with any value"). Lets a handler pick a
+// device out of a generic service type, e.g. a Shelly gen1 relay that only advertises _http._tcp
+// but sets `app=shellyem` / `id=shelly...` in its TXT.
+struct HandlerTxtMatch {
+	std::string key;
+	std::string valuePrefix;
+};
+
 // A device add-on, as declared by its manifest.
 struct DeviceHandler {
-	std::string                signature;   // app_signature to launch (be_roster)
-	std::string                name;        // human-readable name
-	std::vector<std::string>   matchTypes;  // mDNS service types it handles (e.g. "_hue._tcp")
-	std::vector<ServiceKind>   matchKinds;  // ...or whole ServiceKinds
-	std::vector<HandlerAction> actions;     // offered actions; "open" is the default
+	std::string                  signature;   // app_signature to launch (be_roster)
+	std::string                  name;        // human-readable name
+	std::vector<std::string>     matchTypes;  // mDNS service types it handles (e.g. "_hue._tcp")
+	std::vector<ServiceKind>     matchKinds;  // ...or whole ServiceKinds
+	std::vector<HandlerTxtMatch> matchTxt;    // ...or a TXT key/value-prefix (any one is enough)
+	std::vector<HandlerAction>   actions;     // offered actions; "open" is the default
 };
 
 // Canonical lowercase kind name used in manifests (match.kind), and its inverse.

@@ -1,0 +1,15 @@
+1	en	application/x-vnd.Campiello-shelly	3350811047
+Autenticazione attiva sul dispositivo: il controllo potrebbe fallire.	Shelly		Authentication is enabled on the device: control may fail.
+Aggiorno...	Shelly		Refreshing...
+Invio comando...	Shelly		Sending command...
+Carico lo stato...	Shelly		Loading status...
+Nessun canale rilevato.	Shelly		No channels found.
+Nessun dispositivo. Apri uno Shelly dal vicinato WON, o passa host=<ip>.	Shelly		No device. Open a Shelly from the WON neighborhood, or pass host=<ip>.
+Aggiorna	Shelly		Refresh
+Spento	Shelly		Off
+Shelly	Shelly		Shelly
+Chiudi	Shelly		Close
+Dispositivo irraggiungibile.	Shelly		Device unreachable.
+Comando non riuscito.	Shelly		Command failed.
+Acceso	Shelly		On
+Apri web	Shelly		Open web

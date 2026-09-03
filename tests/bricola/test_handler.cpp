@@ -109,6 +109,46 @@ int main()
 		CHECK(def != nullptr && def->signature == "app.hue");
 	}
 
+	// match.txt: a handler can claim a device out of a generic service type by a TXT key/value-prefix
+	// (a Shelly gen1 relay advertises only _http._tcp but sets app=shellyem / id=shelly...).
+	{
+		const char* manifest =
+			"signature  = app.shelly\n"
+			"match.type = _shelly._tcp\n"
+			"match.txt  = app=shelly\n"
+			"match.txt  = id=shelly\n";
+		DeviceHandler h;
+		CHECK(ParseHandlerManifest(manifest, h));
+		CHECK(h.matchTxt.size() == 2);
+		CHECK(h.matchTxt[0].key == "app" && h.matchTxt[0].valuePrefix == "shelly");
+
+		HandlerRegistry reg;
+		reg.Add(h);
+
+		// A gen2 Shelly matches on service type alone (no TXT needed).
+		CHECK(reg.Match(Service("_shelly._tcp", ServiceKind::Home)).size() == 1);
+
+		// A gen1 Shelly EM: _http._tcp + app=shellyem in TXT -> matched by the value-prefix rule.
+		NetworkService em;
+		em.serviceType = "_http._tcp";
+		em.kind = ServiceKind::Web;
+		em.txt = {{"id", "shellyem-98CDAC1EEF64"}, {"app", "shellyem"}};
+		CHECK(reg.Match(em).size() == 1 && reg.Match(em)[0]->signature == "app.shelly");
+
+		// A different _http._tcp device (an IRSAP radiator) is NOT claimed: no shelly TXT keys.
+		NetworkService irsap;
+		irsap.serviceType = "_http._tcp";
+		irsap.kind = ServiceKind::Web;
+		irsap.txt = {{"path", "/otafu.html"}, {"api", "gs_sys_otafu:0.1.0"}};
+		CHECK(reg.Match(irsap).empty());
+
+		// A wrong value prefix does not match (app=other).
+		NetworkService other;
+		other.serviceType = "_http._tcp";
+		other.txt = {{"app", "otherthing"}};
+		CHECK(reg.Match(other).empty());
+	}
+
 	// The launch protocol round-trips a device (including a name and TXT value with spaces) through
 	// the argument list a handler would receive.
 	{
