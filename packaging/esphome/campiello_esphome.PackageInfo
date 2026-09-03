@@ -1,13 +1,14 @@
 name			campiello_esphome
-version			0.1.0-1
+version			0.1.0-3
 architecture	x86_64
-summary			"ESPHome device info for Campiello"
+summary			"ESPHome device info and camera streaming for Campiello"
 description		"Optional device add-on for Campiello: for an ESPHome node on the network
 (_esphomelib._tcp) it shows what the device advertises over mDNS (ESPHome/firmware version, project,
-board, platform, MAC) and opens its web interface. Full entity/sensor control uses the ESPHome native
-protobuf API (port 6053), documented as a follow-up and not faked here. No network, no third-party
-dependency; part of the MIT-clean add-on suite. Launched from the WON network neighborhood on a
-double-click of a discovered ESPHome device."
+board, platform, MAC) and opens its web interface. For an ESP32-CAM node it streams the live camera
+feed (the esp32_camera_web_server MJPEG stream) in a native, letterbox-scaled view, decoded with the
+Haiku Translation Kit. Full entity/sensor control uses the ESPHome native protobuf API (port 6053),
+documented as a follow-up and not faked here. No third-party dependency; part of the MIT-clean add-on
+suite. Launched from the WON network neighborhood on a double-click of a discovered ESPHome device."
 packager		"atomozero <atomozero@proton.me>"
 vendor			"atomozero"
 

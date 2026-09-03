@@ -1,7 +1,8 @@
 # Build the OPTIONAL Campiello ESPHome package (.hpkg).
 #
-# Ships the ESPHome info add-on + its handler manifest. No network and no third-party dependency (it
-# reads the mDNS TXT and opens the web UI via be_roster), so this add-on is itself MIT-clean; kept
+# Ships the ESPHome add-on + its handler manifest. It reads the mDNS TXT, opens the web UI, and for an
+# ESP32-CAM node streams the live MJPEG feed (esp32_camera_web_server) into a native view - decoded
+# with the Haiku Translation Kit, no third-party dependency, so the add-on stays MIT-clean; kept
 # optional only because it is device-specific.
 #
 #   make package    # builds campiello_esphome-<version>-<arch>.hpkg
@@ -9,7 +10,7 @@
 #
 # Haiku-only (needs the `package` tool).
 
-VERSION := 0.1.0-2
+VERSION := 0.1.0-3
 ARCH := x86_64
 PKG := campiello_esphome-$(VERSION)-$(ARCH).hpkg
 
@@ -17,7 +18,7 @@ CXX ?= g++
 CXXFLAGS ?= -std=c++17 -Wall -Wextra -O2
 
 ESP := ../../optional/esphome
-SRC := $(ESP)/campiello_esphome.cpp
+SRC := $(ESP)/campiello_esphome.cpp $(ESP)/MjpegStream.cpp
 STAGE := stage
 
 # Localization (Haiku Locale Kit). Source strings are Italian and show when no catalog matches the
@@ -43,8 +44,8 @@ $(PKG): campiello_esphome.PackageInfo campiello_esphome $(CATALOGS)
 
 # The info app, with its app_signature resource so be_roster can launch it by signature; liblocalestub
 # so B_TRANSLATE resolves the app's catalog at runtime.
-campiello_esphome: $(SRC) $(ESP)/Esphome.rdef
-	$(CXX) $(CXXFLAGS) -o $@ $(SRC) -lbe -llocalestub
+campiello_esphome: $(SRC) $(ESP)/MjpegStream.h $(ESP)/Esphome.rdef
+	$(CXX) $(CXXFLAGS) -o $@ $(SRC) -lbe -lnetwork -ltranslation -llocalestub
 	rc -o campiello_esphome.rsrc $(ESP)/Esphome.rdef
 	xres -o $@ campiello_esphome.rsrc
 	mimeset -f $@

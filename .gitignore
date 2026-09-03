@@ -110,6 +110,9 @@ obj/
 
 # Optional Spotify add-on build artifacts
 /optional/spotify/test_spotifyapi
+
+# Optional ESPHome add-on build artifacts
+/optional/esphome/test_mjpeg
 /packaging/smb/stage/
 /packaging/smb/campiello_smb
 /packaging/smb/campiello_smb_mount

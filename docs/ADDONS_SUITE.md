@@ -241,7 +241,7 @@ follow-up, where it is not).
 |--------|-----------|------|-------------|--------|
 | **campiello_daikin** | `_dkapi._tcp` | Casa | high - open local HTTP "aircon" API | functional, control; **validated live** on 2 units |
 | **campiello_nut** | `_nut._tcp` | Sistema | high - simple text protocol, read-only | functional, monitor (parsers tested; server was localhost-bound) |
-| **campiello_esphome** | `_esphomelib._tcp` | Casa | medium - info now, native API later | info + web UI (native protobuf API = follow-up) |
+| **campiello_esphome** | `_esphomelib._tcp` | Casa | info + web + ESP32-CAM MJPEG live view | functional (info + web UI + camera streaming; native protobuf API = follow-up) |
 | **campiello_eero** | `_eero._tcp` | Rete | low - no open local API | info only |
 
 And a real upgrade of an existing component:
