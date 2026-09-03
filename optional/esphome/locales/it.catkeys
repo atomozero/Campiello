@@ -1,21 +1,31 @@
-1	it	application/x-vnd.Campiello-esphome	4221895461
-Campiello mostra le informazioni annunciate dal dispositivo e ne apre l'interfaccia web (se il componente web_server e' attivo). Il controllo completo di entita' e sensori usa l'API nativa ESPHome (canale protobuf sulla porta 6053, con eventuale cifratura Noise e password/chiave API): e' un'estensione futura, non ancora implementata.	ESPHome		Campiello mostra le informazioni annunciate dal dispositivo e ne apre l'interfaccia web (se il componente web_server e' attivo). Il controllo completo di entita' e sensori usa l'API nativa ESPHome (canale protobuf sulla porta 6053, con eventuale cifratura Noise e password/chiave API): e' un'estensione futura, non ancora implementata.
-Porta:	ESPHome		Porta:
-Interfaccia web	ESPHome		Interfaccia web
-Versione progetto	ESPHome		Versione progetto
+1	it	application/x-vnd.Campiello-esphome	2711070604
+Foto auto	ESPHome		Foto auto
 Rete	ESPHome		Rete
+Host:	ESPHome		Host:
+Diretta	ESPHome		Diretta
+Salvato sulla Scrivania: 	ESPHome		Salvato sulla Scrivania: 
 Nome: 	ESPHome		Nome: 
+Salva...	ESPHome		Salva...
+Fotogramma	ESPHome		Fotogramma
 Guarda video	ESPHome		Guarda video
-Progetto	ESPHome		Progetto
-Scheda	ESPHome		Scheda
 Errore: 	ESPHome		Errore: 
+Salvataggio non riuscito.	ESPHome		Salvataggio non riuscito.
 Apri interfaccia web	ESPHome		Apri interfaccia web
-Riconnetti	ESPHome		Riconnetti
 Versione ESPHome	ESPHome		Versione ESPHome
-Connessione...	ESPHome		Connessione...
 Indirizzo: 	ESPHome		Indirizzo: 
 Chiudi	ESPHome		Chiudi
-Dispositivo ESPHome	ESPHome		Dispositivo ESPHome
 Indirizzo MAC	ESPHome		Indirizzo MAC
 Piattaforma	ESPHome		Piattaforma
+Campiello mostra le informazioni annunciate dal dispositivo e ne apre l'interfaccia web (se il componente web_server e' attivo). Il controllo completo di entita' e sensori usa l'API nativa ESPHome (canale protobuf sulla porta 6053, con eventuale cifratura Noise e password/chiave API): e' un'estensione futura, non ancora implementata.	ESPHome		Campiello mostra le informazioni annunciate dal dispositivo e ne apre l'interfaccia web (se il componente web_server e' attivo). Il controllo completo di entita' e sensori usa l'API nativa ESPHome (canale protobuf sulla porta 6053, con eventuale cifratura Noise e password/chiave API): e' un'estensione futura, non ancora implementata.
+Versione progetto	ESPHome		Versione progetto
+Stream:	ESPHome		Stream:
+fotogramma	ESPHome		fotogramma
+Progetto	ESPHome		Progetto
+Scheda	ESPHome		Scheda
+Foto automatiche...	ESPHome		Foto automatiche...
+Connessione...	ESPHome		Connessione...
+Foto:	ESPHome		Foto:
+Nessun fotogramma da salvare.	ESPHome		Nessun fotogramma da salvare.
+Dispositivo ESPHome	ESPHome		Dispositivo ESPHome
+Web	ESPHome		Web
 Nessun dispositivo. Aprilo dal vicinato WON, o passa host=<ip>.	ESPHome		Nessun dispositivo. Aprilo dal vicinato WON, o passa host=<ip>.
