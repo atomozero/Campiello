@@ -1,6 +1,7 @@
-1	en	application/x-vnd.Campiello-esphome	830392866
+1	en	application/x-vnd.Campiello-esphome	4221895461
 Campiello mostra le informazioni annunciate dal dispositivo e ne apre l'interfaccia web (se il componente web_server e' attivo). Il controllo completo di entita' e sensori usa l'API nativa ESPHome (canale protobuf sulla porta 6053, con eventuale cifratura Noise e password/chiave API): e' un'estensione futura, non ancora implementata.	ESPHome		Campiello shows the info the device advertises and opens its web interface (if the web_server component is enabled). Full control of entities and sensors uses the ESPHome native API (a protobuf channel on port 6053, with optional Noise encryption and a password/API key): a future extension, not yet implemented.
 Porta:	ESPHome		Port:
+Interfaccia web	ESPHome		Web interface
 Versione progetto	ESPHome		Project version
 Rete	ESPHome		Network
 Nome: 	ESPHome		Name: 

@@ -84,6 +84,20 @@ static BBitmap* DecodeJpeg(const unsigned char* data, size_t len)
 	return bmp;
 }
 
+// An ESP32-CAM node exposes an MJPEG stream; detect it from the board or the device/project name.
+static bool LooksLikeCamera(const std::string& name, const std::string& project,
+	const std::string& board)
+{
+	auto lc = [](std::string x) {
+		for (char& c : x) c = (char)std::tolower((unsigned char)c);
+		return x;
+	};
+	std::string ln = lc(name), lp = lc(project), lb = lc(board);
+	return lb.find("cam") != std::string::npos
+		|| ln.find("camera") != std::string::npos || ln.find("telecamera") != std::string::npos
+		|| lp.find("camera") != std::string::npos || lp.find("telecamera") != std::string::npos;
+}
+
 // Shows the latest camera frame, letterbox-scaled to fit.
 class CameraView : public BView {
 public:
@@ -128,6 +142,7 @@ public:
 			std::to_string(port).c_str(), nullptr);
 		fPortCtl->SetExplicitMaxSize(BSize(140, B_SIZE_UNSET));
 		BButton* recon = new BButton("r", B_TRANSLATE("Riconnetti"), new BMessage(kMsgReconnect));
+		BButton* web = new BButton("w", B_TRANSLATE("Interfaccia web"), new BMessage(kMsgOpenWeb));
 
 		BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
 			.Add(fView)
@@ -135,6 +150,7 @@ public:
 				.SetInsets(B_USE_SMALL_INSETS)
 				.Add(fStatus)
 				.AddGlue()
+				.Add(web)
 				.Add(fPortCtl)
 				.Add(recon)
 			.End()
@@ -177,6 +193,14 @@ public:
 				fStatus->SetText(B_TRANSLATE("Connessione..."));
 				Start();
 				return;
+			case kMsgOpenWeb: {
+				BString url("http://");
+				url << fHost.c_str() << "/";
+				char* argv[] = {const_cast<char*>(url.String()), nullptr};
+				if (be_roster->Launch("application/x-vnd.Be.URL.http", 1, argv) != B_OK)
+					be_roster->Launch("text/html", 1, argv);
+				return;
+			}
 		}
 		BWindow::MessageReceived(m);
 	}
@@ -283,17 +307,9 @@ public:
 			"l'API nativa ESPHome (canale protobuf sulla porta 6053, con eventuale cifratura Noise e "
 			"password/chiave API): e' un'estensione futura, non ancora implementata."));
 
-		// An ESP32-CAM node exposes an MJPEG stream (esp32_camera_web_server); detect it from the
-		// board or the device name and offer a live video button.
-		auto lc = [](std::string x) {
-			for (char& c : x) c = (char)std::tolower((unsigned char)c);
-			return x;
-		};
-		std::string board = TxtGet(txt, "board");
-		std::string ln = lc(name), lp = lc(project), lb = lc(board);
-		fIsCamera = lb.find("cam") != std::string::npos
-			|| ln.find("camera") != std::string::npos || ln.find("telecamera") != std::string::npos
-			|| lp.find("camera") != std::string::npos || lp.find("telecamera") != std::string::npos;
+		// An ESP32-CAM node exposes an MJPEG stream (esp32_camera_web_server); detect it and offer a
+		// live video button (double-click on a camera opens the stream directly, see RefsReceived).
+		fIsCamera = LooksLikeCamera(name, project, TxtGet(txt, "board"));
 		fTitle = !project.empty() ? project : (name.empty() ? host : name);
 
 		BButton* video = fIsCamera
@@ -355,7 +371,16 @@ public:
 			ReadAttr(node, "CAMPIELLO:name", name);
 			if (host.Length() == 0)
 				continue;
-			(new EsphomeWindow(host.String(), name.String(), ReadTxt(node)))->Show();
+			auto txt = ReadTxt(node);
+			std::string project = TxtGet(txt, "project_name");
+			// A camera opens straight into the live stream; other nodes get the info window.
+			if (LooksLikeCamera(name.String(), project, TxtGet(txt, "board"))) {
+				std::string title = !project.empty() ? project
+					: (name.Length() ? std::string(name.String()) : std::string(host.String()));
+				(new CameraWindow(host.String(), kDefaultStreamPort, title))->Show();
+			} else {
+				(new EsphomeWindow(host.String(), name.String(), txt))->Show();
+			}
 			fShown = true;
 		}
 	}
