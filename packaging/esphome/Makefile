@@ -10,7 +10,7 @@
 #
 # Haiku-only (needs the `package` tool).
 
-VERSION := 0.1.0-5
+VERSION := 0.1.0-6
 ARCH := x86_64
 PKG := campiello_esphome-$(VERSION)-$(ARCH).hpkg
 

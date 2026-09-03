@@ -131,8 +131,14 @@ bool MjpegStream::Open(std::string* err)
 	// Read until the end of the HTTP response headers.
 	size_t hdrEnd;
 	while ((hdrEnd = FindInBuffer("\r\n\r\n", 0)) == std::string::npos) {
-		if (Fill() <= 0)
+		if (Fill() <= 0) {
+			if (fBuf.empty())
+				return fail("La telecamera ha chiuso subito la connessione: probabilmente e' gia' "
+					"in uso da un altro client (es. Home Assistant). L'ESP32-CAM serve un solo flusso "
+					"per volta - chiudi l'altra visualizzazione, oppure imposta framebuffer_count: 2 "
+					"in ESPHome.");
 			return fail("Risposta HTTP incompleta dalla telecamera.");
+		}
 		if (fBuf.size() > 65536)
 			return fail("Intestazioni HTTP troppo grandi.");
 	}
@@ -234,6 +240,10 @@ bool MjpegStream::Snapshot(const std::string& host, int port, const std::string&
 		resp.append(tmp, n);
 	close(fd);
 
+	if (resp.empty())
+		return fail("La telecamera non ha risposto allo scatto: probabilmente e' gia' in uso "
+			"(es. Home Assistant). L'ESP32-CAM serve un solo client per volta - chiudi l'altra "
+			"visualizzazione, oppure imposta framebuffer_count: 2 in ESPHome.");
 	size_t hdrEnd = resp.find("\r\n\r\n");
 	if (hdrEnd == std::string::npos)
 		return fail("Risposta HTTP incompleta.");
