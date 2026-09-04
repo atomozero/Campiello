@@ -77,7 +77,9 @@ static const uint32 kMsgRepStream  = 'rpst';   // replicant: switch to live stre
 static const uint32 kMsgRepSnap    = 'rpsn';   // replicant: switch to snapshot poll
 static const uint32 kMsgRepTick    = 'rptk';   // replicant: snapshot timer tick
 
-static const char* const kReplicantClass = "campiello::EsphomeCameraReplicant";
+// Must match the real C++ class exactly: the shelf builds the mangled Instantiate symbol from this
+// string. The class lives in the global namespace, so no namespace prefix.
+static const char* const kReplicantClass = "EsphomeCameraReplicant";
 
 // Look up a TXT value by key.
 static std::string TxtGet(const std::vector<std::pair<std::string, std::string>>& txt,
@@ -432,12 +434,10 @@ public:
 
 	~EsphomeCameraReplicant() override { StopAll(); delete fBitmap; }
 
-	static EsphomeCameraReplicant* Instantiate(BMessage* archive)
-	{
-		if (!validate_instantiation(archive, kReplicantClass))
-			return nullptr;
-		return new EsphomeCameraReplicant(archive);
-	}
+	// Defined out-of-line below so the compiler always emits the symbol the shelf looks up by name;
+	// nothing here calls it, so an inline definition would be dropped at -O2 and the dropped replicant
+	// would come back as a grey zombie box.
+	static EsphomeCameraReplicant* Instantiate(BMessage* archive);
 
 	status_t Archive(BMessage* into, bool deep) const override
 	{
@@ -587,7 +587,14 @@ private:
 };
 
 // The Desktop shelf reloads a replicant from this app's image via the "add_on" signature and finds
-// EsphomeCameraReplicant::Instantiate by class name; no extra export hook is needed.
+// this Instantiate by class name. Defined out-of-line so it is emitted as a real symbol (see the
+// declaration above).
+EsphomeCameraReplicant* EsphomeCameraReplicant::Instantiate(BMessage* archive)
+{
+	if (!validate_instantiation(archive, kReplicantClass))
+		return nullptr;
+	return new EsphomeCameraReplicant(archive);
+}
 
 // A small window that hosts a draggable camera replicant: the user drags the corner handle onto the
 // Desktop to pin it there.
@@ -598,6 +605,11 @@ public:
 			(title + " - widget").c_str(), B_TITLED_WINDOW,
 			B_NOT_ZOOMABLE | B_ASYNCHRONOUS_CONTROLS | B_AUTO_UPDATE_SIZE_LIMITS)
 	{
+		// The corner grab handle is only painted while the system-wide "show replicants" flag is on;
+		// turn it on so the handle is visible when the user wants to drag the camera out.
+		if (!BDragger::AreDraggersDrawn())
+			BDragger::ShowAllDraggers();
+
 		EsphomeCameraReplicant* rep = new EsphomeCameraReplicant(
 			BRect(0, 0, 319, 239), host, streamPort, snapPort, true, 2000000);
 		rep->SetExplicitMinSize(BSize(320, 240));
