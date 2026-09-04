@@ -61,9 +61,10 @@ static const uint32 kMsgRepTick   = 'srtk';
 static const bigtime_t kPollInterval = 3000000; // 3 s
 static const size_t kGraphSamples = 120;        // ~6 minutes at a 3 s poll
 
-// The Desktop replicant class, fully qualified. The shelf reloads it from this app's image via the
-// "add_on" signature and finds ShellyGraphReplicant::Instantiate by this name.
-static const char* const kReplicantClass = "campiello::ShellyGraphReplicant";
+// The Desktop replicant class name. The shelf reloads it from this app's image via the "add_on"
+// signature and finds Instantiate by building the mangled symbol from this string, so it MUST match
+// the real C++ class exactly - the class lives in the global namespace, so no namespace prefix.
+static const char* const kReplicantClass = "ShellyGraphReplicant";
 
 // --------------------------------------------------------------------------- shared graph drawing
 // A "nice" Y-axis ceiling (1/2/5 x 10^n) at or above v.
@@ -234,12 +235,10 @@ public:
 
 	~ShellyGraphReplicant() override { StopPoll(); }
 
-	static ShellyGraphReplicant* Instantiate(BMessage* archive)
-	{
-		if (!validate_instantiation(archive, kReplicantClass))
-			return nullptr;
-		return new ShellyGraphReplicant(archive);
-	}
+	// Defined out-of-line below so the compiler always emits the symbol: the shelf finds it by name
+	// in the app image, and nothing in this program calls it, so an inline definition would be
+	// discarded at -O2 and the replicant would come back as a grey zombie box on the Desktop.
+	static ShellyGraphReplicant* Instantiate(BMessage* archive);
 
 	status_t Archive(BMessage* into, bool deep) const override
 	{
@@ -340,7 +339,14 @@ private:
 };
 
 // The Desktop shelf reloads a replicant from this app's image via the "add_on" signature and finds
-// ShellyGraphReplicant::Instantiate by class name; no extra export hook is needed.
+// this Instantiate by class name. Defined out-of-line so it is emitted as a real symbol (see the
+// declaration above).
+ShellyGraphReplicant* ShellyGraphReplicant::Instantiate(BMessage* archive)
+{
+	if (!validate_instantiation(archive, kReplicantClass))
+		return nullptr;
+	return new ShellyGraphReplicant(archive);
+}
 
 // A small window that hosts a draggable watt-graph replicant: the user drags the corner handle onto
 // the Desktop to pin it there.
