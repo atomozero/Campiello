@@ -17,6 +17,7 @@
 #include <Alert.h>
 #include <Button.h>
 #include <Catalog.h>
+#include <Dragger.h>
 #include <Entry.h>
 #include <GroupLayout.h>
 #include <GroupView.h>
@@ -54,12 +55,84 @@ static const uint32 kMsgReady     = 'srdy';
 static const uint32 kMsgToggle    = 'stog';
 static const uint32 kMsgCmdDone   = 'scmd';
 static const uint32 kMsgOpenWeb   = 'sweb';
+static const uint32 kMsgOpenDesktop = 'sdsk';
+static const uint32 kMsgRepTick   = 'srtk';
 
 static const bigtime_t kPollInterval = 3000000; // 3 s
+static const size_t kGraphSamples = 120;        // ~6 minutes at a 3 s poll
+
+// The Desktop replicant class, fully qualified. The shelf reloads it from this app's image via the
+// "add_on" signature and finds ShellyGraphReplicant::Instantiate by this name.
+static const char* const kReplicantClass = "campiello::ShellyGraphReplicant";
+
+// --------------------------------------------------------------------------- shared graph drawing
+// A "nice" Y-axis ceiling (1/2/5 x 10^n) at or above v.
+static float NiceCeil(float v)
+{
+	if (v <= 0) return 1.0f;
+	float p = std::pow(10.0f, std::floor(std::log10(v)));
+	float f = v / p;
+	float nf = (f <= 1) ? 1 : (f <= 2) ? 2 : (f <= 5) ? 5 : 10;
+	return nf * p;
+}
+
+// Draw a rolling watt line chart into `view`'s bounds: frame, grid, blue line, and Y-axis labels
+// (full scale at the top, 0 at the bottom). When `title` is set (the replicant), it is drawn on a
+// reserved top strip; the window instead carries the current value in its own section label. Shared
+// by PowerGraph (in the window) and ShellyGraphReplicant (on the Desktop).
+static void DrawWattHistory(BView* view, const std::deque<float>& data, const char* title)
+{
+	BRect b = view->Bounds();
+	const float pad = 4.0f;
+	const float topInset = (title != nullptr) ? 16.0f : 4.0f;
+	BRect plot(b.left + pad, b.top + topInset, b.right - pad, b.bottom - pad);
+
+	view->SetHighColor(tint_color(ui_color(B_CONTROL_BORDER_COLOR), B_LIGHTEN_1_TINT));
+	view->StrokeRect(b);
+
+	float scale = 1.0f;
+	for (float v : data)
+		if (!std::isnan(v) && v > scale) scale = v;
+	scale = NiceCeil(scale);
+
+	// Grid.
+	view->SetHighColor(tint_color(ui_color(B_DOCUMENT_BACKGROUND_COLOR), B_DARKEN_1_TINT));
+	for (int i = 0; i <= 2; ++i) {
+		float y = plot.bottom - (i / 2.0f) * plot.Height();
+		view->StrokeLine(BPoint(plot.left, y), BPoint(plot.right, y));
+	}
+
+	// Line.
+	if (data.size() >= 2) {
+		view->SetHighColor(60, 130, 220);
+		size_t n = data.size();
+		BPoint prev;
+		bool havePrev = false;
+		for (size_t i = 0; i < n; ++i) {
+			float v = data[i];
+			if (std::isnan(v)) { havePrev = false; continue; }
+			float x = plot.left + (float)i / (n - 1) * plot.Width();
+			float y = plot.bottom - (v / scale) * plot.Height();
+			BPoint p(x, y);
+			if (havePrev) view->StrokeLine(prev, p);
+			prev = p;
+			havePrev = true;
+		}
+	}
+
+	// Y-axis labels.
+	view->SetHighColor(ui_color(B_DOCUMENT_TEXT_COLOR));
+	char full[32];
+	std::snprintf(full, sizeof(full), "%g W", scale);
+	view->DrawString(full, BPoint(plot.left + 2, plot.top + 12));
+	view->DrawString("0 W", BPoint(plot.left + 2, plot.bottom - 3));
+
+	if (title != nullptr)
+		view->DrawString(title, BPoint(b.left + 4, b.top + 12));
+}
 
 // --------------------------------------------------------------------------- live watt graph
-// A rolling line chart of total active power. Keeps the last kMax samples and auto-scales the Y axis
-// to a "nice" ceiling. Dependency-light: a plain BView that redraws on each pushed sample.
+// A rolling line chart of total active power, embedded in the control window.
 class PowerGraph : public BView {
 public:
 	PowerGraph()
@@ -73,77 +146,15 @@ public:
 	void Push(float watts)
 	{
 		fData.push_back(watts);
-		if (fData.size() > kMax)
+		if (fData.size() > kGraphSamples)
 			fData.pop_front();
 		Invalidate();
 	}
 
-	bool HasData() const { return !fData.empty(); }
-
-	void Draw(BRect) override
-	{
-		BRect b = Bounds();
-		const float pad = 4.0f;
-		BRect plot(b.left + pad, b.top + pad, b.right - pad, b.bottom - pad);
-
-		// Frame.
-		SetHighColor(tint_color(ui_color(B_CONTROL_BORDER_COLOR), B_LIGHTEN_1_TINT));
-		StrokeRect(b);
-
-		float scale = 1.0f;
-		for (float v : fData)
-			if (!std::isnan(v) && v > scale) scale = v;
-		scale = NiceCeil(scale);
-
-		// Horizontal grid lines + Y labels (0, mid, full scale).
-		SetHighColor(tint_color(ui_color(B_DOCUMENT_BACKGROUND_COLOR), B_DARKEN_1_TINT));
-		SetLowColor(ViewColor());
-		for (int i = 0; i <= 2; ++i) {
-			float frac = i / 2.0f;
-			float y = plot.bottom - frac * plot.Height();
-			StrokeLine(BPoint(plot.left, y), BPoint(plot.right, y));
-		}
-
-		// The line.
-		if (fData.size() >= 2) {
-			SetHighColor(60, 130, 220); // a calm blue
-			size_t n = fData.size();
-			BPoint prev;
-			bool havePrev = false;
-			for (size_t i = 0; i < n; ++i) {
-				float v = fData[i];
-				if (std::isnan(v)) { havePrev = false; continue; }
-				float x = plot.left + (n == 1 ? 0.0f : (float)i / (n - 1) * plot.Width());
-				float y = plot.bottom - (v / scale) * plot.Height();
-				BPoint p(x, y);
-				if (havePrev)
-					StrokeLine(prev, p);
-				prev = p;
-				havePrev = true;
-			}
-		}
-
-		// Y-axis labels on the left: full scale at the top, 0 at the bottom (the current value is
-		// shown in the section title above the graph, so it is not repeated here).
-		SetHighColor(ui_color(B_DOCUMENT_TEXT_COLOR));
-		char full[32];
-		std::snprintf(full, sizeof(full), "%g W", scale);
-		DrawString(full, BPoint(plot.left + 2, plot.top + 12));
-		DrawString("0 W", BPoint(plot.left + 2, plot.bottom - 3));
-	}
+	void Draw(BRect) override { DrawWattHistory(this, fData, nullptr); }
 
 private:
-	static float NiceCeil(float v)
-	{
-		if (v <= 0) return 1.0f;
-		float p = std::pow(10.0f, std::floor(std::log10(v)));
-		float f = v / p;
-		float nf = (f <= 1) ? 1 : (f <= 2) ? 2 : (f <= 5) ? 5 : 10;
-		return nf * p;
-	}
-
 	std::deque<float> fData;
-	static const size_t kMax = 120; // ~6 minutes at a 3 s poll
 };
 
 // --------------------------------------------------------------------------- workers
@@ -191,6 +202,173 @@ static int32 SetThread(void* arg)
 	job->reply.SendMessage(&m);
 	delete job;
 	return 0;
+}
+
+// --------------------------------------------------------------------------- Desktop replicant
+// A self-contained watt graph that can be dragged onto the Desktop as a replicant. It re-polls the
+// device on its own (reloaded from this app's image via the "add_on" signature) and keeps its own
+// rolling history. It reuses RefreshThread (posting kMsgReady) and DrawWattHistory, so it stays in
+// sync with the in-window graph. The archive carries host/port/gen/name, so it survives a reboot.
+class ShellyGraphReplicant : public BView {
+public:
+	ShellyGraphReplicant(BRect frame, const std::string& host, int port, int gen,
+		const std::string& name)
+		: BView(frame, "shelly_graph", B_FOLLOW_ALL, B_WILL_DRAW | B_FULL_UPDATE_ON_RESIZE),
+		  fHost(host), fPort(port), fGen(gen), fName(name)
+	{
+		SetViewColor(ui_color(B_DOCUMENT_BACKGROUND_COLOR));
+		BRect r = Bounds();
+		BDragger* d = new BDragger(BRect(r.right - 8, r.bottom - 8, r.right, r.bottom), this,
+			B_FOLLOW_RIGHT | B_FOLLOW_BOTTOM);
+		AddChild(d);
+	}
+
+	ShellyGraphReplicant(BMessage* archive)
+		: BView(archive)
+	{
+		const char* h = ""; archive->FindString("campiello:host", &h); fHost = h ? h : "";
+		archive->FindInt32("campiello:port", &fPort);
+		archive->FindInt32("campiello:gen", &fGen);
+		const char* n = ""; archive->FindString("campiello:name", &n); fName = n ? n : "";
+	}
+
+	~ShellyGraphReplicant() override { StopPoll(); }
+
+	static ShellyGraphReplicant* Instantiate(BMessage* archive)
+	{
+		if (!validate_instantiation(archive, kReplicantClass))
+			return nullptr;
+		return new ShellyGraphReplicant(archive);
+	}
+
+	status_t Archive(BMessage* into, bool deep) const override
+	{
+		status_t err = BView::Archive(into, deep);
+		if (err != B_OK)
+			return err;
+		into->AddString("add_on", kSignature);
+		into->AddString("class", kReplicantClass);
+		into->AddString("campiello:host", fHost.c_str());
+		into->AddInt32("campiello:port", fPort);
+		into->AddInt32("campiello:gen", fGen);
+		into->AddString("campiello:name", fName.c_str());
+		return B_OK;
+	}
+
+	void AttachedToWindow() override { BView::AttachedToWindow(); StartPoll(); }
+	void DetachedFromWindow() override { StopPoll(); BView::DetachedFromWindow(); }
+
+	void Draw(BRect) override
+	{
+		char title[80];
+		const char* nm = fName.empty() ? fHost.c_str() : fName.c_str();
+		if (fHavePower)
+			std::snprintf(title, sizeof(title), "%s  %.1f W", nm, fLast);
+		else
+			std::snprintf(title, sizeof(title), "%s", nm);
+		DrawWattHistory(this, fData, title);
+	}
+
+	void MessageReceived(BMessage* m) override
+	{
+		switch (m->what) {
+			case kMsgRepTick:
+				Poll();
+				return;
+			case kMsgReady: {
+				fInFlight = false;
+				bool ok = false; m->FindBool("ok", &ok);
+				if (!ok) {
+					fHavePower = false;
+					fData.push_back(NAN);
+				} else {
+					int32 gen = 0;
+					if (m->FindInt32("gen", &gen) == B_OK && gen >= 1) fGen = gen;
+					double total = 0; bool any = false; double pw = 0;
+					for (int32 i = 0; m->FindDouble("ch.pw", i, &pw) == B_OK; ++i) {
+						bool hp = false; m->FindBool("ch.hp", i, &hp);
+						if (hp) { total += pw; any = true; }
+					}
+					fHavePower = any;
+					fLast = (float)total;
+					fData.push_back(any ? (float)total : NAN);
+				}
+				if (fData.size() > kGraphSamples) fData.pop_front();
+				Invalidate();
+				return;
+			}
+		}
+		BView::MessageReceived(m);
+	}
+
+private:
+	void Poll()
+	{
+		if (fInFlight)
+			return; // do not pile up workers if the device is slow/unreachable
+		RefreshJob* job = new RefreshJob{fHost, (int)fPort, (int)fGen, BMessenger(this)};
+		thread_id t = spawn_thread(RefreshThread, "shelly_rep_poll", B_NORMAL_PRIORITY, job);
+		if (t < 0) { delete job; return; }
+		fInFlight = true;
+		resume_thread(t);
+	}
+
+	void StartPoll()
+	{
+		Poll(); // immediate first sample
+		delete fRunner;
+		fRunner = new BMessageRunner(BMessenger(this), new BMessage(kMsgRepTick), kPollInterval);
+	}
+
+	void StopPoll()
+	{
+		delete fRunner;
+		fRunner = nullptr;
+		// An in-flight poll thread may still post kMsgReady; BMessenger delivery to a gone handler
+		// fails harmlessly, so we do not block DetachedFromWindow waiting for it.
+	}
+
+	std::string     fHost;
+	int32           fPort = 80;
+	int32           fGen = 0;
+	std::string     fName;
+	bool            fInFlight = false;
+	bool            fHavePower = false;
+	float           fLast = 0.0f;
+	std::deque<float> fData;
+	BMessageRunner* fRunner = nullptr;
+};
+
+// The Desktop shelf reloads a replicant from this app's image via the "add_on" signature and finds
+// ShellyGraphReplicant::Instantiate by class name; no extra export hook is needed.
+
+// A small window that hosts a draggable watt-graph replicant: the user drags the corner handle onto
+// the Desktop to pin it there.
+class ReplicantHolder : public BWindow {
+public:
+	ReplicantHolder(const std::string& host, int port, int gen, const std::string& name)
+		: BWindow(BRect(160, 160, 160 + 320, 160 + 210),
+			(((name.empty() ? std::string("Shelly") : name)) + " - widget").c_str(), B_TITLED_WINDOW,
+			B_NOT_ZOOMABLE | B_ASYNCHRONOUS_CONTROLS | B_AUTO_UPDATE_SIZE_LIMITS)
+	{
+		ShellyGraphReplicant* rep = new ShellyGraphReplicant(
+			BRect(0, 0, 299, 149), host, port, gen, name);
+		rep->SetExplicitMinSize(BSize(300, 150));
+		BStringView* hint = new BStringView("h",
+			B_TRANSLATE("Trascina l'angolo in basso a destra sul Desktop."));
+		BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_SMALL_SPACING)
+			.SetInsets(B_USE_SMALL_INSETS)
+			.Add(rep)
+			.Add(hint)
+		.End();
+		CenterOnScreen();
+	}
+	bool QuitRequested() override { return true; }
+};
+
+static void OpenGraphWidget(const std::string& host, int port, int gen, const std::string& name)
+{
+	(new ReplicantHolder(host, port, gen, name))->Show();
 }
 
 // --------------------------------------------------------------------------- window
@@ -242,6 +420,7 @@ void ShellyWindow::BuildChrome()
 
 	BButton* refresh = new BButton("refresh", B_TRANSLATE("Aggiorna"), new BMessage(kMsgRefresh));
 	BButton* web = new BButton("web", B_TRANSLATE("Apri web"), new BMessage(kMsgOpenWeb));
+	BButton* desk = new BButton("desk", B_TRANSLATE("Desktop"), new BMessage(kMsgOpenDesktop));
 
 	fStatus = new BStringView("st", B_TRANSLATE("Carico lo stato..."));
 	fGraphLabel = new BStringView("gl", B_TRANSLATE("Potenza (W)"));
@@ -255,6 +434,7 @@ void ShellyWindow::BuildChrome()
 		.AddGroup(B_HORIZONTAL)
 			.Add(title)
 			.AddGlue()
+			.Add(desk)
 			.Add(web)
 			.Add(refresh)
 		.End()
@@ -397,6 +577,9 @@ void ShellyWindow::MessageReceived(BMessage* msg)
 				be_roster->Launch("text/html", 1, argv);
 			return;
 		}
+		case kMsgOpenDesktop:
+			OpenGraphWidget(fHost, fPort, fGen, fName);
+			return;
 	}
 	BWindow::MessageReceived(msg);
 }

@@ -44,6 +44,21 @@ which passes `CAMPIELLO:host`, `CAMPIELLO:name`, `CAMPIELLO:port` and the mDNS T
   runs on worker threads, results posted back as `BMessage`s. Links `libbe` + the network kit +
   `liblocalestub` (for `B_TRANSLATE`).
 
+## Live watt graph + Desktop widget (replicant)
+
+The control window draws a **rolling line chart of total active power (W)**: a lightweight
+`PowerGraph` view keeping the last ~120 samples with an auto-scaled Y axis (full scale at the top,
+0 W at the bottom); the current value is shown in the section title (`Potenza: N W`). A
+`BMessageRunner` re-polls the device every 3 s (skipping a tick while a poll is already in flight),
+so the graph moves on its own; an unreachable poll breaks the line instead of faking a value.
+
+The graph can also live on the **Desktop as a replicant**. Press **Desktop** in the window: a small
+holder opens with a draggable graph - drag its bottom-right corner onto the Desktop and it pins there,
+re-polling on its own (reloaded from this app's image via the `add_on` signature, class
+`ShellyGraphReplicant`). The replicant carries the host, port and generation in its archive, so it
+survives a reboot. `PowerGraph` and the replicant share one `DrawWattHistory` routine and reuse the
+same `RefreshThread`, so the on-Desktop graph stays consistent with the window.
+
 ## Authentication
 
 Auth is off by default on a freshly paired LAN device (`GET /shelly` reports `auth_en:false` on gen2,
