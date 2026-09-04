@@ -55,7 +55,6 @@ static const uint32 kMsgReady     = 'srdy';
 static const uint32 kMsgToggle    = 'stog';
 static const uint32 kMsgCmdDone   = 'scmd';
 static const uint32 kMsgOpenWeb   = 'sweb';
-static const uint32 kMsgOpenDesktop = 'sdsk';
 static const uint32 kMsgRepTick   = 'srtk';
 
 static const bigtime_t kPollInterval = 3000000; // 3 s
@@ -132,32 +131,6 @@ static void DrawWattHistory(BView* view, const std::deque<float>& data, const ch
 		view->DrawString(title, BPoint(b.left + 4, b.top + 12));
 }
 
-// --------------------------------------------------------------------------- live watt graph
-// A rolling line chart of total active power, embedded in the control window.
-class PowerGraph : public BView {
-public:
-	PowerGraph()
-		: BView("graph", B_WILL_DRAW | B_FRAME_EVENTS)
-	{
-		SetViewColor(ui_color(B_DOCUMENT_BACKGROUND_COLOR));
-		SetExplicitMinSize(BSize(220, 130));
-	}
-
-	// Append a sample (watts). A NaN means "no reading this tick" and breaks the line (a gap).
-	void Push(float watts)
-	{
-		fData.push_back(watts);
-		if (fData.size() > kGraphSamples)
-			fData.pop_front();
-		Invalidate();
-	}
-
-	void Draw(BRect) override { DrawWattHistory(this, fData, nullptr); }
-
-private:
-	std::deque<float> fData;
-};
-
 // --------------------------------------------------------------------------- workers
 struct RefreshJob { std::string host; int port; int gen; BMessenger reply; };
 static int32 RefreshThread(void* arg)
@@ -218,6 +191,11 @@ public:
 		  fHost(host), fPort(port), fGen(gen), fName(name)
 	{
 		SetViewColor(ui_color(B_DOCUMENT_BACKGROUND_COLOR));
+		SetExplicitMinSize(BSize(220, 140));
+		// Built with a frame: this instance is embedded in the control window, which drives it via
+		// Push(); it must not self-poll. A copy reconstructed from an archive (on the Desktop) polls
+		// on its own - see the archive constructor.
+		fSelfPoll = false;
 		BRect r = Bounds();
 		BDragger* d = new BDragger(BRect(r.right - 8, r.bottom - 8, r.right, r.bottom), this,
 			B_FOLLOW_RIGHT | B_FOLLOW_BOTTOM);
@@ -231,7 +209,21 @@ public:
 		archive->FindInt32("campiello:port", &fPort);
 		archive->FindInt32("campiello:gen", &fGen);
 		const char* n = ""; archive->FindString("campiello:name", &n); fName = n ? n : "";
+		fSelfPoll = true; // reconstructed on the Desktop: no window drives it, so poll on our own
 	}
+
+	// Feed a sample from the owning window (used only while embedded). A NaN breaks the line (a gap).
+	void Push(float watts)
+	{
+		fHavePower = (watts == watts); // NaN != NaN
+		if (fHavePower) fLast = watts;
+		fData.push_back(watts);
+		if (fData.size() > kGraphSamples) fData.pop_front();
+		Invalidate();
+	}
+
+	// Keep the detected generation so a dragged-out copy starts with it instead of re-probing.
+	void SetGen(int gen) { if (gen >= 1) fGen = gen; }
 
 	~ShellyGraphReplicant() override { StopPoll(); }
 
@@ -254,11 +246,17 @@ public:
 		return B_OK;
 	}
 
-	void AttachedToWindow() override { BView::AttachedToWindow(); StartPoll(); }
+	void AttachedToWindow() override { BView::AttachedToWindow(); if (fSelfPoll) StartPoll(); }
 	void DetachedFromWindow() override { StopPoll(); BView::DetachedFromWindow(); }
 
 	void Draw(BRect) override
 	{
+		// On the Desktop the graph carries its own title (device + W); embedded in the window the
+		// enclosing label already shows that, so draw without an internal title there.
+		if (!fSelfPoll) {
+			DrawWattHistory(this, fData, nullptr);
+			return;
+		}
 		char title[80];
 		const char* nm = fName.empty() ? fHost.c_str() : fName.c_str();
 		if (fHavePower)
@@ -331,6 +329,7 @@ private:
 	int32           fPort = 80;
 	int32           fGen = 0;
 	std::string     fName;
+	bool            fSelfPoll = true;   // Desktop copy polls itself; window-embedded copy is fed
 	bool            fInFlight = false;
 	bool            fHavePower = false;
 	float           fLast = 0.0f;
@@ -346,41 +345,6 @@ ShellyGraphReplicant* ShellyGraphReplicant::Instantiate(BMessage* archive)
 	if (!validate_instantiation(archive, kReplicantClass))
 		return nullptr;
 	return new ShellyGraphReplicant(archive);
-}
-
-// A small window that hosts a draggable watt-graph replicant: the user drags the corner handle onto
-// the Desktop to pin it there.
-class ReplicantHolder : public BWindow {
-public:
-	ReplicantHolder(const std::string& host, int port, int gen, const std::string& name)
-		: BWindow(BRect(160, 160, 160 + 320, 160 + 210),
-			(((name.empty() ? std::string("Shelly") : name)) + " - widget").c_str(), B_TITLED_WINDOW,
-			B_NOT_ZOOMABLE | B_ASYNCHRONOUS_CONTROLS | B_AUTO_UPDATE_SIZE_LIMITS)
-	{
-		// The corner grab handle is only painted when the system-wide "show replicants" flag is on;
-		// if the user has it off the handle is invisible and the widget looks undraggable. Turn it on
-		// so the handle is there exactly when they want to drag the graph out to the Desktop.
-		if (!BDragger::AreDraggersDrawn())
-			BDragger::ShowAllDraggers();
-
-		ShellyGraphReplicant* rep = new ShellyGraphReplicant(
-			BRect(0, 0, 299, 149), host, port, gen, name);
-		rep->SetExplicitMinSize(BSize(300, 150));
-		BStringView* hint = new BStringView("h",
-			B_TRANSLATE("Trascina la maniglia in basso a destra sul Desktop."));
-		BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_SMALL_SPACING)
-			.SetInsets(B_USE_SMALL_INSETS)
-			.Add(rep)
-			.Add(hint)
-		.End();
-		CenterOnScreen();
-	}
-	bool QuitRequested() override { return true; }
-};
-
-static void OpenGraphWidget(const std::string& host, int port, int gen, const std::string& name)
-{
-	(new ReplicantHolder(host, port, gen, name))->Show();
 }
 
 // --------------------------------------------------------------------------- window
@@ -404,7 +368,7 @@ private:
 
 	BStringView*   fStatus  = nullptr;
 	BStringView*   fGraphLabel = nullptr;
-	PowerGraph*    fGraph   = nullptr;
+	ShellyGraphReplicant* fGraph = nullptr;
 	BGroupView*    fChannels = nullptr;
 	BStringView*   fAuthNote = nullptr;
 	BMessageRunner* fRunner = nullptr;
@@ -432,11 +396,23 @@ void ShellyWindow::BuildChrome()
 
 	BButton* refresh = new BButton("refresh", B_TRANSLATE("Aggiorna"), new BMessage(kMsgRefresh));
 	BButton* web = new BButton("web", B_TRANSLATE("Apri web"), new BMessage(kMsgOpenWeb));
-	BButton* desk = new BButton("desk", B_TRANSLATE("Desktop"), new BMessage(kMsgOpenDesktop));
 
 	fStatus = new BStringView("st", B_TRANSLATE("Carico lo stato..."));
 	fGraphLabel = new BStringView("gl", B_TRANSLATE("Potenza (W)"));
-	fGraph = new PowerGraph();
+	// The graph is an archivable replicant with a drag handle in its bottom-right corner: drag it
+	// straight onto the Desktop to pin a self-polling copy there. Embedded here it is driven by this
+	// window's poll (Push), so it does not poll on its own.
+	fGraph = new ShellyGraphReplicant(BRect(0, 0, 299, 139), fHost, fPort, fGen, fName);
+	// The corner handle is only painted while the system-wide "show replicants" flag is on; turn it on
+	// so it is visible right here without the user having to enable it from the Deskbar.
+	if (!BDragger::AreDraggersDrawn())
+		BDragger::ShowAllDraggers();
+	BStringView* hint = new BStringView("gh",
+		B_TRANSLATE("Trascina la maniglia in basso a destra sul Desktop."));
+	BFont sf(be_plain_font);
+	sf.SetSize(sf.Size() * 0.9f);
+	hint->SetFont(&sf);
+	hint->SetHighColor(tint_color(ui_color(B_PANEL_TEXT_COLOR), B_LIGHTEN_1_TINT));
 	fChannels = new BGroupView(B_VERTICAL);
 	fAuthNote = new BStringView("auth", "");
 	fAuthNote->Hide();
@@ -446,13 +422,13 @@ void ShellyWindow::BuildChrome()
 		.AddGroup(B_HORIZONTAL)
 			.Add(title)
 			.AddGlue()
-			.Add(desk)
 			.Add(web)
 			.Add(refresh)
 		.End()
 		.Add(fStatus)
 		.Add(fGraphLabel)
 		.Add(fGraph)
+		.Add(hint)
 		.Add(fChannels)
 		.Add(fAuthNote)
 		.AddGlue()
@@ -484,6 +460,7 @@ void ShellyWindow::UpdateFromReady(BMessage* ready)
 
 	int32 gen = 1; ready->FindInt32("gen", &gen);
 	if (gen >= 1) fGen = gen; // cache for control calls, saves a probe
+	fGraph->SetGen(gen);      // so a copy dragged to the Desktop starts with the detected generation
 	const char* model = ""; ready->FindString("model", &model);
 	const char* fw = ""; ready->FindString("fw", &fw);
 	char buf[256];
@@ -589,9 +566,6 @@ void ShellyWindow::MessageReceived(BMessage* msg)
 				be_roster->Launch("text/html", 1, argv);
 			return;
 		}
-		case kMsgOpenDesktop:
-			OpenGraphWidget(fHost, fPort, fGen, fName);
-			return;
 	}
 	BWindow::MessageReceived(msg);
 }

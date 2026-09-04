@@ -52,17 +52,24 @@ The control window draws a **rolling line chart of total active power (W)**: a l
 `BMessageRunner` re-polls the device every 3 s (skipping a tick while a poll is already in flight),
 so the graph moves on its own; an unreachable poll breaks the line instead of faking a value.
 
-The graph can also live on the **Desktop as a replicant**. Press **Desktop** in the window: a small
-holder opens with a draggable graph - grab the **handle in its bottom-right corner** and drag it onto
-the Desktop, where it pins and re-polls on its own (reloaded from this app's image via the `add_on`
-signature, class `ShellyGraphReplicant`). The replicant carries the host, port and generation in its
-archive, so it survives a reboot. `PowerGraph` and the replicant share one `DrawWattHistory` routine
-and reuse the same `RefreshThread`, so the on-Desktop graph stays consistent with the window.
+The graph can also live on the **Desktop as a replicant**. The in-window graph *is* an archivable
+`ShellyGraphReplicant` with a drag handle in its bottom-right corner: grab that handle and drag it
+straight onto the Desktop, where a copy pins and re-polls on its own (reloaded from this app's image
+via the `add_on` signature, class `ShellyGraphReplicant`). There is no separate window or button - the
+handle is right on the graph. The replicant carries the host, port and generation in its archive, so
+it survives a reboot.
 
-The corner handle is only painted while Haiku's system-wide "show replicants" flag is on
-(`BDragger::AreDraggersDrawn()`); if it is off the handle is invisible and the widget looks
-undraggable. Opening the holder window turns the flag on (`BDragger::ShowAllDraggers()`) so the handle
-is always there when you want to drag the graph out.
+The same class serves both places: while embedded in the control window it does not poll (the window's
+poll feeds it via `Push()`), and when reconstructed from an archive on the Desktop it self-polls with
+a `BMessageRunner` on the same `RefreshThread`. Both draw through one `DrawWattHistory` routine, so the
+on-Desktop graph stays consistent with the window.
+
+Two Haiku details make this work. The corner handle is only painted while the system-wide "show
+replicants" flag is on (`BDragger::AreDraggersDrawn()`); the window turns it on
+(`BDragger::ShowAllDraggers()`) so the handle is visible without the user enabling it from the Deskbar.
+And `ShellyGraphReplicant::Instantiate` is defined out-of-line (so `-O2` cannot drop the symbol the
+shelf looks up by name) with the class archived under its real global-namespace name, otherwise a
+dropped replicant comes back as a grey zombie box.
 
 ## Authentication
 

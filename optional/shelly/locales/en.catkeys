@@ -1,4 +1,4 @@
-1	en	application/x-vnd.Campiello-shelly	3009522122
+1	en	application/x-vnd.Campiello-shelly	2622715148
 Autenticazione attiva sul dispositivo: il controllo potrebbe fallire.	Shelly		Authentication is enabled on the device: control may fail.
 Potenza (W)	Shelly		Power (W)
 Invio comando...	Shelly		Sending command...
@@ -15,4 +15,3 @@ Comando non riuscito.	Shelly		Command failed.
 Apri web	Shelly		Open web
 Acceso	Shelly		On
 Potenza	Shelly		Power
-Desktop	Shelly		Desktop
