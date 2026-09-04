@@ -351,11 +351,17 @@ public:
 			(((name.empty() ? std::string("Shelly") : name)) + " - widget").c_str(), B_TITLED_WINDOW,
 			B_NOT_ZOOMABLE | B_ASYNCHRONOUS_CONTROLS | B_AUTO_UPDATE_SIZE_LIMITS)
 	{
+		// The corner grab handle is only painted when the system-wide "show replicants" flag is on;
+		// if the user has it off the handle is invisible and the widget looks undraggable. Turn it on
+		// so the handle is there exactly when they want to drag the graph out to the Desktop.
+		if (!BDragger::AreDraggersDrawn())
+			BDragger::ShowAllDraggers();
+
 		ShellyGraphReplicant* rep = new ShellyGraphReplicant(
 			BRect(0, 0, 299, 149), host, port, gen, name);
 		rep->SetExplicitMinSize(BSize(300, 150));
 		BStringView* hint = new BStringView("h",
-			B_TRANSLATE("Trascina l'angolo in basso a destra sul Desktop."));
+			B_TRANSLATE("Trascina la maniglia in basso a destra sul Desktop."));
 		BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_SMALL_SPACING)
 			.SetInsets(B_USE_SMALL_INSETS)
 			.Add(rep)

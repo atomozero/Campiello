@@ -53,11 +53,16 @@ The control window draws a **rolling line chart of total active power (W)**: a l
 so the graph moves on its own; an unreachable poll breaks the line instead of faking a value.
 
 The graph can also live on the **Desktop as a replicant**. Press **Desktop** in the window: a small
-holder opens with a draggable graph - drag its bottom-right corner onto the Desktop and it pins there,
-re-polling on its own (reloaded from this app's image via the `add_on` signature, class
-`ShellyGraphReplicant`). The replicant carries the host, port and generation in its archive, so it
-survives a reboot. `PowerGraph` and the replicant share one `DrawWattHistory` routine and reuse the
-same `RefreshThread`, so the on-Desktop graph stays consistent with the window.
+holder opens with a draggable graph - grab the **handle in its bottom-right corner** and drag it onto
+the Desktop, where it pins and re-polls on its own (reloaded from this app's image via the `add_on`
+signature, class `ShellyGraphReplicant`). The replicant carries the host, port and generation in its
+archive, so it survives a reboot. `PowerGraph` and the replicant share one `DrawWattHistory` routine
+and reuse the same `RefreshThread`, so the on-Desktop graph stays consistent with the window.
+
+The corner handle is only painted while Haiku's system-wide "show replicants" flag is on
+(`BDragger::AreDraggersDrawn()`); if it is off the handle is invisible and the widget looks
+undraggable. Opening the holder window turns the flag on (`BDragger::ShowAllDraggers()`) so the handle
+is always there when you want to drag the graph out.
 
 ## Authentication
 
