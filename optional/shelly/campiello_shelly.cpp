@@ -37,11 +37,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <deque>
 #include <string>
 #include <vector>
 
 #include "ShellyClient.h"
+#include "ShellyPowerLog.h"
 
 using namespace campiello::shelly;
 
@@ -55,6 +57,7 @@ static const uint32 kMsgReady     = 'srdy';
 static const uint32 kMsgToggle    = 'stog';
 static const uint32 kMsgCmdDone   = 'scmd';
 static const uint32 kMsgOpenWeb   = 'sweb';
+static const uint32 kMsgHistory   = 'shis';
 static const uint32 kMsgRepTick   = 'srtk';
 
 static const bigtime_t kPollInterval = 3000000; // 3 s
@@ -209,6 +212,7 @@ public:
 		archive->FindInt32("campiello:port", &fPort);
 		archive->FindInt32("campiello:gen", &fGen);
 		const char* n = ""; archive->FindString("campiello:name", &n); fName = n ? n : "";
+		archive->FindBool("campiello:hist", &fHistoryMode);
 		fSelfPoll = true; // reconstructed on the Desktop: no window drives it, so poll on our own
 	}
 
@@ -224,6 +228,18 @@ public:
 
 	// Keep the detected generation so a dragged-out copy starts with it instead of re-probing.
 	void SetGen(int gen) { if (gen >= 1) fGen = gen; }
+
+	// Live (rolling ~6 min) vs the last 48 hours read from the on-disk log written by the logger.
+	void SetHistoryMode(bool on) { fHistoryMode = on; if (on) ReloadHistory(); Invalidate(); }
+	bool IsHistoryMode() const { return fHistoryMode; }
+	void ReloadHistory()
+	{
+		std::vector<PowerSample> samples =
+			ShellyPowerLog::Load(fHost, (long)std::time(nullptr) - ShellyPowerLog::kWindowSeconds);
+		fHistData.clear();
+		for (const PowerSample& s : samples)
+			fHistData.push_back(s.w);
+	}
 
 	~ShellyGraphReplicant() override { StopPoll(); }
 
@@ -243,6 +259,7 @@ public:
 		into->AddInt32("campiello:port", fPort);
 		into->AddInt32("campiello:gen", fGen);
 		into->AddString("campiello:name", fName.c_str());
+		into->AddBool("campiello:hist", fHistoryMode);
 		return B_OK;
 	}
 
@@ -251,19 +268,29 @@ public:
 
 	void Draw(BRect) override
 	{
-		// On the Desktop the graph carries its own title (device + W); embedded in the window the
-		// enclosing label already shows that, so draw without an internal title there.
+		const std::deque<float>& data = fHistoryMode ? fHistData : fData;
+		// On the Desktop the graph carries its own title; embedded in the window the enclosing label
+		// already shows the value, so draw without an internal title there.
 		if (!fSelfPoll) {
-			DrawWattHistory(this, fData, nullptr);
+			DrawWattHistory(this, data, nullptr);
 			return;
 		}
-		char title[80];
+		char title[96];
 		const char* nm = fName.empty() ? fHost.c_str() : fName.c_str();
-		if (fHavePower)
+		if (fHistoryMode)
+			std::snprintf(title, sizeof(title), "%s  %s", nm, B_TRANSLATE("48h"));
+		else if (fHavePower)
 			std::snprintf(title, sizeof(title), "%s  %.1f W", nm, fLast);
 		else
 			std::snprintf(title, sizeof(title), "%s", nm);
-		DrawWattHistory(this, fData, title);
+		DrawWattHistory(this, data, title);
+	}
+
+	// On the Desktop, a click toggles between the live graph and the 48h history.
+	void MouseDown(BPoint) override
+	{
+		if (fSelfPoll)
+			SetHistoryMode(!fHistoryMode);
 	}
 
 	void MessageReceived(BMessage* m) override
@@ -291,6 +318,7 @@ public:
 					fData.push_back(any ? (float)total : NAN);
 				}
 				if (fData.size() > kGraphSamples) fData.pop_front();
+				if (fHistoryMode) ReloadHistory(); // the logger appends ~once a minute; refresh the view
 				Invalidate();
 				return;
 			}
@@ -330,10 +358,12 @@ private:
 	int32           fGen = 0;
 	std::string     fName;
 	bool            fSelfPoll = true;   // Desktop copy polls itself; window-embedded copy is fed
+	bool            fHistoryMode = false; // false = live rolling graph, true = last 48h from the log
 	bool            fInFlight = false;
 	bool            fHavePower = false;
 	float           fLast = 0.0f;
-	std::deque<float> fData;
+	std::deque<float> fData;      // live samples
+	std::deque<float> fHistData;  // 48h samples loaded from the log
 	BMessageRunner* fRunner = nullptr;
 };
 
@@ -369,6 +399,7 @@ private:
 	BStringView*   fStatus  = nullptr;
 	BStringView*   fGraphLabel = nullptr;
 	ShellyGraphReplicant* fGraph = nullptr;
+	BButton*       fHistBtn = nullptr;
 	BGroupView*    fChannels = nullptr;
 	BStringView*   fAuthNote = nullptr;
 	BMessageRunner* fRunner = nullptr;
@@ -379,6 +410,9 @@ ShellyWindow::ShellyWindow(const std::string& host, const std::string& name, int
 		B_TITLED_WINDOW, B_NOT_ZOOMABLE | B_AUTO_UPDATE_SIZE_LIMITS),
 	  fHost(host), fName(name), fPort(port <= 0 ? 80 : port), fGen(gen)
 {
+	// Register this device so the background logger (campiello_shelly_logd) records its power, giving
+	// the 48h history even when no window is open.
+	ShellyPowerLog::AddWatch({fHost, fPort, fGen, fName});
 	BuildChrome();
 	StartRefresh();
 	// Keep the graph moving without the user pressing Aggiorna.
@@ -396,6 +430,7 @@ void ShellyWindow::BuildChrome()
 
 	BButton* refresh = new BButton("refresh", B_TRANSLATE("Aggiorna"), new BMessage(kMsgRefresh));
 	BButton* web = new BButton("web", B_TRANSLATE("Apri web"), new BMessage(kMsgOpenWeb));
+	fHistBtn = new BButton("hist", B_TRANSLATE("48h"), new BMessage(kMsgHistory));
 
 	fStatus = new BStringView("st", B_TRANSLATE("Carico lo stato..."));
 	fGraphLabel = new BStringView("gl", B_TRANSLATE("Potenza (W)"));
@@ -422,6 +457,7 @@ void ShellyWindow::BuildChrome()
 		.AddGroup(B_HORIZONTAL)
 			.Add(title)
 			.AddGlue()
+			.Add(fHistBtn)
 			.Add(web)
 			.Add(refresh)
 		.End()
@@ -521,16 +557,24 @@ void ShellyWindow::UpdateFromReady(BMessage* ready)
 		fAuthNote->Hide();
 	}
 
-	// The section title carries the current total power, so it is not repeated inside the graph.
-	char lab[64];
-	if (anyPower)
-		std::snprintf(lab, sizeof(lab), "%s: %.1f W", B_TRANSLATE("Potenza"), totalPower);
-	else
-		std::snprintf(lab, sizeof(lab), "%s (W)", B_TRANSLATE("Potenza"));
-	fGraphLabel->SetText(lab);
+	// The section title carries the current total power (live mode only; in 48h mode it names the
+	// window instead and must not be overwritten with the instantaneous value).
+	if (!fGraph->IsHistoryMode()) {
+		char lab[64];
+		if (anyPower)
+			std::snprintf(lab, sizeof(lab), "%s: %.1f W", B_TRANSLATE("Potenza"), totalPower);
+		else
+			std::snprintf(lab, sizeof(lab), "%s (W)", B_TRANSLATE("Potenza"));
+		fGraphLabel->SetText(lab);
+	}
 
 	// Feed the graph: total active power across metered channels (0 W is a valid reading).
 	fGraph->Push(anyPower ? (float)totalPower : NAN);
+	// In 48h mode the log (written by the logger ~once a minute) is the source; refresh it.
+	if (fGraph->IsHistoryMode())
+		fGraph->ReloadHistory();
+	// Refresh the watch entry with the now-known generation, so the logger uses it.
+	ShellyPowerLog::AddWatch({fHost, fPort, fGen, fName});
 }
 
 void ShellyWindow::MessageReceived(BMessage* msg)
@@ -564,6 +608,14 @@ void ShellyWindow::MessageReceived(BMessage* msg)
 			char* argv[1] = { const_cast<char*>(url.c_str()) };
 			if (be_roster->Launch("application/x-vnd.Be.URL.http", 1, argv) != B_OK)
 				be_roster->Launch("text/html", 1, argv);
+			return;
+		}
+		case kMsgHistory: {
+			bool toHistory = !fGraph->IsHistoryMode();
+			fGraph->SetHistoryMode(toHistory);
+			fHistBtn->SetLabel(toHistory ? B_TRANSLATE("Live") : B_TRANSLATE("48h"));
+			fGraphLabel->SetText(toHistory ? B_TRANSLATE("Potenza, ultime 48 ore (W)")
+			                               : B_TRANSLATE("Potenza (W)"));
 			return;
 		}
 	}

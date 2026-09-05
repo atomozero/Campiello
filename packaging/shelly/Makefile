@@ -11,7 +11,7 @@
 #
 # Haiku-only (needs the `package` tool).
 
-VERSION := 0.1.0-7
+VERSION := 0.1.0-8
 ARCH := x86_64
 PKG := campiello_shelly-$(VERSION)-$(ARCH).hpkg
 
@@ -19,7 +19,10 @@ CXX ?= g++
 CXXFLAGS ?= -std=c++17 -Wall -Wextra -O2
 
 SH := ../../optional/shelly
-SRC := $(SH)/campiello_shelly.cpp $(SH)/ShellyClient.cpp
+SRC := $(SH)/campiello_shelly.cpp $(SH)/ShellyClient.cpp $(SH)/ShellyPowerLog.cpp
+# The background power logger: reads the watch list, polls each Shelly once a minute and appends to
+# its 48h power log. No libbe (headless), only the socket client and the plain-text log helper.
+LOGD_SRC := $(SH)/shelly_logd.cpp $(SH)/ShellyClient.cpp $(SH)/ShellyPowerLog.cpp
 STAGE := stage
 
 # Localization (Haiku Locale Kit). Source strings are Italian and show when no catalog matches the
@@ -33,24 +36,30 @@ CATALOGS := $(LANGS:%=%.catalog)
 .PHONY: package clean
 package: $(PKG)
 
-$(PKG): campiello_shelly.PackageInfo campiello_shelly $(CATALOGS)
+$(PKG): campiello_shelly.PackageInfo campiello_shelly campiello_shelly_logd $(CATALOGS)
 	rm -rf $(STAGE)
-	mkdir -p $(STAGE)/apps $(STAGE)/data/campiello/handlers
-	mkdir -p $(STAGE)/data/locale/catalogs/$(CATALOG_DIR)
+	mkdir -p $(STAGE)/apps $(STAGE)/bin $(STAGE)/data/campiello/handlers
+	mkdir -p $(STAGE)/data/locale/catalogs/$(CATALOG_DIR) $(STAGE)/data/user_launch
 	cp campiello_shelly $(STAGE)/apps/campiello_shelly
+	cp campiello_shelly_logd $(STAGE)/bin/campiello_shelly_logd
 	cp $(SH)/shelly.handler $(STAGE)/data/campiello/handlers/shelly.handler
+	cp launch/campiello_shelly $(STAGE)/data/user_launch/campiello_shelly
 	for l in $(LANGS); do cp $$l.catalog $(STAGE)/data/locale/catalogs/$(CATALOG_DIR)/$$l.catalog; done
 	package create -C $(STAGE) -i campiello_shelly.PackageInfo $(PKG)
 	@echo "Built $(PKG)"
 
 # The control panel, with its app_signature resource so be_roster can launch it by signature;
 # liblocalestub so B_TRANSLATE resolves the app's catalog at runtime.
-campiello_shelly: $(SRC) $(SH)/ShellyClient.h $(SH)/Shelly.rdef
+campiello_shelly: $(SRC) $(SH)/ShellyClient.h $(SH)/ShellyPowerLog.h $(SH)/Shelly.rdef
 	$(CXX) $(CXXFLAGS) -o $@ $(SRC) -lbe -lnetwork -llocalestub
 	rc -o campiello_shelly.rsrc $(SH)/Shelly.rdef
 	xres -o $@ campiello_shelly.rsrc
 	mimeset -f $@
 	rm -f campiello_shelly.rsrc
+
+# The headless background logger. No libbe, only the network kit (sockets).
+campiello_shelly_logd: $(LOGD_SRC) $(SH)/ShellyClient.h $(SH)/ShellyPowerLog.h
+	$(CXX) $(CXXFLAGS) -o $@ $(LOGD_SRC) -lnetwork
 
 # Build a catalog from its checked-in catkeys. To refresh the catkeys after changing strings, see
 # `make catkeys` below.
@@ -67,4 +76,4 @@ catkeys:
 	@echo "Refreshed locales/it.catkeys; merge new keys into the other locales/*.catkeys by hand."
 
 clean:
-	rm -rf $(STAGE) campiello_shelly $(CATALOGS) shelly.pre $(PKG)
+	rm -rf $(STAGE) campiello_shelly campiello_shelly_logd $(CATALOGS) shelly.pre $(PKG)

@@ -183,3 +183,5 @@ obj/
 
 # Compiled Haiku locale catalogs (the .catkeys sources are tracked, the built catalogs are not)
 *.catalog
+/packaging/shelly/campiello_shelly_logd
+/optional/shelly/test_powerlog

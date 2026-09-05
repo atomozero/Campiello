@@ -71,6 +71,35 @@ And `ShellyGraphReplicant::Instantiate` is defined out-of-line (so `-O2` cannot 
 shelf looks up by name) with the class archived under its real global-namespace name, otherwise a
 dropped replicant comes back as a grey zombie box.
 
+## 48h history + background logger
+
+The graph has two modes, switched by a **Live / 48h** button in the window (and by a click on an
+on-Desktop replicant): **Live** is the rolling last-~120-samples chart described above, and **48h**
+draws the **last 48 hours** of total active power read from a local log. A Shelly gen2 Switch exposes
+only the instantaneous `apower` and the cumulative `aenergy.total`; it keeps **no on-device power
+history**, so the 48h view is drawn from a log this add-on records itself.
+
+That log is written by **`campiello_shelly_logd`**, a headless background logger started at login by
+its own launch_daemon job (`data/user_launch/campiello_shelly`, signature
+`x-vnd.Campiello-shelly-logd`). Once a minute it reads a **watch list** of the plugs the user has
+opened in the control panel, polls each one's total active power over the same local HTTP API, and
+appends one `epoch watts` sample to that device's log, trimmed to the last 48 hours (~2880 samples).
+Because it runs whether or not a window is open, the 48h graph has real coverage even after a reboot.
+
+- **Files** live under `$CAMPIELLO_SHELLY_DIR` or `$HOME/config/settings/Campiello/shelly`: one
+  `<host>.log` per device (`epoch watts\n` lines) plus a single `watch` list
+  (`host<TAB>port<TAB>gen<TAB>name\n`). `ShellyPowerLog` (`optional/shelly/ShellyPowerLog.{h,cpp}`) is
+  the sole helper: `Append`/`Load`/`Trim` for samples, `LoadWatch`/`AddWatch` for the watch list. It
+  is dependency-free (no libbe, no third-party library), so the logger links only the socket client
+  and the log helper and the package stays **MIT-clean**.
+- The control panel is the **reader and the registrar**: opening a Shelly calls `AddWatch` (deduped by
+  host) so the logger picks it up, and switching to 48h calls `ReloadHistory` to load
+  `ShellyPowerLog::Load(host, now - 48h)`. The logger is the **single writer**; the GUI never writes
+  the sample logs.
+- Kept deliberately **out of `campiello_daemon`**: the core stays device-agnostic and MIT-clean, so
+  the Shelly-specific polling lives in this add-on's own logger rather than the shared file-sharing
+  node.
+
 ## Authentication
 
 Auth is off by default on a freshly paired LAN device (`GET /shelly` reports `auth_en:false` on gen2,
@@ -88,6 +117,10 @@ control is a documented follow-up, not faked.
   `FetchInfo` + `FetchChannels` returned the channel state and power/energy correctly. A Shelly EM
   (gen1) on the same LAN was offline at test time, so the gen1 live grab is covered by the offline
   parser test rather than a live capture.
+- `test_powerlog` passes (21 checks, offline): `ParseLog` (valid/junk lines, `since` filtering),
+  `SanitizeHost`, `ParseWatch` (fields, defaults, names with spaces, comments), a filesystem
+  round-trip in a scratch dir (append + load-since + 48h `Trim` + `AddWatch` dedup/update), and the
+  NaN reject. Build with `g++ -std=c++17 -o test_powerlog test_powerlog.cpp ShellyPowerLog.cpp`.
 
 ## Follow-ups
 

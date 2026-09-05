@@ -1,0 +1,7 @@
+job x-vnd.Campiello-shelly-logd {
+	launch /bin/campiello_shelly_logd
+	legacy
+	on {
+		initial_volumes_mounted
+	}
+}
